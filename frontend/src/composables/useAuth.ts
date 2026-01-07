@@ -1,30 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import axios from '@/lib/axios'
+import axios, { webAxios } from '@/lib/axios'
 import type { User, LoginCredentials, RegisterData } from '@/types/auth'
 
 // Fetch current user from API
 const fetchCurrentUser = async (): Promise<User> => {
-  const response = await axios.get('/api/v1/user')
+  const response = await axios.get('/user')
   return response.data.data
 }
 
 // Login: get CSRF cookie, then login, then fetch user
 const loginUser = async (credentials: LoginCredentials): Promise<User> => {
-  await axios.get('/sanctum/csrf-cookie')
-  await axios.post('/login', credentials)
+  await webAxios.get('/sanctum/csrf-cookie')
+  await webAxios.post('/login', credentials)
   return await fetchCurrentUser()
 }
 
 // Register: get CSRF cookie, then register, then fetch user
 const registerUser = async (data: RegisterData): Promise<User> => {
-  await axios.get('/sanctum/csrf-cookie')
-  await axios.post('/register', data)
+  await webAxios.get('/sanctum/csrf-cookie')
+  await webAxios.post('/register', data)
   return await fetchCurrentUser()
 }
 
 // Logout
 const logoutUser = async (): Promise<void> => {
-  await axios.post('/logout')
+  await webAxios.post('/logout')
 }
 
 // Composables

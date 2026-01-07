@@ -1,20 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
-
-export interface Subject {
-  id: number
-  uuid: string
-  code: string
-  name: string
-  description?: string
-  credits: number
-  created_at: string
-  updated_at: string
-}
+import type { Subject } from '@/types/subject'
+import type { PaginationMeta } from '@/types/pagination'
 
 // API functions
-const fetchSubjects = async (page = 1): Promise<{ data: Subject[]; meta: any }> => {
-  const response = await axios.get(`/api/v1/subjects?page=${page}`)
+const fetchSubjects = async (page = 1): Promise<{ data: Subject[]; meta: PaginationMeta }> => {
+  const response = await axios.get(`/subjects?page=${page}`)
   return {
     data: response.data.data,
     meta: response.data.meta,
@@ -22,7 +13,7 @@ const fetchSubjects = async (page = 1): Promise<{ data: Subject[]; meta: any }> 
 }
 
 const fetchSubject = async (uuid: string): Promise<Subject> => {
-  const response = await axios.get(`/api/v1/subjects/${uuid}`)
+  const response = await axios.get(`/subjects/${uuid}`)
   return response.data.data
 }
 
@@ -32,7 +23,7 @@ const createSubject = async (data: {
   description?: string
   credits: number
 }): Promise<Subject> => {
-  const response = await axios.post('/api/v1/subjects', data)
+  const response = await axios.post('/subjects', data)
   return response.data.data
 }
 
@@ -43,12 +34,12 @@ const updateSubject = async ({
   uuid: string
   data: { code?: string; name?: string; description?: string; credits?: number }
 }): Promise<Subject> => {
-  const response = await axios.put(`/api/v1/subjects/${uuid}`, data)
+  const response = await axios.put(`/subjects/${uuid}`, data)
   return response.data.data
 }
 
 const deleteSubject = async (uuid: string): Promise<void> => {
-  await axios.delete(`/api/v1/subjects/${uuid}`)
+  await axios.delete(`/subjects/${uuid}`)
 }
 
 // Composables

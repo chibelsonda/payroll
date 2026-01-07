@@ -1,12 +1,29 @@
 import axios from 'axios'
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+const apiBaseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
+const webBaseURL = import.meta.env.VITE_WEB_BASE_URL || 'http://localhost:8000'
 
-axios.defaults.baseURL = baseURL
-axios.defaults.headers.common['Accept'] = 'application/json'
-axios.defaults.headers.common['Content-Type'] = 'application/json'
-axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest'
-axios.defaults.withCredentials = true
-axios.defaults.withXSRFToken = true
+const commonConfig = {
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  },
+  withCredentials: true,
+  withXSRFToken: true,
+}
 
-export default axios
+// API axios instance (for /api/v1 routes)
+const apiAxios = axios.create({
+  ...commonConfig,
+  baseURL: apiBaseURL,
+})
+
+// Web axios instance (for /login, /logout, /register, /sanctum/csrf-cookie)
+const webAxios = axios.create({
+  ...commonConfig,
+  baseURL: webBaseURL,
+})
+
+export default apiAxios
+export { webAxios }

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { Student } from '@/types/auth'
+import type { PaginationMeta } from '@/types/pagination'
 
 // API functions
-const fetchStudents = async (page = 1): Promise<{ data: Student[]; meta: any }> => {
-  const response = await axios.get(`/api/v1/students?page=${page}`)
+const fetchStudents = async (page = 1): Promise<{ data: Student[]; meta: PaginationMeta }> => {
+  const response = await axios.get(`/students?page=${page}`)
   return {
     data: response.data.data,
     meta: response.data.meta,
@@ -12,22 +13,22 @@ const fetchStudents = async (page = 1): Promise<{ data: Student[]; meta: any }> 
 }
 
 const fetchStudent = async (uuid: string): Promise<Student> => {
-  const response = await axios.get(`/api/v1/students/${uuid}`)
+  const response = await axios.get(`/students/${uuid}`)
   return response.data.data
 }
 
 const createStudent = async (data: { user_id: number; student_id: string }): Promise<Student> => {
-  const response = await axios.post('/api/v1/students', data)
+  const response = await axios.post('/students', data)
   return response.data.data
 }
 
 const updateStudent = async ({ uuid, data }: { uuid: string; data: { student_id?: string } }): Promise<Student> => {
-  const response = await axios.put(`/api/v1/students/${uuid}`, data)
+  const response = await axios.put(`/students/${uuid}`, data)
   return response.data.data
 }
 
 const deleteStudent = async (uuid: string): Promise<void> => {
-  await axios.delete(`/api/v1/students/${uuid}`)
+  await axios.delete(`/students/${uuid}`)
 }
 
 // Composables

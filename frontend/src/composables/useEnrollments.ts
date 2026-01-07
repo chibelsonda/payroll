@@ -1,28 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
-import type { Student } from '@/types/auth'
-
-export interface Enrollment {
-  id: number
-  uuid: string
-  student_id: number
-  subject_id: number
-  status: 'active' | 'inactive'
-  created_at: string
-  updated_at: string
-  student: Student
-  subject: {
-    id: number
-    uuid: string
-    code: string
-    name: string
-    credits: number
-  }
-}
+import type { Enrollment } from '@/types/enrollment'
+import type { PaginationMeta } from '@/types/pagination'
 
 // API functions
-const fetchEnrollments = async (page = 1): Promise<{ data: Enrollment[]; meta: any }> => {
-  const response = await axios.get(`/api/v1/enrollments?page=${page}`)
+const fetchEnrollments = async (page = 1): Promise<{ data: Enrollment[]; meta: PaginationMeta }> => {
+  const response = await axios.get(`/enrollments?page=${page}`)
   return {
     data: response.data.data,
     meta: response.data.meta,
@@ -30,12 +13,12 @@ const fetchEnrollments = async (page = 1): Promise<{ data: Enrollment[]; meta: a
 }
 
 const fetchEnrollment = async (uuid: string): Promise<Enrollment> => {
-  const response = await axios.get(`/api/v1/enrollments/${uuid}`)
+  const response = await axios.get(`/enrollments/${uuid}`)
   return response.data.data
 }
 
 const createEnrollment = async (data: { subject_id: number }): Promise<Enrollment> => {
-  const response = await axios.post('/api/v1/enrollments', data)
+  const response = await axios.post('/enrollments', data)
   return response.data.data
 }
 
@@ -46,12 +29,12 @@ const updateEnrollment = async ({
   uuid: string
   data: { status?: 'active' | 'inactive' }
 }): Promise<Enrollment> => {
-  const response = await axios.put(`/api/v1/enrollments/${uuid}`, data)
+  const response = await axios.put(`/enrollments/${uuid}`, data)
   return response.data.data
 }
 
 const deleteEnrollment = async (uuid: string): Promise<void> => {
-  await axios.delete(`/api/v1/enrollments/${uuid}`)
+  await axios.delete(`/enrollments/${uuid}`)
 }
 
 // Composables
