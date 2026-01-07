@@ -1,25 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import type { User, LoginCredentials, RegisterData } from '@/types/auth'
 
-// API functions
-const loginUser = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
-  const response = await axios.post('/api/v1/login', credentials)
-  return response.data.data
-}
-
-const registerUser = async (data: RegisterData): Promise<{ user: User; token: string }> => {
-  const response = await axios.post('/api/v1/register', data)
-  return response.data.data
-}
-
-const logoutUser = async (): Promise<void> => {
-  await axios.post('/api/v1/logout')
-}
-
+// Fetch current user from API
 const fetchCurrentUser = async (): Promise<User> => {
   const response = await axios.get('/api/v1/user')
   return response.data.data
+}
+
+// Login: get CSRF cookie, then login, then fetch user
+const loginUser = async (credentials: LoginCredentials): Promise<User> => {
+  await axios.get('/sanctum/csrf-cookie')
+  await axios.post('/login', credentials)
+  return await fetchCurrentUser()
+}
+
+// Register: get CSRF cookie, then register, then fetch user
+const registerUser = async (data: RegisterData): Promise<User> => {
+  await axios.get('/sanctum/csrf-cookie')
+  await axios.post('/register', data)
+  return await fetchCurrentUser()
+}
+
+// Logout
+const logoutUser = async (): Promise<void> => {
+  await axios.post('/logout')
 }
 
 // Composables
@@ -28,11 +33,8 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
-      // Store token
-      localStorage.setItem('token', data.token)
-      // Update user in cache
-      queryClient.setQueryData(['user'], data.user)
+    onSuccess: (user) => {
+      queryClient.setQueryData(['user'], user)
     },
   })
 }
@@ -42,11 +44,8 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: registerUser,
-    onSuccess: (data) => {
-      // Store token
-      localStorage.setItem('token', data.token)
-      // Update user in cache
-      queryClient.setQueryData(['user'], data.user)
+    onSuccess: (user) => {
+      queryClient.setQueryData(['user'], user)
     },
   })
 }
@@ -57,14 +56,7 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
-      // Clear token
-      localStorage.removeItem('token')
-      // Clear persisted query cache from localStorage
-      localStorage.removeItem('ces-query-cache')
-      // Clear user from cache
       queryClient.removeQueries({ queryKey: ['user'] })
-      // Clear all cached data
-      queryClient.clear()
     },
   })
 }
@@ -74,8 +66,7 @@ export const useCurrentUser = () => {
     queryKey: ['user'],
     queryFn: fetchCurrentUser,
     retry: false,
-    staleTime: 1000 * 60 * 10, // 10 minutes
-    gcTime: 1000 * 60 * 60 * 24, // 24 hours for persistence
-    enabled: !!localStorage.getItem('token'), // Only fetch if token exists
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 60 * 24,
   })
 }

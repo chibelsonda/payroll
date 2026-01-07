@@ -9,7 +9,8 @@ import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persist
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'
-import axios from 'axios'
+import '@/lib/axios'
+import { useAuthStore } from '@/stores/auth'
 
 const app = createApp(App)
 
@@ -21,10 +22,9 @@ app.use(vuetify)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours (cache time for persistence)
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 60 * 24,
       retry: (failureCount, error: any) => {
-        // Don't retry on 4xx errors
         if (error?.response?.status >= 400 && error?.response?.status < 500) {
           return false
         }
@@ -40,22 +40,17 @@ const queryClient = new QueryClient({
 // Create localStorage persister
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
-  key: 'ces-query-cache', // Unique key for this app
+  key: 'ces-query-cache',
 })
 
-// Enable persistence - data survives page refresh
+// Enable persistence
 persistQueryClient({
   queryClient,
   persister,
-  maxAge: 1000 * 60 * 60 * 24, // 24 hours max cache age
+  maxAge: 1000 * 60 * 60 * 24,
   dehydrateOptions: {
     shouldDehydrateQuery: (query) => {
-      // Don't persist queries that are in error state
       if (query.state.status === 'error') {
-        return false
-      }
-      // Don't persist user query if no token (logged out)
-      if (query.queryKey[0] === 'user' && !localStorage.getItem('token')) {
         return false
       }
       return true
@@ -63,22 +58,15 @@ persistQueryClient({
   },
 })
 
-// Configure Vue Query with existing query client
+// Configure Vue Query
 app.use(VueQueryPlugin, {
   queryClient,
 })
 
-// Configure axios
-axios.defaults.baseURL = 'http://localhost:8000'
-axios.defaults.headers.common['Accept'] = 'application/json'
-
-// Add axios interceptor for auth token
-axios.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
+// Fetch current user on app load
+const authStore = useAuthStore()
+authStore.fetchUser().catch(() => {
+  // Silently fail if user is not authenticated
 })
 
 app.mount('#app')

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import axios from 'axios'
+import axios from '@/lib/axios'
 import type { Student } from '@/types/auth'
 
 // API functions

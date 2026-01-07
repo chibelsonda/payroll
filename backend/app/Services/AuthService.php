@@ -19,7 +19,7 @@ class AuthService
      * Register a new user and create associated records
      *
      * @param array $data Registration data including first_name, last_name, email, password, role
-     * @return array Array containing the created user and access token
+     * @return array Array containing the created user
      * @throws \Exception If user creation fails or validation errors occur
      */
     public function register(array $data): array
@@ -37,11 +37,10 @@ class AuthService
             $this->userService->createStudentForUser($user, []);
         }
 
-        $token = $user->createToken(config('application.auth.token_name'))->plainTextToken;
+        Auth::login($user);
 
         return [
             'user' => $user->load('student'),
-            'token' => $token,
         ];
     }
 
@@ -69,33 +68,33 @@ class AuthService
      * Authenticate a user with email and password
      *
      * @param array $credentials Login credentials (email and password)
-     * @return array Array containing the authenticated user and access token
+     * @return array Array containing the authenticated user
      * @throws \Exception If credentials are invalid
      */
     public function login(array $credentials): array
     {
-        if (!Auth::attempt($credentials)) {
+        if (!Auth::attempt($credentials, true)) {
             throw new InvalidCredentialsException();
         }
 
         $user = Auth::user();
-        $token = $user->createToken(config('application.auth.token_name'))->plainTextToken;
 
         return [
             'user' => $user->load('student'),
-            'token' => $token,
         ];
     }
 
     /**
-     * Logout the current user by revoking their access token
+     * Logout the current user
      *
      * @param \Illuminate\Http\Request $request The current HTTP request
      * @return void
      */
     public function logout(\Illuminate\Http\Request $request): void
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
     }
 
     /**

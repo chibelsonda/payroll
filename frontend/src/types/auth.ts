@@ -1,5 +1,4 @@
 export interface User {
-  id: string
   uuid: string
   first_name: string
   last_name: string
@@ -36,5 +35,4 @@ export interface RegisterData {
 
 export interface AuthResponse {
   user: User
-  token: string
 }

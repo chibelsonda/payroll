@@ -160,11 +160,17 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     await auth.login(formData)
     notification.showSuccess('Login successful!')
 
+    // Wait a moment for user data to be available, then redirect based on role
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     // Redirect based on role
     if (auth.isAdmin) {
       router.push('/admin')
-    } else {
+    } else if (auth.isStudent) {
       router.push('/student')
+    } else {
+      // Fallback: redirect to login if role is not determined
+      router.push('/login')
     }
   } catch (error: unknown) {
     // Handle server-side validation errors

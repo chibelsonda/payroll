@@ -23,29 +23,27 @@ class AuthController extends BaseApiController
      * Register a new user account
      *
      * @param RegisterRequest $request Validated registration data
-     * @return JsonResponse JSON response with user data and access token
+     * @return JsonResponse JSON response with user data
      */
     public function register(RegisterRequest $request): JsonResponse
     {
         $result = $this->authService->register($request->validated());
         return $this->createdResponse([
             'user' => new UserResource($result['user']),
-            'token' => $result['token'],
         ], 'User registered successfully');
     }
 
     /**
-     * Authenticate a user and return access token
+     * Authenticate a user
      *
      * @param LoginRequest $request Validated login credentials
-     * @return JsonResponse JSON response with user data and access token
+     * @return JsonResponse JSON response with user data
      */
     public function login(LoginRequest $request): JsonResponse
     {
         $result = $this->authService->login($request->only('email', 'password'));
         return $this->successResponse([
             'user' => new UserResource($result['user']),
-            'token' => $result['token'],
         ], 'Login successful');
     }
 

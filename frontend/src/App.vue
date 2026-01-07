@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAuthStore } from './stores/auth'
 import NotificationSnackbar from './components/NotificationSnackbar.vue'
-
-const auth = useAuthStore()
-
-onMounted(() => {
-  auth.fetchUser()
-})
 </script>
 
 <template>
