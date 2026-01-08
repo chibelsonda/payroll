@@ -2,12 +2,12 @@
 
 namespace App\Exceptions;
 
-use Exception;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class InvalidCredentialsException extends Exception
+class InvalidCredentialsException extends HttpException
 {
-    public function __construct(string $message = 'Invalid credentials', int $code = 401)
+    public function __construct(string $message = 'Invalid credentials', int $statusCode = 401)
     {
-        parent::__construct($message, $code);
+        parent::__construct($statusCode, $message);
     }
 }

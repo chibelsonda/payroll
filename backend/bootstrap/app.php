@@ -72,6 +72,19 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // Handle InvalidCredentialsException before generic HttpException
+        $exceptions->render(function (\App\Exceptions\InvalidCredentialsException $e, $request) {
+            if ($request->is('api/*') || $request->is('login') || $request->is('register')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'Invalid credentials',
+                    'data' => null,
+                    'errors' => ['credentials' => [$e->getMessage() ?: 'Invalid credentials']],
+                    'meta' => [],
+                ], 401);
+            }
+        });
+
         $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([
