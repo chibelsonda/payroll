@@ -35,12 +35,13 @@ class AuthService
 
         if ($user->isStudent()) {
             $this->userService->createStudentForUser($user, []);
+            $user->load('student');
         }
 
         Auth::login($user);
 
         return [
-            'user' => $user->load('student'),
+            'user' => $user,
         ];
     }
 
@@ -77,10 +78,16 @@ class AuthService
             throw new InvalidCredentialsException();
         }
 
+        /** @var User $user */
         $user = Auth::user();
 
+        // Only load student relationship if user is a student
+        if ($user->isStudent()) {
+            $user->load('student');
+        }
+
         return [
-            'user' => $user->load('student'),
+            'user' => $user,
         ];
     }
 
@@ -98,13 +105,21 @@ class AuthService
     }
 
     /**
-     * Get the currently authenticated user with student relationship
+     * Get the currently authenticated user with relationships loaded
      *
      * @param \Illuminate\Http\Request $request The current HTTP request
-     * @return User The authenticated user with student relationship loaded
+     * @return User The authenticated user with appropriate relationships loaded
      */
     public function getCurrentUser(\Illuminate\Http\Request $request): User
     {
-        return $request->user()->load('student');
+        /** @var User $user */
+        $user = $request->user();
+
+        // Only load student relationship if user is a student
+        if ($user->isStudent()) {
+            $user->load('student');
+        }
+
+        return $user;
     }
 }
