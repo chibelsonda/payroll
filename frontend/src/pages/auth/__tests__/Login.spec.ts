@@ -119,8 +119,6 @@ describe('Login.vue', () => {
       await form.trigger('submit')
       await nextTick()
       await waitForNextTick()
-      await waitForNextTick()
-      await waitForNextTick() // Extra wait for async operations
 
       // Verify login was called (might not be called if validation fails, so check if form exists)
       // The form submission should trigger the handler
@@ -174,7 +172,6 @@ describe('Login.vue', () => {
       await form.trigger('submit')
       await nextTick()
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
       // This test verifies the form exists and can be submitted
@@ -215,7 +212,6 @@ describe('Login.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await nextTick()
-      await waitForNextTick()
       await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
@@ -305,7 +301,6 @@ describe('Login.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
       // This test verifies the form exists and can handle errors
@@ -334,7 +329,6 @@ describe('Login.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
       // This test verifies the form exists and can handle validation errors
@@ -356,7 +350,6 @@ describe('Login.vue', () => {
       // Trigger form submit
       const form = wrapper.find('form')
       await form.trigger('submit')
-      await waitForNextTick()
       await waitForNextTick()
 
       // Note: Form validation might prevent submission, but we verify form exists

@@ -147,7 +147,6 @@ describe('Register.vue', () => {
       await form.trigger('submit')
       await nextTick()
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
       // This test verifies the form exists and can be submitted
@@ -191,7 +190,6 @@ describe('Register.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await nextTick()
-      await waitForNextTick()
       await waitForNextTick()
 
       // Note: Form validation might prevent submission with stubbed components
@@ -289,7 +287,6 @@ describe('Register.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission, but we verify form exists
       expect(form.exists()).toBe(true)
@@ -315,7 +312,6 @@ describe('Register.vue', () => {
       const form = wrapper.find('form')
       await form.trigger('submit')
       await waitForNextTick()
-      await waitForNextTick()
 
       // Note: Form validation might prevent submission, but we verify form exists
       expect(form.exists()).toBe(true)
@@ -336,7 +332,6 @@ describe('Register.vue', () => {
       // Trigger form submit
       const form = wrapper.find('form')
       await form.trigger('submit')
-      await waitForNextTick()
       await waitForNextTick()
 
       // Note: Form validation might prevent submission, but we verify form exists
@@ -362,7 +357,6 @@ describe('Register.vue', () => {
       // Trigger form submit
       const form = wrapper.find('form')
       await form.trigger('submit')
-      await waitForNextTick()
       await waitForNextTick()
 
       // Note: Form validation might prevent submission, but we verify form exists
