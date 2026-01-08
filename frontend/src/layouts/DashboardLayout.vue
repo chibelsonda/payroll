@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { useNotification } from '@/composables/useNotification'
@@ -57,7 +57,7 @@ interface Props {
   appBarTitle?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   appBarTitle: 'Enrollment System'
 })
 
@@ -69,11 +69,14 @@ const drawer = ref(true)
 const handleLogout = async () => {
   try {
     await auth.logout()
+    // Use replace instead of push to prevent back navigation to protected routes
+    router.replace('/login')
     notification.showSuccess('Logged out successfully')
-    router.push('/login')
   } catch (error) {
     notification.showError('Failed to logout. Please try again.')
     console.error('Logout failed:', error)
+    // Force redirect even on error to ensure user leaves protected area
+    router.replace('/login')
   }
 }
 </script>

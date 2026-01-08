@@ -1,3 +1,4 @@
+import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { Student } from '@/types/auth'
@@ -32,11 +33,20 @@ const deleteStudent = async (uuid: string): Promise<void> => {
 }
 
 // Composables
-export const useStudents = (page = 1, keepPreviousData = true) => {
+export const useStudents = (page = 1, keepPreviousData = true, enabled: boolean | Ref<boolean> | (() => boolean) = true) => {
+  // Convert function to computed ref for reactivity
+  const enabledValue = typeof enabled === 'function'
+    ? computed(enabled)
+    : enabled
+
   return useQuery({
     queryKey: ['students', page],
     queryFn: () => fetchStudents(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
+    enabled: enabledValue,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 }
 

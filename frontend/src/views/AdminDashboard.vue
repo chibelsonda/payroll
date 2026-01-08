@@ -98,10 +98,11 @@ import { useEnrollments } from '@/composables/useEnrollments'
 
 const auth = useAuthStore()
 
-// Vue Query hooks
-const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useStudents()
-const { data: subjectsData, isLoading: subjectsLoading, error: subjectsError } = useSubjects()
-const { data: enrollmentsData, isLoading: enrollmentsLoading, error: enrollmentsError } = useEnrollments()
+// Only fetch when user is authenticated
+const isAuthenticated = computed(() => !!auth.user)
+const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useStudents(1, true, isAuthenticated)
+const { data: subjectsData, isLoading: subjectsLoading, error: subjectsError } = useSubjects(1, true, isAuthenticated)
+const { data: enrollmentsData, isLoading: enrollmentsLoading, error: enrollmentsError } = useEnrollments(1, true, isAuthenticated)
 
 // Computed properties
 const isLoading = computed(() => studentsLoading.value || subjectsLoading.value || enrollmentsLoading.value)

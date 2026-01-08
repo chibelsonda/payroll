@@ -74,8 +74,17 @@ export const useLogout = () => {
 
   return useMutation({
     mutationFn: logoutUser,
+    onMutate: async () => {
+      // Clear user immediately to disable all authenticated queries
+      queryClient.setQueryData(['user'], null)
+      // Cancel all in-flight queries before logout to prevent 401 errors
+      await queryClient.cancelQueries()
+    },
     onSuccess: () => {
-      queryClient.removeQueries({ queryKey: ['user'] })
+      // Remove all queries (don't invalidate - that would trigger refetch during logout)
+      queryClient.removeQueries()
+      // Reset all query cache to ensure clean state
+      queryClient.resetQueries()
     },
   })
 }

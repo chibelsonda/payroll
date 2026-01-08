@@ -157,20 +157,17 @@ const onSubmit = handleSubmit(async (values: unknown) => {
   const formData = values as LoginFormData
 
   try {
-    await auth.login(formData)
+    const user = await auth.login(formData)
     notification.showSuccess('Login successful!')
 
-    // Wait a moment for user data to be available, then redirect based on role
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    // Redirect based on role
-    if (auth.isAdmin) {
-      router.push('/admin')
-    } else if (auth.isStudent) {
-      router.push('/student')
+    // Redirect based on role from the returned user (don't rely on store state which might not be updated yet)
+    if (user.role === 'admin') {
+      await router.push('/admin')
+    } else if (user.role === 'student') {
+      await router.push('/student')
     } else {
       // Fallback: redirect to login if role is not determined
-      router.push('/login')
+      await router.push('/login')
     }
   } catch (error: unknown) {
     // Handle server-side validation errors

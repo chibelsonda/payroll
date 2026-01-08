@@ -1,3 +1,4 @@
+import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { Subject } from '@/types/subject'
@@ -43,11 +44,20 @@ const deleteSubject = async (uuid: string): Promise<void> => {
 }
 
 // Composables
-export const useSubjects = (page = 1, keepPreviousData = true) => {
+export const useSubjects = (page = 1, keepPreviousData = true, enabled: boolean | Ref<boolean> | (() => boolean) = true) => {
+  // Convert function to computed ref for reactivity
+  const enabledValue = typeof enabled === 'function'
+    ? computed(enabled)
+    : enabled
+
   return useQuery({
     queryKey: ['subjects', page],
     queryFn: () => fetchSubjects(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
+    enabled: enabledValue,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   })
 }
 

@@ -54,8 +54,8 @@
             <div class="text-caption">Enrolled Subjects</div>
           </v-card-text>
           <v-card-actions>
-            <v-btn 
-              to="/student/enrollments" 
+            <v-btn
+              to="/student/enrollments"
               color="primary"
               prepend-icon="mdi-arrow-right"
             >
@@ -75,8 +75,9 @@ import { useEnrollments } from '@/composables/useEnrollments'
 
 const auth = useAuthStore()
 
-// Use composable instead of direct axios call
-const { data: enrollmentsData, isLoading, error, refetch } = useEnrollments()
+// Only fetch enrollments when user is authenticated
+const isAuthenticated = computed(() => !!auth.user)
+const { data: enrollmentsData, isLoading, error, refetch } = useEnrollments(1, true, isAuthenticated)
 
 // Computed properties
 const enrollmentsCount = computed(() => enrollmentsData.value?.data?.length || 0)
@@ -84,8 +85,9 @@ const enrollmentsCount = computed(() => enrollmentsData.value?.data?.length || 0
 const fullName = computed(() => {
   const user = auth.user
   if (!user) return 'Guest'
-  return user.first_name && user.last_name 
-    ? `${user.first_name} ${user.last_name}` 
-    : user.name || user.email
+  if (user.first_name && user.last_name) {
+    return `${user.first_name} ${user.last_name}`
+  }
+  return user.email
 })
 </script>

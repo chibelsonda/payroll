@@ -1,3 +1,4 @@
+import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { Enrollment } from '@/types/enrollment'
@@ -5,10 +6,30 @@ import type { PaginationMeta } from '@/types/pagination'
 
 // API functions
 const fetchEnrollments = async (page = 1): Promise<{ data: Enrollment[]; meta: PaginationMeta }> => {
-  const response = await axios.get(`/enrollments?page=${page}`)
-  return {
-    data: response.data.data,
-    meta: response.data.meta,
+  try {
+    const response = await axios.get(`/enrollments?page=${page}`)
+    return {
+      data: response.data.data,
+      meta: response.data.meta,
+    }
+  } catch (error: unknown) {
+    // Handle 401 errors gracefully (user not authenticated)
+    const axiosError = error as { response?: { status?: number } }
+    if (axiosError?.response?.status === 401) {
+      // Return empty data instead of throwing - query is disabled when not authenticated anyway
+      return {
+        data: [],
+        meta: {
+          current_page: 1,
+          from: null,
+          last_page: 1,
+          per_page: 10,
+          to: null,
+          total: 0,
+        },
+      }
+    }
+    throw error
   }
 }
 
@@ -38,11 +59,22 @@ const deleteEnrollment = async (uuid: string): Promise<void> => {
 }
 
 // Composables
-export const useEnrollments = (page = 1, keepPreviousData = true) => {
+export const useEnrollments = (page = 1, keepPreviousData = true, enabled: boolean | Ref<boolean> | (() => boolean) = true) => {
+  // Convert function to computed ref for reactivity
+  const enabledValue = typeof enabled === 'function'
+    ? computed(enabled)
+    : enabled
+
   return useQuery({
     queryKey: ['enrollments', page],
     queryFn: () => fetchEnrollments(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
+    enabled: enabledValue,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    // Don't throw on error - handle gracefully
+    throwOnError: false,
   })
 }
 
