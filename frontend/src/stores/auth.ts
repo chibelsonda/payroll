@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loginMutation = useLogin()
   const registerMutation = useRegister()
   const logoutMutation = useLogout()
-  const { data: user, refetch: refetchUser, isLoading: isLoadingUser } = useCurrentUser()
+  const { data: user, refetch: refetchUser, isLoading: isLoadingUser, enable } = useCurrentUser()
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
@@ -26,7 +26,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const fetchUser = async () => {
-    await refetchUser()
+    enable()
+    try {
+      await refetchUser()
+    } catch {
+      // Silently ignore 401 errors (user is not authenticated)
+    }
   }
 
   return {

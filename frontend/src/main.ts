@@ -4,13 +4,12 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
 import { persistQueryClient } from '@tanstack/query-persist-client-core'
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'
 import '@/lib/axios'
-import { useAuthStore } from '@/stores/auth'
 
 const app = createApp(App)
 
@@ -24,8 +23,11 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 60 * 24,
-      retry: (failureCount, error: any) => {
-        if (error?.response?.status >= 400 && error?.response?.status < 500) {
+      retry: (failureCount, error: unknown) => {
+        const axiosError = error as { response?: { status?: number }; isSilent?: boolean }
+        // Don't retry on 4xx errors or silent errors
+        const status = axiosError?.response?.status
+        if (axiosError?.isSilent || (status !== undefined && status >= 400 && status < 500)) {
           return false
         }
         return failureCount < 3
@@ -38,7 +40,7 @@ const queryClient = new QueryClient({
 })
 
 // Create localStorage persister
-const persister = createSyncStoragePersister({
+const persister = createAsyncStoragePersister({
   storage: window.localStorage,
   key: 'ces-query-cache',
 })
@@ -63,10 +65,5 @@ app.use(VueQueryPlugin, {
   queryClient,
 })
 
-// Fetch current user on app load
-const authStore = useAuthStore()
-authStore.fetchUser().catch(() => {
-  // Silently fail if user is not authenticated
-})
 
 app.mount('#app')
