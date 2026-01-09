@@ -31,6 +31,15 @@ const router = createRouter({
         menuItems: [
           { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
           { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
+          {
+            title: 'Settings',
+            icon: 'mdi-cog',
+            children: [
+              { title: 'General', to: '/admin/settings/general' },
+              { title: 'Notifications', to: '/admin/settings/notifications' },
+              { title: 'Security', to: '/admin/settings/security' },
+            ],
+          },
         ],
       },
       children: [
