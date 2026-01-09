@@ -3,18 +3,18 @@ export interface User {
   first_name: string
   last_name: string
   email: string
-  role: 'admin' | 'student'
+  role: 'admin' | 'employee'
   email_verified_at?: string
   created_at: string
   updated_at: string
-  student?: Student
+  employee?: Employee
 }
 
-export interface Student {
+export interface Employee {
   id: number
   uuid: string
   user_id: number
-  student_id: string
+  employee_id: string
   created_at: string
   updated_at: string
   user?: User

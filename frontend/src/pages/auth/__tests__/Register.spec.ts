@@ -133,7 +133,7 @@ describe('Register.vue', () => {
         first_name: 'John',
         last_name: 'Doe',
         email: 'john.doe@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -173,7 +173,7 @@ describe('Register.vue', () => {
         first_name: 'John',
         last_name: 'Doe',
         email: 'john.doe@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -228,7 +228,7 @@ describe('Register.vue', () => {
       expect(authStore.register).toBeDefined()
     })
 
-    it('redirects to student dashboard when user role is student', async () => {
+    it('redirects to employee dashboard when user role is employee', async () => {
       const wrapper = mount(Register, createMountOptions())
 
       const mockUser: User = {
@@ -236,14 +236,14 @@ describe('Register.vue', () => {
         first_name: 'Student',
         last_name: 'User',
         email: 'student@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
 
       authStore.register.mockResolvedValue(mockUser)
       authStore.isAdmin = false
-      authStore.isStudent = true
+      authStore.isEmployee = true
       mockGet
         .mockResolvedValueOnce({}) // CSRF cookie
         .mockResolvedValueOnce({ data: { data: mockUser } }) // Get user

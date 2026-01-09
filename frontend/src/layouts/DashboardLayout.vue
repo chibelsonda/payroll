@@ -58,7 +58,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  appBarTitle: 'Enrollment System'
+  appBarTitle: 'Payroll System'
 })
 
 const auth = useAuthStore()

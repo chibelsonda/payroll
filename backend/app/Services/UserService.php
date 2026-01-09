@@ -38,11 +38,11 @@ class UserService
     /**
      * Get all users with pagination
      *
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator Paginated users with student relationship
+     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator Paginated users with employee relationship
      */
     public function getAllUsers()
     {
-        return User::with('student')->paginate(config('application.pagination.per_page'));
+        return User::with('employee')->paginate(config('application.pagination.per_page'));
     }
 
     /**
@@ -70,16 +70,16 @@ class UserService
     }
 
     /**
-     * Create a student record for an existing user
+     * Create an employee record for an existing user
      *
-     * @param User $user The user to create a student record for
-     * @param array $data Additional student data (optional student_id)
-     * @return \App\Models\Student The created student instance
+     * @param User $user The user to create an employee record for
+     * @param array $data Additional employee data (optional employee_id)
+     * @return \App\Models\Employee The created employee instance
      */
-    public function createStudentForUser(User $user, array $data): \App\Models\Student
+    public function createEmployeeForUser(User $user, array $data): \App\Models\Employee
     {
-        return $user->student()->create([
-            'student_id' => $data['student_id'] ?? config('application.student.id_prefix') . str_pad($user->id, 4, '0', STR_PAD_LEFT),
+        return $user->employee()->create([
+            'employee_id' => $data['employee_id'] ?? config('application.employee.id_prefix') . str_pad($user->id, 4, '0', STR_PAD_LEFT),
         ]);
     }
 }

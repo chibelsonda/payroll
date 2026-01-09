@@ -25,7 +25,7 @@ class AuthService
     public function register(array $data): array
     {
         // Extract role before creating user (role is not stored in users table)
-        $role = $data['role'] ?? 'student';
+        $role = $data['role'] ?? 'employee';
         unset($data['role']);
 
         $user = $this->userService->createUser($data);
@@ -33,9 +33,9 @@ class AuthService
         // Automatically assign Spatie role based on registration role
         $this->assignRoleToUser($user, $role);
 
-        if ($user->isStudent()) {
-            $this->userService->createStudentForUser($user, []);
-            $user->load('student');
+        if ($user->isEmployee()) {
+            $this->userService->createEmployeeForUser($user, []);
+            $user->load('employee');
         }
 
         Auth::login($user);
@@ -49,7 +49,7 @@ class AuthService
      * Assign Spatie role to user based on role field
      *
      * @param User $user The user instance
-     * @param string $role The role from registration (admin, staff, student)
+     * @param string $role The role from registration (admin, staff, employee)
      * @return void
      */
     protected function assignRoleToUser(User $user, string $role): void
@@ -58,7 +58,7 @@ class AuthService
         $spatieRole = match ($role) {
             'admin' => 'admin',
             'staff' => 'staff',
-            'student' => 'user', // Student maps to 'user' role in Spatie
+            'employee' => 'user', // Employee maps to 'user' role in Spatie
             default => 'user',  // Default to 'user' role
         };
 
@@ -81,9 +81,9 @@ class AuthService
         /** @var User $user */
         $user = Auth::user();
 
-        // Only load student relationship if user is a student
-        if ($user->isStudent()) {
-            $user->load('student');
+        // Only load employee relationship if user is an employee
+        if ($user->isEmployee()) {
+            $user->load('employee');
         }
 
         return [
@@ -115,9 +115,9 @@ class AuthService
         /** @var User $user */
         $user = $request->user();
 
-        // Only load student relationship if user is a student
-        if ($user->isStudent()) {
-            $user->load('student');
+        // Only load employee relationship if user is an employee
+        if ($user->isEmployee()) {
+            $user->load('employee');
         }
 
         return $user;

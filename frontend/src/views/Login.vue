@@ -163,8 +163,8 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     // Redirect based on role from the returned user (don't rely on store state which might not be updated yet)
     if (user.role === 'admin') {
       await router.push('/admin')
-    } else if (user.role === 'student') {
-      await router.push('/student')
+    } else if (user.role === 'employee') {
+      await router.push('/employee')
     } else {
       // Fallback: redirect to login if role is not determined
       await router.push('/login')

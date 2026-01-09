@@ -4,15 +4,15 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateEnrollmentRequest extends FormRequest
+class UpdateEmployeeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        $enrollment = $this->route('enrollment');
-        return $this->user()->can('update', $enrollment);
+        $employee = $this->route('employee');
+        return $this->user()->can('update', $employee);
     }
 
     /**
@@ -22,8 +22,9 @@ class UpdateEnrollmentRequest extends FormRequest
      */
     public function rules(): array
     {
+        $employee = $this->route('employee');
         return [
-            'status' => 'sometimes|in:active,inactive',
+            'employee_id' => 'sometimes|string|unique:employees,employee_id,' . $employee->id,
         ];
     }
 }

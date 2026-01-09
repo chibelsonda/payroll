@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
-  const isStudent = computed(() => user.value?.role === 'student')
+  const isEmployee = computed(() => user.value?.role === 'employee')
 
   const login = async (credentials: LoginCredentials) => {
     return await loginMutation.mutateAsync(credentials)
@@ -38,7 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     isAuthenticated,
     isAdmin,
-    isStudent,
+    isEmployee,
     isLoadingUser,
     login,
     register,

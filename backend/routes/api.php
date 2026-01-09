@@ -1,10 +1,8 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\EnrollmentController;
 use App\Http\Controllers\Api\V1\PostController;
-use App\Http\Controllers\Api\V1\StudentController;
-use App\Http\Controllers\Api\V1\SubjectController;
+use App\Http\Controllers\Api\V1\EmployeeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -47,8 +45,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
         });
 
         // Existing resource routes
-        Route::apiResource('students', StudentController::class);
-        Route::apiResource('subjects', SubjectController::class);
-        Route::apiResource('enrollments', EnrollmentController::class);
+        Route::apiResource('employees', EmployeeController::class);
     });
 });

@@ -4,11 +4,11 @@
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            <h2>Students Management</h2>
+            <h2>Employees Management</h2>
             <v-spacer></v-spacer>
             <v-btn color="primary" @click="showCreateDialog = true">
               <v-icon left>mdi-plus</v-icon>
-              Add Student
+              Add Employee
             </v-btn>
           </v-card-title>
 
@@ -16,21 +16,21 @@
             <!-- Loading State -->
             <div v-if="isLoading" class="text-center py-8">
               <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-              <p class="mt-4">Loading students...</p>
+              <p class="mt-4">Loading employees...</p>
             </div>
 
             <!-- Error State -->
             <v-alert v-else-if="error" type="error" class="mb-4">
-              Failed to load students: {{ error.message }}
+              Failed to load employees: {{ error.message }}
               <template #append>
                 <v-btn variant="text" @click="refetch">Retry</v-btn>
               </template>
             </v-alert>
 
-            <!-- Students Table -->
+            <!-- Employees Table -->
             <v-data-table
               v-else
-              :items="students"
+              :items="employees"
               :headers="headers"
               :loading="isLoading"
               density="compact"
@@ -45,14 +45,14 @@
                   icon="mdi-pencil"
                   size="small"
                   variant="text"
-                  @click="editStudent(item)"
+                  @click="editEmployee(item)"
                 ></v-btn>
                 <v-btn
                   icon="mdi-delete"
                   size="small"
                   variant="text"
                   color="error"
-                  @click="deleteStudent(item)"
+                  @click="deleteEmployee(item)"
                 ></v-btn>
               </template>
             </v-data-table>
@@ -61,16 +61,16 @@
       </v-col>
     </v-row>
 
-    <!-- Create/Edit Student Dialog -->
+    <!-- Create/Edit Employee Dialog -->
     <v-dialog v-model="showCreateDialog" max-width="500px">
       <v-card>
         <v-card-title>
-          {{ editingStudent ? 'Edit Student' : 'Create Student' }}
+          {{ editingEmployee ? 'Edit Employee' : 'Create Employee' }}
         </v-card-title>
         <v-card-text>
           <v-form ref="form" v-model="formValid">
             <v-text-field
-              v-model="studentForm.first_name"
+              v-model="employeeForm.first_name"
               label="First Name"
               :rules="[v => !!v || 'First name is required']"
               required
@@ -78,7 +78,7 @@
               variant="outlined"
             ></v-text-field>
             <v-text-field
-              v-model="studentForm.last_name"
+              v-model="employeeForm.last_name"
               label="Last Name"
               :rules="[v => !!v || 'Last name is required']"
               required
@@ -86,7 +86,7 @@
               variant="outlined"
             ></v-text-field>
             <v-text-field
-              v-model="studentForm.email"
+              v-model="employeeForm.email"
               label="Email"
               type="email"
               :rules="[v => !!v || 'Email is required']"
@@ -95,16 +95,16 @@
               variant="outlined"
             ></v-text-field>
             <v-text-field
-              v-model="studentForm.student_id"
-              label="Student ID"
-              :rules="[v => !!v || 'Student ID is required']"
+              v-model="employeeForm.employee_id"
+              label="Employee ID"
+              :rules="[v => !!v || 'Employee ID is required']"
               required
               density="compact"
               variant="outlined"
             ></v-text-field>
             <v-text-field
-              v-if="!editingStudent"
-              v-model="studentForm.password"
+              v-if="!editingEmployee"
+              v-model="employeeForm.password"
               label="Password"
               type="password"
               :rules="[v => !!v || 'Password is required']"
@@ -120,9 +120,9 @@
           <v-btn
             color="primary"
             :loading="createMutation.isPending || updateMutation.isPending"
-            @click="saveStudent"
+            @click="saveEmployee"
           >
-            {{ editingStudent ? 'Update' : 'Create' }}
+            {{ editingEmployee ? 'Update' : 'Create' }}
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -133,7 +133,7 @@
       <v-card>
         <v-card-title>Confirm Delete</v-card-title>
         <v-card-text>
-          Are you sure you want to delete student "{{ selectedStudent?.user?.first_name }} {{ selectedStudent?.user?.last_name }}"?
+          Are you sure you want to delete employee "{{ selectedEmployee?.user?.first_name }} {{ selectedEmployee?.user?.last_name }}"?
           This action cannot be undone.
         </v-card-text>
         <v-card-actions>
@@ -155,42 +155,42 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import {
-  useStudents,
-  useCreateStudent,
-  useUpdateStudent,
-  useDeleteStudent
+  useEmployees,
+  useCreateEmployee,
+  useUpdateEmployee,
+  useDeleteEmployee
 } from '@/composables'
 import { useRegister } from '@/composables/useAuth'
-import type { Student } from '@/types/auth'
+import type { Employee } from '@/types/auth'
 
 // Reactive state
 const showCreateDialog = ref(false)
 const showDeleteDialog = ref(false)
-const editingStudent = ref<Student | null>(null)
-const selectedStudent = ref<Student | null>(null)
+const editingEmployee = ref<Employee | null>(null)
+const selectedEmployee = ref<Employee | null>(null)
 const formValid = ref(false)
 
 // Form data
-const studentForm = reactive({
+const employeeForm = reactive({
   first_name: '',
   last_name: '',
   email: '',
-  student_id: '',
+  employee_id: '',
   password: ''
 })
 
 // Vue Query hooks
-const { data: studentsData, isLoading, error, refetch } = useStudents()
-const createMutation = useCreateStudent()
-const updateMutation = useUpdateStudent()
-const deleteMutation = useDeleteStudent()
+const { data: employeesData, isLoading, error, refetch } = useEmployees()
+const createMutation = useCreateEmployee()
+const updateMutation = useUpdateEmployee()
+const deleteMutation = useDeleteEmployee()
 const registerMutation = useRegister()
 
 // Computed properties
-const students = computed(() => studentsData.value?.data || [])
+const employees = computed(() => employeesData.value?.data || [])
 
 const headers = [
-  { title: 'Student ID', key: 'student_id' },
+  { title: 'Employee ID', key: 'employee_id' },
   { title: 'Name', key: 'user' },
   { title: 'Email', key: 'user.email' },
   { title: 'Actions', key: 'actions', sortable: false }
@@ -198,14 +198,14 @@ const headers = [
 
 // Methods
 const resetForm = () => {
-  Object.assign(studentForm, {
+  Object.assign(employeeForm, {
     first_name: '',
     last_name: '',
     email: '',
-    student_id: '',
+    employee_id: '',
     password: ''
   })
-  editingStudent.value = null
+  editingEmployee.value = null
 }
 
 const closeDialog = () => {
@@ -213,33 +213,33 @@ const closeDialog = () => {
   resetForm()
 }
 
-const editStudent = (student: Student) => {
-  editingStudent.value = student
-  studentForm.first_name = student.user.first_name
-  studentForm.last_name = student.user.last_name
-  studentForm.email = student.user.email
-  studentForm.student_id = student.student_id
+const editEmployee = (employee: Employee) => {
+  editingEmployee.value = employee
+  employeeForm.first_name = employee.user.first_name
+  employeeForm.last_name = employee.user.last_name
+  employeeForm.email = employee.user.email
+  employeeForm.employee_id = employee.employee_id
   showCreateDialog.value = true
 }
 
-const saveStudent = async () => {
+const saveEmployee = async () => {
   if (!formValid.value) return
 
   try {
     const formData = {
-      first_name: studentForm.first_name,
-      last_name: studentForm.last_name,
-      email: studentForm.email,
-      student_id: studentForm.student_id,
-      ...(editingStudent.value ? {} : { password: studentForm.password })
+      first_name: employeeForm.first_name,
+      last_name: employeeForm.last_name,
+      email: employeeForm.email,
+      employee_id: employeeForm.employee_id,
+      ...(editingEmployee.value ? {} : { password: employeeForm.password })
     }
 
-    if (editingStudent.value) {
+    if (editingEmployee.value) {
       // For updates, we need to update the user data separately
       // This is a simplified example - in a real app you'd have a dedicated endpoint
       await updateMutation.mutateAsync({
-        uuid: editingStudent.value.uuid,
-        data: { student_id: studentForm.student_id }
+        uuid: editingEmployee.value.uuid,
+        data: { employee_id: employeeForm.employee_id }
       })
     } else {
       await createMutation.mutateAsync(formData)
@@ -247,24 +247,24 @@ const saveStudent = async () => {
 
     closeDialog()
   } catch (error) {
-    console.error('Failed to save student:', error)
+    console.error('Failed to save employee:', error)
   }
 }
 
-const deleteStudent = (student: Student) => {
-  selectedStudent.value = student
+const deleteEmployee = (employee: Employee) => {
+  selectedEmployee.value = employee
   showDeleteDialog.value = true
 }
 
 const confirmDelete = async () => {
-  if (!selectedStudent.value) return
+  if (!selectedEmployee.value) return
 
   try {
-    await deleteMutation.mutateAsync(selectedStudent.value.uuid)
+    await deleteMutation.mutateAsync(selectedEmployee.value.uuid)
     showDeleteDialog.value = false
-    selectedStudent.value = null
+    selectedEmployee.value = null
   } catch (error) {
-    console.error('Failed to delete student:', error)
+    console.error('Failed to delete employee:', error)
   }
 }
 </script>

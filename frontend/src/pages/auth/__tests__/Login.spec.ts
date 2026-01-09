@@ -102,7 +102,7 @@ describe('Login.vue', () => {
         first_name: 'Test',
         last_name: 'User',
         email: 'test@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -154,7 +154,7 @@ describe('Login.vue', () => {
         first_name: 'Test',
         last_name: 'User',
         email: 'test@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -195,7 +195,7 @@ describe('Login.vue', () => {
         first_name: 'Test',
         last_name: 'User',
         email: 'test@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
@@ -250,7 +250,7 @@ describe('Login.vue', () => {
       expect(authStore.login).toBeDefined()
     })
 
-    it('redirects to student dashboard when user role is student', async () => {
+    it('redirects to employee dashboard when user role is employee', async () => {
       const wrapper = mount(Login, createMountOptions())
 
       const mockUser: User = {
@@ -258,7 +258,7 @@ describe('Login.vue', () => {
         first_name: 'Student',
         last_name: 'User',
         email: 'student@example.com',
-        role: 'student',
+        role: 'employee',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }

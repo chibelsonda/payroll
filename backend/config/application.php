@@ -27,26 +27,14 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Student Settings
+    | Employee Settings
     |--------------------------------------------------------------------------
     |
-    | Student ID prefix for auto-generation
+    | Employee ID prefix for auto-generation
     |
     */
-    'student' => [
-        'id_prefix' => env('STUDENT_ID_PREFIX', 'STU'),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Subject Settings
-    |--------------------------------------------------------------------------
-    |
-    | Default credits for subjects
-    |
-    */
-    'subject' => [
-        'default_credits' => env('SUBJECT_DEFAULT_CREDITS', 3),
+    'employee' => [
+        'id_prefix' => env('EMPLOYEE_ID_PREFIX', 'EMP'),
     ],
 
     /*
@@ -59,6 +47,6 @@ return [
     */
     'roles' => [
         'admin' => 'admin',
-        'student' => 'student',
+        'employee' => 'employee',
     ],
 ];

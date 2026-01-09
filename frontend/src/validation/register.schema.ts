@@ -32,8 +32,8 @@ export const registerSchema = z
       .string()
       .min(1, 'Password confirmation is required'),
     role: z
-      .enum(['student', 'admin'], {
-        message: 'Role must be either student or admin',
+      .enum(['employee', 'admin'], {
+        message: 'Role must be either employee or admin',
       }),
   })
   .refine((data) => data.password === data.password_confirmation, {

@@ -52,9 +52,9 @@ class User extends Authenticatable
         ];
     }
 
-    public function student()
+    public function employee()
     {
-        return $this->hasOne(Student::class);
+        return $this->hasOne(Employee::class);
     }
 
     /**
@@ -68,12 +68,12 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user has student role using Spatie Permission
-     * Students are assigned the 'user' role in Spatie
+     * Check if user has employee role using Spatie Permission
+     * Employees are assigned the 'user' role in Spatie
      *
      * @return bool
      */
-    public function isStudent(): bool
+    public function isEmployee(): bool
     {
         return $this->hasRole('user');
     }

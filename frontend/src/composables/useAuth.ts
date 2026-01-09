@@ -7,7 +7,7 @@ import type { User, LoginCredentials, RegisterData } from '@/types/auth'
 const fetchCurrentUser = async (): Promise<User | null> => {
   //try {
     const response = await axios.get('/user')
-    return response.data.data
+  return response.data.data
   // } catch (error: unknown) {
   //   // Return null if unauthorized (401) - user is not authenticated
   //   const axiosError = error as { response?: { status?: number }; config?: { url?: string } }

@@ -20,67 +20,16 @@
     <!-- Dashboard Content -->
     <div v-else>
       <v-row>
-        <v-col cols="12" md="4">
+        <v-col cols="12" md="6">
           <v-card>
-            <v-card-title>Students</v-card-title>
+            <v-card-title>Employees</v-card-title>
             <v-card-text>
-              <div class="text-h4">{{ studentsCount }}</div>
-              <div class="text-caption">Total Students</div>
+              <div class="text-h4">{{ employeesCount }}</div>
+              <div class="text-caption">Total Employees</div>
             </v-card-text>
             <v-card-actions>
-              <v-btn to="/admin/students" color="primary">Manage Students</v-btn>
+              <v-btn to="/admin/employees" color="primary">Manage Employees</v-btn>
             </v-card-actions>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12" md="4">
-          <v-card>
-            <v-card-title>Subjects</v-card-title>
-            <v-card-text>
-              <div class="text-h4">{{ subjectsCount }}</div>
-              <div class="text-caption">Total Subjects</div>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn to="/admin/subjects" color="primary">Manage Subjects</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-
-        <v-col cols="12" md="4">
-          <v-card>
-            <v-card-title>Enrollments</v-card-title>
-            <v-card-text>
-              <div class="text-h4">{{ enrollmentsCount }}</div>
-              <div class="text-caption">Total Enrollments</div>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn to="/admin/enrollments" color="primary">Manage Enrollments</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-col>
-      </v-row>
-
-      <!-- Recent Activity Section -->
-      <v-row class="mt-6">
-        <v-col cols="12">
-          <v-card>
-            <v-card-title>Recent Enrollments</v-card-title>
-            <v-card-text>
-              <v-data-table
-                :items="recentEnrollments"
-                :headers="enrollmentHeaders"
-                :loading="enrollmentsLoading"
-                hide-default-footer
-                density="compact"
-              >
-                <template #[`item.student`]="{ item }">
-                  {{ item.student?.user?.first_name || 'N/A' }} {{ item.student?.user?.last_name || '' }}
-                </template>
-                <template #[`item.created_at`]="{ item }">
-                  {{ formatDate(item.created_at) }}
-                </template>
-              </v-data-table>
-            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
@@ -92,45 +41,23 @@
 import { computed } from 'vue'
 import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '@/stores/auth'
-import { useStudents } from '@/composables/useStudents'
-import { useSubjects } from '@/composables/useSubjects'
-import { useEnrollments } from '@/composables/useEnrollments'
+import { useEmployees } from '@/composables/useEmployees'
 
 const auth = useAuthStore()
 
 // Only fetch when user is authenticated
 const isAuthenticated = computed(() => !!auth.user)
-const { data: studentsData, isLoading: studentsLoading, error: studentsError } = useStudents(1, true, isAuthenticated)
-const { data: subjectsData, isLoading: subjectsLoading, error: subjectsError } = useSubjects(1, true, isAuthenticated)
-const { data: enrollmentsData, isLoading: enrollmentsLoading, error: enrollmentsError } = useEnrollments(1, true, isAuthenticated)
+const { data: employeesData, isLoading: employeesLoading, error: employeesError } = useEmployees(1, true, isAuthenticated)
 
 // Computed properties
-const isLoading = computed(() => studentsLoading.value || subjectsLoading.value || enrollmentsLoading.value)
-const error = computed(() => studentsError.value || subjectsError.value || enrollmentsError.value)
+const isLoading = computed(() => employeesLoading.value)
+const error = computed(() => employeesError.value)
 
-const studentsCount = computed(() => studentsData.value?.data?.length || 0)
-const subjectsCount = computed(() => subjectsData.value?.data?.length || 0)
-const enrollmentsCount = computed(() => enrollmentsData.value?.data?.length || 0)
-
-const recentEnrollments = computed(() => {
-  return enrollmentsData.value?.data?.slice(0, 5) || []
-})
-
-const enrollmentHeaders = [
-  { title: 'Student', key: 'student', sortable: false },
-  { title: 'Subject', key: 'subject.name', sortable: false },
-  { title: 'Enrolled At', key: 'created_at', sortable: false },
-]
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
-}
+const employeesCount = computed(() => employeesData.value?.data?.length || 0)
 
 const refetch = () => {
   // Properly refetch all queries instead of reloading the page
   const queryClient = useQueryClient()
-  queryClient.invalidateQueries({ queryKey: ['students'] })
-  queryClient.invalidateQueries({ queryKey: ['subjects'] })
-  queryClient.invalidateQueries({ queryKey: ['enrollments'] })
+  queryClient.invalidateQueries({ queryKey: ['employees'] })
 }
 </script>

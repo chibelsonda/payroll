@@ -33,9 +33,9 @@ export function createTestRouter(): Router {
         component: { template: '<div>Admin Dashboard</div>' },
       },
       {
-        path: '/student',
-        name: 'student-dashboard',
-        component: { template: '<div>Student Dashboard</div>' },
+        path: '/employee',
+        name: 'employee-dashboard',
+        component: { template: '<div>Employee Dashboard</div>' },
       },
     ],
   })
@@ -225,7 +225,7 @@ export function mockAuthStore() {
     user: null,
     isAuthenticated: false,
     isAdmin: false,
-    isStudent: false,
+    isEmployee: false,
     isLoadingUser: false,
     isLoginLoading: false,
     isRegisterLoading: false,

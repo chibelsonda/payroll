@@ -169,7 +169,7 @@ const {
   email: '',
   password: '',
   password_confirmation: '',
-  role: 'student',
+  role: 'employee',
 })
 
 // Create fields with validation
@@ -240,7 +240,7 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     if (auth.isAdmin) {
       router.push('/admin')
     } else {
-      router.push('/student')
+      router.push('/employee')
     }
   } catch (error: unknown) {
     // Handle server-side validation errors

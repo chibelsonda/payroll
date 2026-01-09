@@ -15,15 +15,15 @@ class UserResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Map Spatie roles to frontend role format
-        $role = 'student'; // default
+        $role = 'employee'; // default
         $roles = $this->getRoleNames();
 
         if ($roles->contains('admin')) {
             $role = 'admin';
         } elseif ($roles->contains('user')) {
-            $role = 'student';
+            $role = 'employee';
         } elseif ($roles->contains('staff')) {
-            $role = 'student'; // or map to appropriate frontend role
+            $role = 'employee'; // or map to appropriate frontend role
         }
 
         return [
@@ -36,14 +36,14 @@ class UserResource extends JsonResource
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
-            'student' => $this->whenLoaded('student', function () {
+            'employee' => $this->whenLoaded('employee', function () {
                 return [
-                    'id' => $this->student->id,
-                    'uuid' => $this->student->uuid,
-                    'user_id' => $this->student->user_id,
-                    'student_id' => $this->student->student_id,
-                    'created_at' => $this->student->created_at?->toIso8601String(),
-                    'updated_at' => $this->student->updated_at?->toIso8601String(),
+                    'id' => $this->employee->id,
+                    'uuid' => $this->employee->uuid,
+                    'user_id' => $this->employee->user_id,
+                    'employee_id' => $this->employee->employee_id,
+                    'created_at' => $this->employee->created_at?->toIso8601String(),
+                    'updated_at' => $this->employee->updated_at?->toIso8601String(),
                 ];
             }),
         ];

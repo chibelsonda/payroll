@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const studentSchema = z.object({
+export const employeeSchema = z.object({
   first_name: z
     .string()
     .min(1, 'First name is required')
@@ -18,12 +18,12 @@ export const studentSchema = z.object({
     .min(1, 'Email is required')
     .email('Please enter a valid email address')
     .max(255, 'Email must not exceed 255 characters'),
-  student_id: z
+  employee_id: z
     .string()
-    .min(1, 'Student ID is required')
-    .min(3, 'Student ID must be at least 3 characters')
-    .max(20, 'Student ID must not exceed 20 characters')
-    .regex(/^[A-Za-z0-9-]+$/, 'Student ID can only contain letters, numbers, and hyphens'),
+    .min(1, 'Employee ID is required')
+    .min(3, 'Employee ID must be at least 3 characters')
+    .max(20, 'Employee ID must not exceed 20 characters')
+    .regex(/^[A-Za-z0-9-]+$/, 'Employee ID can only contain letters, numbers, and hyphens'),
   password: z
     .string()
     .min(1, 'Password is required')
@@ -32,10 +32,10 @@ export const studentSchema = z.object({
     .optional(),
 })
 
-export const createStudentSchema = studentSchema.required({ password: true })
+export const createEmployeeSchema = employeeSchema.required({ password: true })
 
-export const updateStudentSchema = studentSchema.omit({ password: true })
+export const updateEmployeeSchema = employeeSchema.omit({ password: true })
 
-export type StudentFormData = z.infer<typeof studentSchema>
-export type CreateStudentFormData = z.infer<typeof createStudentSchema>
-export type UpdateStudentFormData = z.infer<typeof updateStudentSchema>
+export type EmployeeFormData = z.infer<typeof employeeSchema>
+export type CreateEmployeeFormData = z.infer<typeof createEmployeeSchema>
+export type UpdateEmployeeFormData = z.infer<typeof updateEmployeeSchema>

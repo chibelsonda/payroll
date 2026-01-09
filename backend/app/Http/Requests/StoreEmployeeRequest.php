@@ -4,14 +4,14 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreStudentRequest extends FormRequest
+class StoreEmployeeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create', \App\Models\Student::class);
+        return $this->user()->can('create', \App\Models\Employee::class);
     }
 
     /**
@@ -23,7 +23,7 @@ class StoreStudentRequest extends FormRequest
     {
         return [
             'user_id' => 'required|exists:users,id',
-            'student_id' => 'required|string|unique:students',
+            'employee_id' => 'required|string|unique:employees',
         ];
     }
 }

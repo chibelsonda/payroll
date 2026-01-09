@@ -2,6 +2,4 @@
 export * from './useAuth'
 
 // Data composables
-export * from './useStudents'
-export * from './useSubjects'
-export * from './useEnrollments'
+export * from './useEmployees'
