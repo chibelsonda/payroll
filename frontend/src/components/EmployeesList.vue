@@ -67,9 +67,10 @@
       location="right"
       temporary
       width="500"
+      class="employee-drawer"
     >
-      <v-card class="h-100 d-flex flex-column">
-        <v-card-title class="d-flex align-center">
+      <v-card class="d-flex flex-column" style="height: 100%; overflow: hidden;">
+        <v-card-title class="d-flex align-center flex-shrink-0">
           <span class="text-h6">{{ editingEmployee ? 'Edit Employee' : 'Create Employee' }}</span>
           <v-spacer></v-spacer>
           <v-btn
@@ -80,10 +81,10 @@
           ></v-btn>
         </v-card-title>
 
-        <v-divider></v-divider>
+        <v-divider class="flex-shrink-0"></v-divider>
 
-        <v-form ref="formRef" @submit.prevent="handleButtonClick" class="d-flex flex-column flex-grow-1">
-          <v-card-text class="flex-grow-1 overflow-y-auto pa-6">
+        <v-form ref="formRef" @submit.prevent="handleButtonClick" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+          <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
             <!-- First Name Section -->
             <div class="mb-6">
               <div class="text-body-2 mb-1">First Name</div>
@@ -171,9 +172,9 @@
             </div>
           </v-card-text>
 
-          <v-divider></v-divider>
+          <v-divider class="flex-shrink-0"></v-divider>
 
-          <v-card-actions class="pa-4">
+          <v-card-actions class="pa-4 flex-shrink-0">
             <v-spacer></v-spacer>
             <v-btn type="button" @click="closeDialog">Cancel</v-btn>
             <v-btn
@@ -475,3 +476,16 @@ const confirmDelete = async () => {
   }
 }
 </script>
+
+<style scoped>
+.employee-drawer {
+  top: 0 !important;
+  height: 100vh !important;
+  z-index: 2000 !important;
+}
+
+.employee-drawer :deep(.v-navigation-drawer__content) {
+  height: 100% !important;
+  overflow: hidden;
+}
+</style>
