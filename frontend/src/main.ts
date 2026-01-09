@@ -31,7 +31,7 @@ const queryClient = new QueryClient({
         const axiosError = error as { response?: { status?: number }; isSilent?: boolean }
         // Don't retry on 4xx errors or silent errors
         const status = axiosError?.response?.status
-        if (axiosError?.isSilent || (status !== undefined && status >= 400 && status < 500)) {
+        if (status !== undefined && status >= 400 && status < 500) {
           return false
         }
         return failureCount < 3

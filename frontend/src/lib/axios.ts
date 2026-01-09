@@ -61,22 +61,5 @@ const webAxios = axios.create({
 setupLoadingInterceptors(apiAxios)
 setupLoadingInterceptors(webAxios)
 
-// Interceptor to suppress console logging of 401 errors (expected when not authenticated)
-apiAxios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Suppress console logging for 401 errors on protected endpoints
-    // These errors are expected when user is not authenticated
-    if (error.response?.status === 401) {
-      // Mark as silent - let handlers deal with it without console spam
-      const silentError = Object.assign(error, {
-        isSilent: true,
-      })
-      return Promise.reject(silentError)
-    }
-    return Promise.reject(error)
-  }
-)
-
 export default apiAxios
 export { webAxios }

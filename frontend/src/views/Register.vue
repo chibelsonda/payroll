@@ -6,15 +6,6 @@
           <v-card-text class="pa-8">
 
             <div class="text-h4 font-weight-medium mb-6 text-center">Sign Up</div>
-            <v-alert
-              v-if="errorMessage"
-              type="error"
-              class="mb-6"
-              closable
-              @click:close="clearError"
-            >
-              {{ errorMessage }}
-            </v-alert>
 
             <v-form @submit="onSubmit">
               <!-- Personal Information Section -->
