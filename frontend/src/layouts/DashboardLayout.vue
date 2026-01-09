@@ -272,6 +272,13 @@ const handleLogout = async () => {
 .app-bar {
   background: linear-gradient(135deg, rgb(25, 118, 210) 0%, rgb(13, 71, 161) 100%) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  height: 60px !important;
+  min-height: 60px !important;
+}
+
+.app-bar :deep(.v-toolbar__content) {
+  height: 60px !important;
+  min-height: 60px !important;
 }
 
 .app-bar :deep(.v-toolbar-title) {

@@ -59,6 +59,7 @@
               :items-per-page-options="[10, 15, 25, 50]"
               :hide-no-data="true"
               :no-data-text="''"
+              :row-height="36"
             >
               <!-- Filter row in body -->
               <template v-slot:[`body.prepend`]>
@@ -126,13 +127,13 @@
 
               <template v-slot:[`item.user`]="{ item }">
                 <div class="d-flex align-center">
-                  <v-avatar size="32" color="primary" class="me-3">
+                  <v-avatar size="28" color="primary" class="me-2">
                     <span class="text-white text-caption font-weight-bold">
                       {{ getInitials(item.user) }}
                     </span>
                   </v-avatar>
                   <div>
-                    <div class="font-weight-medium">{{ item.user?.first_name }} {{ item.user?.last_name }}</div>
+                    <div class="font-weight-medium text-body-2">{{ item.user?.first_name }} {{ item.user?.last_name }}</div>
                   </div>
                 </div>
               </template>
@@ -714,6 +715,17 @@ const confirmDelete = async () => {
 .employees-table :deep(.v-data-table__thead th) {
   font-weight: 600;
   color: rgba(0, 0, 0, 0.87);
+  padding: 6px 12px !important;
+  font-size: 0.75rem;
+}
+
+.employees-table :deep(.v-data-table__tbody tr) {
+  height: 36px !important;
+}
+
+.employees-table :deep(.v-data-table__tbody td) {
+  padding: 4px 12px !important;
+  font-size: 0.75rem;
 }
 
 .employees-table :deep(.v-data-table__tbody tr:hover) {
