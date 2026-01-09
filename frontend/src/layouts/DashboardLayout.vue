@@ -11,6 +11,7 @@
           :key="item.to"
           :to="item.to"
           :prepend-icon="item.icon"
+          :active="isActiveRoute(item.to)"
         >
           <v-list-item-title>{{ item.title }}</v-list-item-title>
         </v-list-item>
@@ -42,7 +43,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables/useNotification'
 
 interface MenuItem {
@@ -63,8 +64,18 @@ withDefaults(defineProps<Props>(), {
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
 const drawer = ref(true)
+
+// Check if a route is currently active
+const isActiveRoute = (path: string): boolean => {
+  const currentPath = route.path
+
+  // Only exact matches should be highlighted
+  // This prevents parent routes (e.g., /admin) from being highlighted when on child routes (e.g., /admin/employees)
+  return currentPath === path
+}
 
 const handleLogout = async () => {
   try {
