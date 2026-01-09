@@ -1,46 +1,20 @@
 <template>
-  <v-container fluid class="px-6">
+  <v-container fluid class="px-4 py-4">
     <v-row>
       <v-col cols="12">
-        <!-- Header Card -->
-        <v-card class="mb-4" elevation="0" rounded="lg">
-          <v-card-text class="px-6">
-            <div class="d-flex align-center justify-space-between flex-wrap">
-              <div class="mb-4 mb-sm-0">
-                <h1 class="text-h4 font-weight-bold mb-2">Employees Management</h1>
-                <p class="text-body-2 text-medium-emphasis">
-                  Manage and organize your employee database
-                </p>
-              </div>
+        <!-- Main Content Card -->
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="px-4 py-3">
+            <div class="d-flex align-center justify-space-between flex-wrap w-100">
+              <h1 class="text-h6 font-weight-bold mb-0">Employees Management</h1>
               <v-btn
                 color="primary"
                 size="small"
                 prepend-icon="mdi-plus"
                 @click="openEmployeeDrawer"
-                class="elevation-2"
               >
-                Add Employee
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <!-- Main Content Card -->
-        <v-card elevation="2" rounded="lg">
-          <v-card-title class="pa-6 pb-4">
-            <div class="d-flex align-center justify-space-between flex-wrap w-100">
-              <span class="text-h6 font-weight-medium">All Employees</span>
-              <v-text-field
-                v-model="searchQuery"
-                density="compact"
-                variant="outlined"
-                prepend-inner-icon="mdi-magnify"
-                placeholder="Search employees..."
-                hide-details
-                clearable
-                class="mt-4 mt-sm-0"
-                style="max-width: 300px;"
-              ></v-text-field>
+              Add Employee
+            </v-btn>
             </div>
           </v-card-title>
 
@@ -48,9 +22,9 @@
 
           <v-card-text class="pa-0">
             <!-- Loading State -->
-            <div v-if="isLoading" class="text-center py-12">
-              <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-              <p class="mt-4 text-body-1 text-medium-emphasis">Loading employees...</p>
+            <div v-if="isLoading" class="text-center py-8">
+              <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+              <p class="mt-3 text-body-2 text-medium-emphasis">Loading employees...</p>
             </div>
 
             <!-- Error State -->
@@ -58,8 +32,9 @@
               v-else-if="error"
               type="error"
               variant="tonal"
-              class="ma-6"
+              class="ma-4"
               rounded="lg"
+              density="compact"
             >
               <div class="d-flex align-center">
                 <v-icon class="me-3">mdi-alert-circle</v-icon>
@@ -71,37 +46,84 @@
               </div>
             </v-alert>
 
-            <!-- Empty State -->
-            <div v-else-if="filteredEmployees.length === 0" class="text-center py-12">
-              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-account-group-outline</v-icon>
-              <p class="text-h6 font-weight-medium mb-2">
-                {{ searchQuery ? 'No employees found' : 'No employees yet' }}
-              </p>
-              <p class="text-body-2 text-medium-emphasis mb-4">
-                {{ searchQuery ? 'Try adjusting your search query' : 'Get started by adding your first employee' }}
-              </p>
-              <v-btn
-                v-if="!searchQuery"
-                color="primary"
-                prepend-icon="mdi-plus"
-                @click="openEmployeeDrawer"
-              >
-                Add Employee
-              </v-btn>
-            </div>
-
             <!-- Employees Table -->
             <v-data-table
               v-else
               :items="filteredEmployees"
               :headers="headers"
               :loading="isLoading"
-              density="comfortable"
+              density="compact"
               item-key="uuid"
               class="employees-table"
-              :items-per-page="10"
-              :items-per-page-options="[5, 10, 25, 50]"
+              :items-per-page="15"
+              :items-per-page-options="[10, 15, 25, 50]"
+              :hide-no-data="true"
+              :no-data-text="''"
             >
+              <!-- Filter row in body -->
+              <template v-slot:[`body.prepend`]>
+                <tr class="filter-row">
+                  <td>
+                    <v-text-field
+                      v-model="filters.employeeId"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model="filters.name"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model="filters.email"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td></td>
+                </tr>
+              </template>
+
+              <!-- Empty state in table body -->
+              <template v-slot:[`body.append`]>
+                <tr v-if="filteredEmployees.length === 0">
+                  <td :colspan="headers.length" class="text-center py-8">
+                    <v-icon size="48" color="grey-lighten-1" class="mb-3">mdi-account-group-outline</v-icon>
+                    <p class="text-subtitle-1 font-weight-medium mb-1">
+                      {{ hasActiveFilters ? 'No employees found' : 'No employees yet' }}
+                    </p>
+                    <p class="text-body-2 text-medium-emphasis mb-3">
+                      {{ hasActiveFilters ? 'Try adjusting your filters' : 'Get started by adding your first employee' }}
+                    </p>
+                <v-btn
+                      v-if="!hasActiveFilters"
+                      color="primary"
+                      size="small"
+                      prepend-icon="mdi-plus"
+                      @click="openEmployeeDrawer"
+                    >
+                      Add Employee
+                    </v-btn>
+                  </td>
+                </tr>
+              </template>
+
               <template v-slot:[`item.user`]="{ item }">
                 <div class="d-flex align-center">
                   <v-avatar size="32" color="primary" class="me-3">
@@ -133,24 +155,30 @@
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
-                <div class="d-flex align-center ga-2">
-                  <v-btn
-                    icon="mdi-pencil"
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    @click="editEmployee(item)"
-                    class="action-btn"
-                  ></v-btn>
-                  <v-btn
-                    icon="mdi-delete"
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click="deleteEmployee(item)"
-                    class="action-btn"
-                  ></v-btn>
-                </div>
+                <v-menu>
+                  <template #activator="{ props }">
+                <v-btn
+                      icon="mdi-dots-vertical"
+                  size="small"
+                  variant="text"
+                      v-bind="props"
+                      class="action-btn"
+                    ></v-btn>
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item
+                      prepend-icon="mdi-pencil"
+                      title="Edit"
+                      @click="editEmployee(item)"
+                    ></v-list-item>
+                    <v-list-item
+                      prepend-icon="mdi-delete"
+                      title="Delete"
+                      class="text-error"
+                  @click="deleteEmployee(item)"
+                    ></v-list-item>
+                  </v-list>
+                </v-menu>
               </template>
             </v-data-table>
           </v-card-text>
@@ -168,7 +196,7 @@
     >
       <v-card class="d-flex flex-column employee-drawer-card" style="height: 100%; overflow: hidden;" elevation="0">
         <!-- Enhanced Header -->
-        <v-card-title class="employee-drawer-header flex-shrink-0 pa-6">
+        <v-card-title class="employee-drawer-header flex-shrink-0 py-2 px-5">
           <div class="d-flex align-center w-100">
             <v-avatar
               color="primary"
@@ -203,36 +231,36 @@
 
               <!-- First Name -->
               <div class="mb-4">
-                <div class="text-body-2 mb-2 font-weight-medium">First Name</div>
-                <v-text-field
+                <div class="text-body-2 mb-1 font-weight-medium">First Name</div>
+            <v-text-field
                   v-model="firstName"
                   placeholder="Enter first name"
                   prepend-inner-icon="mdi-account-outline"
                   :error-messages="firstNameError"
                   :error="hasFirstNameError"
-                  required
-                  density="compact"
-                  variant="outlined"
+              required
+              density="compact"
+              variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
-                ></v-text-field>
+            ></v-text-field>
               </div>
 
               <!-- Last Name -->
               <div class="mb-4">
-                <div class="text-body-2 mb-2 font-weight-medium">Last Name</div>
-                <v-text-field
+                <div class="text-body-2 mb-1 font-weight-medium">Last Name</div>
+            <v-text-field
                   v-model="lastName"
                   placeholder="Enter last name"
                   prepend-inner-icon="mdi-account-outline"
                   :error-messages="lastNameError"
                   :error="hasLastNameError"
-                  required
-                  density="compact"
-                  variant="outlined"
+              required
+              density="compact"
+              variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
-                ></v-text-field>
+            ></v-text-field>
               </div>
             </div>
 
@@ -244,27 +272,27 @@
 
               <!-- Email -->
               <div class="mb-4">
-                <div class="text-body-2 mb-2 font-weight-medium">Email Address</div>
-                <v-text-field
+                <div class="text-body-2 mb-1 font-weight-medium">Email Address</div>
+            <v-text-field
                   v-model="email"
                   placeholder="Email address"
-                  type="email"
+              type="email"
                   prepend-inner-icon="mdi-email-outline"
                   :error-messages="emailError"
                   :error="hasEmailError"
-                  required
+              required
                   autocomplete="email"
-                  density="compact"
-                  variant="outlined"
+              density="compact"
+              variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
-                ></v-text-field>
+            ></v-text-field>
               </div>
 
               <!-- Password (Create mode only) -->
               <div v-if="!editingEmployee" class="mb-4">
-                <div class="text-body-2 mb-2 font-weight-medium">Password</div>
-                <v-text-field
+                <div class="text-body-2 mb-1 font-weight-medium">Password</div>
+            <v-text-field
                   v-model="password"
                   placeholder="Enter password (min. 8 characters)"
                   :type="showPassword ? 'text' : 'password'"
@@ -272,14 +300,14 @@
                   :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                   :error-messages="passwordError"
                   :error="hasPasswordError"
-                  required
+              required
                   autocomplete="new-password"
-                  density="compact"
-                  variant="outlined"
+              density="compact"
+              variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
                   @click:append-inner="showPassword = !showPassword"
-                ></v-text-field>
+            ></v-text-field>
               </div>
             </div>
 
@@ -291,22 +319,22 @@
 
               <!-- Employee ID -->
               <div class="mb-4">
-                <div class="text-body-2 mb-2 font-weight-medium">Employee ID</div>
-                <v-text-field
+                <div class="text-body-2 mb-1 font-weight-medium">Employee ID</div>
+            <v-text-field
                   v-model="employeeId"
                   placeholder="Enter unique employee ID"
                   prepend-inner-icon="mdi-identifier"
                   :error-messages="employeeIdError"
                   :error="hasEmployeeIdError"
-                  required
-                  density="compact"
-                  variant="outlined"
+              required
+              density="compact"
+              variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
-                ></v-text-field>
+            ></v-text-field>
               </div>
             </div>
-          </v-card-text>
+        </v-card-text>
 
           <v-divider class="flex-shrink-0"></v-divider>
 
@@ -321,19 +349,19 @@
               Cancel
             </v-btn>
             <v-spacer class="mx-2"></v-spacer>
-            <v-btn
+          <v-btn
               type="button"
-              color="primary"
+            color="primary"
               variant="flat"
               size="small"
               :loading="isSaving || isSubmitting"
               @click="handleButtonClick"
               class="flex-grow-1"
               :prepend-icon="editingEmployee ? 'mdi-content-save' : 'mdi-check'"
-            >
+          >
               {{ editingEmployee ? 'Update Employee' : 'Create Employee' }}
-            </v-btn>
-          </v-card-actions>
+          </v-btn>
+        </v-card-actions>
         </v-form>
       </v-card>
     </v-navigation-drawer>
@@ -386,7 +414,12 @@ const selectedEmployee = ref<Employee | null>(null)
 const showPassword = ref(false)
 const errorMessage = ref<string | null>(null)
 const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
-const searchQuery = ref('')
+// Column filters
+const filters = ref({
+  employeeId: '',
+  name: '',
+  email: '',
+})
 
 const notification = useNotification()
 
@@ -403,10 +436,10 @@ const {
 } = useZodForm<CreateEmployeeFormData>(
   createEmployeeSchema,
   {
-    first_name: '',
-    last_name: '',
-    email: '',
-    employee_id: '',
+  first_name: '',
+  last_name: '',
+  email: '',
+  employee_id: '',
     password: '',
   }
 )
@@ -500,18 +533,41 @@ const employees = computed(() => employeesData.value?.data || [])
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 const isDeleting = computed(() => deleteMutation.isPending.value)
 
-// Filter employees based on search query
+// Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return !!(filters.value.employeeId || filters.value.name || filters.value.email)
+})
+
+// Filter employees based on column filters
 const filteredEmployees = computed(() => {
-  if (!searchQuery.value) {
-    return employees.value
+  let result = employees.value
+
+  // Filter by Employee ID
+  if (filters.value.employeeId) {
+    const query = filters.value.employeeId.toLowerCase()
+    result = result.filter((emp) =>
+      emp.employee_id?.toLowerCase().includes(query)
+    )
   }
-  const query = searchQuery.value.toLowerCase()
-  return employees.value.filter((emp) => {
-    const name = `${emp.user?.first_name || ''} ${emp.user?.last_name || ''}`.toLowerCase()
-    const email = emp.user?.email?.toLowerCase() || ''
-    const employeeId = emp.employee_id?.toLowerCase() || ''
-    return name.includes(query) || email.includes(query) || employeeId.includes(query)
-  })
+
+  // Filter by Name
+  if (filters.value.name) {
+    const query = filters.value.name.toLowerCase()
+    result = result.filter((emp) => {
+      const name = `${emp.user?.first_name || ''} ${emp.user?.last_name || ''}`.toLowerCase()
+      return name.includes(query)
+    })
+  }
+
+  // Filter by Email
+  if (filters.value.email) {
+    const query = filters.value.email.toLowerCase()
+    result = result.filter((emp) =>
+      emp.user?.email?.toLowerCase().includes(query)
+    )
+  }
+
+  return result
 })
 
 const headers = [
@@ -700,5 +756,39 @@ const confirmDelete = async () => {
 .employee-form-field :deep(.v-field__input) {
   padding-top: 4px;
   padding-bottom: 4px;
+}
+
+.filter-row {
+  background-color: rgba(0, 0, 0, 0.02);
+  display: table-row !important;
+}
+
+.filter-row td {
+  padding: 6px 16px !important;
+  vertical-align: middle;
+  display: table-cell !important;
+}
+
+.employees-table :deep(.v-data-table__tbody) {
+  display: table-row-group !important;
+}
+
+.filter-input {
+  margin: 0;
+}
+
+.filter-input :deep(.v-field) {
+  font-size: 0.875rem;
+  min-height: 28px;
+  max-height: 28px;
+}
+
+.filter-input :deep(.v-field__input) {
+  min-height: 28px;
+  padding: 2px 8px;
+}
+
+.filter-input :deep(.v-input__details) {
+  display: none;
 }
 </style>
