@@ -9,11 +9,15 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'
-import '@/lib/axios'
 
 const app = createApp(App)
 
+// Initialize Pinia first (needed for axios interceptors)
 app.use(createPinia())
+
+// Import axios after Pinia is initialized (so stores are available in interceptors)
+import '@/lib/axios'
+
 app.use(router)
 app.use(vuetify)
 

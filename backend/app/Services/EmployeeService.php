@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Employee;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class EmployeeService
 {
@@ -28,30 +30,87 @@ class EmployeeService
     }
 
     /**
-     * Create a new employee record
+     * Create a new employee record with associated user
      *
-     * @param array $data Employee data including user_id and employee_id
-     * @return Employee The created employee instance
+     * @param array $data Employee and user data including first_name, last_name, email, password, employee_id
+     * @return Employee The created employee instance with user relationship loaded
      * @throws \Exception If employee creation fails
      */
     public function createEmployee(array $data): Employee
     {
-        return Employee::create([
-            'user_id' => $data['user_id'],
-            'employee_id' => $data['employee_id'],
-        ]);
+        // If user_id is provided, create employee for existing user (backward compatibility)
+        if (isset($data['user_id'])) {
+            return Employee::create([
+                'user_id' => $data['user_id'],
+                'employee_id' => $data['employee_id'],
+            ]);
+        }
+
+        // Otherwise, create both user and employee in a transaction
+        return DB::transaction(function () use ($data) {
+            // Create user
+            $userService = app(UserService::class);
+            $user = $userService->createUser([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'email' => $data['email'],
+                'password' => $data['password'],
+            ]);
+
+            // Assign 'user' role (employees use 'user' role in Spatie)
+            $user->assignRole('user');
+
+            // Create employee record
+            $employee = $user->employee()->create([
+                'employee_id' => $data['employee_id'],
+            ]);
+
+            // Load user relationship and return
+            return $employee->load('user');
+        });
     }
 
     /**
-     * Update an existing employee record
+     * Update an existing employee record and associated user
      *
      * @param Employee $employee The employee to update
-     * @param array $data The data to update
+     * @param array $data The data to update (may include user fields: first_name, last_name, email)
      * @return Employee The updated employee instance with fresh relationships
      */
     public function updateEmployee(Employee $employee, array $data): Employee
     {
-        $employee->update($data);
+        // Ensure user relationship is loaded
+        if (!$employee->relationLoaded('user')) {
+            $employee->load('user');
+        }
+
+        // Separate user fields from employee fields
+        $userFields = [];
+        $employeeFields = [];
+
+        foreach ($data as $key => $value) {
+            if (in_array($key, ['first_name', 'last_name', 'email'])) {
+                $userFields[$key] = $value;
+            } else {
+                $employeeFields[$key] = $value;
+            }
+        }
+
+        // Update user if there are user fields
+        if (!empty($userFields)) {
+            $user = $employee->user;
+            if ($user) {
+                $user->update($userFields);
+            } else {
+                throw new \Exception('Employee does not have an associated user');
+            }
+        }
+
+        // Update employee if there are employee fields
+        if (!empty($employeeFields)) {
+            $employee->update($employeeFields);
+        }
+
         return $employee->fresh(['user']);
     }
 

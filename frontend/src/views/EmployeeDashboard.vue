@@ -3,12 +3,6 @@
     <h1 class="text-h4 mb-4">Employee Dashboard</h1>
     <p class="text-h6 mb-6">Welcome, {{ fullName }}</p>
 
-    <!-- Loading State -->
-    <div v-if="isLoading" class="text-center py-8">
-      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <p class="mt-4">Loading dashboard data...</p>
-    </div>
-
     <!-- Dashboard Content -->
     <v-row>
       <v-col cols="12" md="6">

@@ -34,7 +34,8 @@
                 <div class="d-flex justify-space-between align-center mb-1">
                   <div class="text-body-2">Password</div>
                   <router-link
-                    to="/forgot-password"
+                    to="#"
+                    @click.prevent
                     class="text-primary text-decoration-none text-body-2"
                   >
                     Forgot login password?

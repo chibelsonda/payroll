@@ -19,6 +19,9 @@ export function useZodForm<T extends Record<string, unknown>>(
     validationSchema: toTypedSchema(schema),
     // @ts-expect-error - VeeValidate expects deep partial but we provide compatible Partial<T>
     initialValues: initialValues || {},
+    validateOnMount: false,
+    validateOnBlur: true,
+    validateOnChange: true,
   })
 
   /**

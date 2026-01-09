@@ -23,8 +23,27 @@ class UpdateEmployeeRequest extends FormRequest
     public function rules(): array
     {
         $employee = $this->route('employee');
-        return [
-            'employee_id' => 'sometimes|string|unique:employees,employee_id,' . $employee->id,
+
+        // Ensure user relationship is loaded if needed
+        if ($employee && !$employee->relationLoaded('user')) {
+            $employee->load('user');
+        }
+
+        $userId = $employee ? $employee->user_id : null;
+
+        $rules = [
+            'first_name' => 'sometimes|string|max:255',
+            'last_name' => 'sometimes|string|max:255',
+            'employee_id' => 'sometimes|string|unique:employees,employee_id,' . ($employee ? $employee->id : 'NULL'),
         ];
+
+        // Add email validation with uniqueness check
+        if ($userId) {
+            $rules['email'] = 'sometimes|string|email|max:255|unique:users,email,' . $userId;
+        } else {
+            $rules['email'] = 'sometimes|string|email|max:255';
+        }
+
+        return $rules;
     }
 }

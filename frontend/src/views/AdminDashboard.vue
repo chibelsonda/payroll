@@ -39,7 +39,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '@/stores/auth'
 import { useEmployees } from '@/composables/useEmployees'
 
@@ -47,17 +46,11 @@ const auth = useAuthStore()
 
 // Only fetch when user is authenticated
 const isAuthenticated = computed(() => !!auth.user)
-const { data: employeesData, isLoading: employeesLoading, error: employeesError } = useEmployees(1, true, isAuthenticated)
+const { data: employeesData, isLoading: employeesLoading, error: employeesError, refetch } = useEmployees(1, true, isAuthenticated)
 
 // Computed properties
 const isLoading = computed(() => employeesLoading.value)
 const error = computed(() => employeesError.value)
 
 const employeesCount = computed(() => employeesData.value?.data?.length || 0)
-
-const refetch = () => {
-  // Properly refetch all queries instead of reloading the page
-  const queryClient = useQueryClient()
-  queryClient.invalidateQueries({ queryKey: ['employees'] })
-}
 </script>

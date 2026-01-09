@@ -27,10 +27,27 @@ class EmployeeController extends BaseApiController
      */
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', \App\Models\Employee::class);
+
         $employees = $this->employeeService->getAllEmployees();
+
+        // Extract pagination metadata before wrapping in ResourceCollection
+        $meta = [
+            'pagination' => [
+                'current_page' => $employees->currentPage(),
+                'last_page' => $employees->lastPage(),
+                'per_page' => $employees->perPage(),
+                'total' => $employees->total(),
+                'from' => $employees->firstItem(),
+                'to' => $employees->lastItem(),
+                'has_more_pages' => $employees->hasMorePages(),
+            ]
+        ];
+
         return $this->successResponse(
-            EmployeeResource::collection($employees),
-            'Employees retrieved successfully'
+            EmployeeResource::collection($employees->items()),
+            'Employees retrieved successfully',
+            $meta
         );
     }
 
@@ -69,12 +86,14 @@ class EmployeeController extends BaseApiController
     /**
      * Update an existing employee record
      *
-     * @param Request $request HTTP request with update data
+     * @param UpdateEmployeeRequest $request HTTP request with update data
      * @param Employee $employee The employee to update
      * @return JsonResponse The updated employee resource
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee): JsonResponse
     {
+        $this->authorize('update', $employee);
+
         $employee = $this->employeeService->updateEmployee($employee, $request->validated());
         return $this->successResponse(
             new EmployeeResource($employee),

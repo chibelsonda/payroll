@@ -38,6 +38,7 @@ class AuthService
             $user->load('employee');
         }
 
+        // Always log in the user after registration (for public self-registration)
         Auth::login($user);
 
         return [

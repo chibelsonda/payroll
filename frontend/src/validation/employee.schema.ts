@@ -25,14 +25,23 @@ export const employeeSchema = z.object({
     .max(20, 'Employee ID must not exceed 20 characters')
     .regex(/^[A-Za-z0-9-]+$/, 'Employee ID can only contain letters, numbers, and hyphens'),
   password: z
+    .union([
+      z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must not exceed 100 characters'),
+      z.literal(''),
+      z.undefined()
+    ])
+    .optional()
+    .transform((val) => (val === '' ? undefined : val)),
+})
+
+// For create mode: password is required (no transform, validates empty strings)
+export const createEmployeeSchema = employeeSchema.extend({
+  password: z
     .string()
     .min(1, 'Password is required')
     .min(8, 'Password must be at least 8 characters')
-    .max(100, 'Password must not exceed 100 characters')
-    .optional(),
+    .max(100, 'Password must not exceed 100 characters'),
 })
-
-export const createEmployeeSchema = employeeSchema.required({ password: true })
 
 export const updateEmployeeSchema = employeeSchema.omit({ password: true })
 

@@ -30,13 +30,14 @@ const loginUser = async (credentials: LoginCredentials): Promise<User> => {
   return user
 }
 
-// Register: get CSRF cookie, then register, then fetch user
+// Register: get CSRF cookie, then register, and use the returned user data
 const registerUser = async (data: RegisterData): Promise<User> => {
   await webAxios.get('/sanctum/csrf-cookie')
-  await webAxios.post('/register', data)
-  const user = await fetchCurrentUser()
+  const response = await webAxios.post('/register', data)
+  // The register endpoint returns the user data directly, use it instead of fetching
+  const user = response.data.data?.user
   if (!user) {
-    throw new Error('Failed to fetch user after registration')
+    throw new Error('Failed to get user from registration response')
   }
   return user
 }

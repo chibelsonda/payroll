@@ -39,6 +39,11 @@ const router = createRouter({
           name: 'admin-dashboard',
           component: AdminDashboard,
         },
+        {
+          path: 'employees',
+          name: 'admin-employees',
+          component: () => import('../components/EmployeesList.vue'),
+        },
         // Add more admin routes here
       ],
     },
@@ -59,6 +64,11 @@ const router = createRouter({
           path: '',
           name: 'employee-dashboard',
           component: EmployeeDashboard,
+        },
+        {
+          path: 'profile',
+          name: 'employee-profile',
+          component: EmployeeDashboard, // Using same component for now, can be replaced with dedicated profile component
         },
         // Add more employee routes here
       ],

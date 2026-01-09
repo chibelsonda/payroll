@@ -7,9 +7,18 @@ import type { PaginationMeta } from '@/types/pagination'
 // API functions
 const fetchEmployees = async (page = 1): Promise<{ data: Employee[]; meta: PaginationMeta }> => {
   const response = await axios.get(`/employees?page=${page}`)
+  // Handle the API response structure: { success, message, data, meta: { pagination: {...} } }
+  const paginationMeta = response.data.meta?.pagination || {}
   return {
-    data: response.data.data,
-    meta: response.data.meta,
+    data: response.data.data || [],
+    meta: {
+      current_page: paginationMeta.current_page || page,
+      from: paginationMeta.from ?? null,
+      last_page: paginationMeta.last_page || 1,
+      per_page: paginationMeta.per_page || 10,
+      to: paginationMeta.to ?? null,
+      total: paginationMeta.total || 0,
+    },
   }
 }
 
@@ -18,12 +27,29 @@ const fetchEmployee = async (uuid: string): Promise<Employee> => {
   return response.data.data
 }
 
-const createEmployee = async (data: { user_id: number; employee_id: string }): Promise<Employee> => {
+const createEmployee = async (data: {
+  first_name: string
+  last_name: string
+  email: string
+  password: string
+  employee_id: string
+}): Promise<Employee> => {
   const response = await axios.post('/employees', data)
   return response.data.data
 }
 
-const updateEmployee = async ({ uuid, data }: { uuid: string; data: { employee_id?: string } }): Promise<Employee> => {
+const updateEmployee = async ({
+  uuid,
+  data
+}: {
+  uuid: string
+  data: {
+    first_name?: string
+    last_name?: string
+    email?: string
+    employee_id?: string
+  }
+}): Promise<Employee> => {
   const response = await axios.put(`/employees/${uuid}`, data)
   return response.data.data
 }
