@@ -1,59 +1,156 @@
 <template>
-  <v-container>
+  <v-container fluid class="px-6">
     <v-row>
       <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <h2>Employees Management</h2>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" @click="openEmployeeDrawer">
-              <v-icon left>mdi-plus</v-icon>
-              Add Employee
-            </v-btn>
+        <!-- Header Card -->
+        <v-card class="mb-4" elevation="0" rounded="lg">
+          <v-card-text class="px-6">
+            <div class="d-flex align-center justify-space-between flex-wrap">
+              <div class="mb-4 mb-sm-0">
+                <h1 class="text-h4 font-weight-bold mb-2">Employees Management</h1>
+                <p class="text-body-2 text-medium-emphasis">
+                  Manage and organize your employee database
+                </p>
+              </div>
+              <v-btn
+                color="primary"
+                size="small"
+                prepend-icon="mdi-plus"
+                @click="openEmployeeDrawer"
+                class="elevation-2"
+              >
+                Add Employee
+              </v-btn>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- Main Content Card -->
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-6 pb-4">
+            <div class="d-flex align-center justify-space-between flex-wrap w-100">
+              <span class="text-h6 font-weight-medium">All Employees</span>
+              <v-text-field
+                v-model="searchQuery"
+                density="compact"
+                variant="outlined"
+                prepend-inner-icon="mdi-magnify"
+                placeholder="Search employees..."
+                hide-details
+                clearable
+                class="mt-4 mt-sm-0"
+                style="max-width: 300px;"
+              ></v-text-field>
+            </div>
           </v-card-title>
 
-          <v-card-text>
+          <v-divider></v-divider>
+
+          <v-card-text class="pa-0">
             <!-- Loading State -->
-            <div v-if="isLoading" class="text-center py-8">
+            <div v-if="isLoading" class="text-center py-12">
               <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-              <p class="mt-4">Loading employees...</p>
+              <p class="mt-4 text-body-1 text-medium-emphasis">Loading employees...</p>
             </div>
 
             <!-- Error State -->
-            <v-alert v-else-if="error" type="error" class="mb-4">
-              Failed to load employees: {{ error.message }}
-              <template #append>
-                <v-btn variant="text" @click="refetch">Retry</v-btn>
-              </template>
+            <v-alert
+              v-else-if="error"
+              type="error"
+              variant="tonal"
+              class="ma-6"
+              rounded="lg"
+            >
+              <div class="d-flex align-center">
+                <v-icon class="me-3">mdi-alert-circle</v-icon>
+                <div class="flex-grow-1">
+                  <div class="font-weight-medium">Failed to load employees</div>
+                  <div class="text-caption">{{ error.message }}</div>
+                </div>
+                <v-btn variant="text" color="error" @click="refetch">Retry</v-btn>
+              </div>
             </v-alert>
+
+            <!-- Empty State -->
+            <div v-else-if="filteredEmployees.length === 0" class="text-center py-12">
+              <v-icon size="64" color="grey-lighten-1" class="mb-4">mdi-account-group-outline</v-icon>
+              <p class="text-h6 font-weight-medium mb-2">
+                {{ searchQuery ? 'No employees found' : 'No employees yet' }}
+              </p>
+              <p class="text-body-2 text-medium-emphasis mb-4">
+                {{ searchQuery ? 'Try adjusting your search query' : 'Get started by adding your first employee' }}
+              </p>
+              <v-btn
+                v-if="!searchQuery"
+                color="primary"
+                prepend-icon="mdi-plus"
+                @click="openEmployeeDrawer"
+              >
+                Add Employee
+              </v-btn>
+            </div>
 
             <!-- Employees Table -->
             <v-data-table
               v-else
-              :items="employees"
+              :items="filteredEmployees"
               :headers="headers"
               :loading="isLoading"
-              density="compact"
+              density="comfortable"
               item-key="uuid"
+              class="employees-table"
+              :items-per-page="10"
+              :items-per-page-options="[5, 10, 25, 50]"
             >
-              <template #item.user="{ item }">
-                {{ item.user.first_name }} {{ item.user.last_name }}
+              <template v-slot:[`item.user`]="{ item }">
+                <div class="d-flex align-center">
+                  <v-avatar size="32" color="primary" class="me-3">
+                    <span class="text-white text-caption font-weight-bold">
+                      {{ getInitials(item.user) }}
+                    </span>
+                  </v-avatar>
+                  <div>
+                    <div class="font-weight-medium">{{ item.user?.first_name }} {{ item.user?.last_name }}</div>
+                  </div>
+                </div>
               </template>
 
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-pencil"
+              <template v-slot:[`item.email`]="{ item }">
+                <div class="d-flex align-center">
+                  <v-icon size="16" class="me-2 text-medium-emphasis">mdi-email-outline</v-icon>
+                  <span class="text-body-2">{{ item.user?.email }}</span>
+                </div>
+              </template>
+
+              <template v-slot:[`item.employee_id`]="{ item }">
+                <v-chip
                   size="small"
-                  variant="text"
-                  @click="editEmployee(item)"
-                ></v-btn>
-                <v-btn
-                  icon="mdi-delete"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  @click="deleteEmployee(item)"
-                ></v-btn>
+                  variant="outlined"
+                  color="primary"
+                >
+                  {{ item.employee_id }}
+                </v-chip>
+              </template>
+
+              <template v-slot:[`item.actions`]="{ item }">
+                <div class="d-flex align-center ga-2">
+                  <v-btn
+                    icon="mdi-pencil"
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    @click="editEmployee(item)"
+                    class="action-btn"
+                  ></v-btn>
+                  <v-btn
+                    icon="mdi-delete"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    @click="deleteEmployee(item)"
+                    class="action-btn"
+                  ></v-btn>
+                </div>
               </template>
             </v-data-table>
           </v-card-text>
@@ -69,121 +166,172 @@
       width="500"
       class="employee-drawer"
     >
-      <v-card class="d-flex flex-column" style="height: 100%; overflow: hidden;">
-        <v-card-title class="d-flex align-center flex-shrink-0">
-          <span class="text-h6">{{ editingEmployee ? 'Edit Employee' : 'Create Employee' }}</span>
-          <v-spacer></v-spacer>
-          <v-btn
-            icon="mdi-close"
-            variant="text"
-            size="small"
-            @click="closeDialog"
-          ></v-btn>
+      <v-card class="d-flex flex-column employee-drawer-card" style="height: 100%; overflow: hidden;" elevation="0">
+        <!-- Enhanced Header -->
+        <v-card-title class="employee-drawer-header flex-shrink-0 pa-6">
+          <div class="d-flex align-center w-100">
+            <v-avatar
+              color="primary"
+              size="40"
+              class="me-3"
+            >
+              <v-icon color="white">{{ editingEmployee ? 'mdi-pencil' : 'mdi-account-plus' }}</v-icon>
+            </v-avatar>
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-bold">{{ editingEmployee ? 'Edit Employee' : 'Create Employee' }}</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                {{ editingEmployee ? 'Update employee information' : 'Add a new employee to the system' }}
+              </div>
+            </div>
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              size="small"
+              @click="closeDialog"
+              class="ml-2"
+            ></v-btn>
+          </div>
         </v-card-title>
 
         <v-divider class="flex-shrink-0"></v-divider>
 
         <v-form ref="formRef" @submit.prevent="handleButtonClick" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
           <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
-            <!-- First Name Section -->
+            <!-- Personal Information Section -->
             <div class="mb-6">
-              <div class="text-body-2 mb-1">First Name</div>
-              <v-text-field
-                v-model="firstName"
-                placeholder="Enter first name"
-                prepend-inner-icon="mdi-account-outline"
-                :error-messages="firstNameError"
-                :error="hasFirstNameError"
-                required
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-              ></v-text-field>
+              <div class="text-subtitle-2 font-weight-medium mb-4 text-primary">Personal Information</div>
+
+              <!-- First Name -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-2 font-weight-medium">First Name</div>
+                <v-text-field
+                  v-model="firstName"
+                  placeholder="Enter first name"
+                  prepend-inner-icon="mdi-account-outline"
+                  :error-messages="firstNameError"
+                  :error="hasFirstNameError"
+                  required
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
+
+              <!-- Last Name -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-2 font-weight-medium">Last Name</div>
+                <v-text-field
+                  v-model="lastName"
+                  placeholder="Enter last name"
+                  prepend-inner-icon="mdi-account-outline"
+                  :error-messages="lastNameError"
+                  :error="hasLastNameError"
+                  required
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
             </div>
 
-            <!-- Last Name Section -->
+            <v-divider class="my-4"></v-divider>
+
+            <!-- Account Information Section -->
             <div class="mb-6">
-              <div class="text-body-2 mb-1">Last Name</div>
-              <v-text-field
-                v-model="lastName"
-                placeholder="Enter last name"
-                prepend-inner-icon="mdi-account-outline"
-                :error-messages="lastNameError"
-                :error="hasLastNameError"
-                required
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-              ></v-text-field>
+              <div class="text-subtitle-2 font-weight-medium mb-4 text-primary">Account Information</div>
+
+              <!-- Email -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-2 font-weight-medium">Email Address</div>
+                <v-text-field
+                  v-model="email"
+                  placeholder="Email address"
+                  type="email"
+                  prepend-inner-icon="mdi-email-outline"
+                  :error-messages="emailError"
+                  :error="hasEmailError"
+                  required
+                  autocomplete="email"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
+
+              <!-- Password (Create mode only) -->
+              <div v-if="!editingEmployee" class="mb-4">
+                <div class="text-body-2 mb-2 font-weight-medium">Password</div>
+                <v-text-field
+                  v-model="password"
+                  placeholder="Enter password (min. 8 characters)"
+                  :type="showPassword ? 'text' : 'password'"
+                  prepend-inner-icon="mdi-lock-outline"
+                  :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                  :error-messages="passwordError"
+                  :error="hasPasswordError"
+                  required
+                  autocomplete="new-password"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                  @click:append-inner="showPassword = !showPassword"
+                ></v-text-field>
+              </div>
             </div>
 
-            <!-- Email Section -->
-            <div class="mb-6">
-              <div class="text-body-2 mb-1">Email</div>
-              <v-text-field
-                v-model="email"
-                placeholder="Email address"
-                type="email"
-                prepend-inner-icon="mdi-email-outline"
-                :error-messages="emailError"
-                :error="hasEmailError"
-                required
-                autocomplete="email"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-              ></v-text-field>
-            </div>
+            <v-divider class="my-4"></v-divider>
 
-            <!-- Employee ID Section -->
-            <div class="mb-6">
-              <div class="text-body-2 mb-1">Employee ID</div>
-              <v-text-field
-                v-model="employeeId"
-                placeholder="Enter employee ID"
-                prepend-inner-icon="mdi-identifier"
-                :error-messages="employeeIdError"
-                :error="hasEmployeeIdError"
-                required
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-              ></v-text-field>
-            </div>
+            <!-- Employee Details Section -->
+            <div class="mb-4">
+              <div class="text-subtitle-2 font-weight-medium mb-4 text-primary">Employee Details</div>
 
-            <!-- Password Section -->
-            <div v-if="!editingEmployee" class="mb-4">
-              <div class="text-body-2 mb-1">Password</div>
-              <v-text-field
-                v-model="password"
-                placeholder="Enter your password"
-                :type="showPassword ? 'text' : 'password'"
-                prepend-inner-icon="mdi-lock-outline"
-                :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-                :error-messages="passwordError"
-                :error="hasPasswordError"
-                required
-                autocomplete="new-password"
-                density="compact"
-                variant="outlined"
-                hide-details="auto"
-                @click:append-inner="showPassword = !showPassword"
-              ></v-text-field>
+              <!-- Employee ID -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-2 font-weight-medium">Employee ID</div>
+                <v-text-field
+                  v-model="employeeId"
+                  placeholder="Enter unique employee ID"
+                  prepend-inner-icon="mdi-identifier"
+                  :error-messages="employeeIdError"
+                  :error="hasEmployeeIdError"
+                  required
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
             </div>
           </v-card-text>
 
           <v-divider class="flex-shrink-0"></v-divider>
 
-          <v-card-actions class="pa-4 flex-shrink-0">
-            <v-spacer></v-spacer>
-            <v-btn type="button" @click="closeDialog">Cancel</v-btn>
+          <v-card-actions class="pa-4 flex-shrink-0 bg-grey-lighten-5">
+            <v-btn
+              type="button"
+              variant="outlined"
+              @click="closeDialog"
+              class="flex-grow-1"
+              size="small"
+            >
+              Cancel
+            </v-btn>
+            <v-spacer class="mx-2"></v-spacer>
             <v-btn
               type="button"
               color="primary"
+              variant="flat"
+              size="small"
               :loading="isSaving || isSubmitting"
               @click="handleButtonClick"
+              class="flex-grow-1"
+              :prepend-icon="editingEmployee ? 'mdi-content-save' : 'mdi-check'"
             >
-              {{ editingEmployee ? 'Update' : 'Create' }}
+              {{ editingEmployee ? 'Update Employee' : 'Create Employee' }}
             </v-btn>
           </v-card-actions>
         </v-form>
@@ -238,6 +386,7 @@ const selectedEmployee = ref<Employee | null>(null)
 const showPassword = ref(false)
 const errorMessage = ref<string | null>(null)
 const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
+const searchQuery = ref('')
 
 const notification = useNotification()
 
@@ -262,12 +411,15 @@ const {
   }
 )
 
-// Watch editingEmployee to set dummy password for edit mode validation
+// Watch editingEmployee to ensure dummy password is set for edit mode validation.
+// This is a safety net in case editingEmployee is set outside of editEmployee().
+// The password field is hidden in edit mode (v-if="!editingEmployee"), but the
+// form schema (createEmployeeSchema) still requires it for validation.
+// We set a dummy password that passes validation, but it won't be sent to the API.
 watch(editingEmployee, (newValue: Employee | null) => {
   if (newValue) {
-    // In edit mode, set a dummy password that passes validation
-    // This allows the form to validate, but we won't send password to API
-    // Check current password value and set dummy if needed
+    // Set dummy password if field is empty or doesn't meet minimum length
+    // (though in practice, the field should always be empty in edit mode)
     const currentPassword = passwordField.value.value as string
     if (!currentPassword || currentPassword.length < 8) {
       setFieldValue('password', 'dummy_password_for_edit_validation')
@@ -275,16 +427,15 @@ watch(editingEmployee, (newValue: Employee | null) => {
   }
 }, { immediate: false })
 
-// Wrapper for handleSubmit - password is validated by schema simultaneously with other fields
-// baseHandleSubmit from VeeValidate validates ALL fields (including password) before calling the callback
-// The validation happens when the form is submitted, and all fields are validated at once
+// Wrapper for handleSubmit that ensures all fields (including password) are validated
+// before the callback executes. VeeValidate's handleSubmit validates ALL fields
+// simultaneously when the form is submitted. If any field fails validation,
+// the callback won't be called.
 const createFormHandler = (callback: (values: CreateEmployeeFormData) => Promise<void> | void) => {
   return baseHandleSubmit(async (values: CreateEmployeeFormData) => {
-    // VeeValidate's handleSubmit validates all fields simultaneously before this callback runs
-    // If any field (including password) fails validation, this callback won't be called
-    // The password field is part of createEmployeeSchema, so it will be validated with other fields
-    // Schema validation happens automatically for all fields including password
-    // For edit mode, we'll filter out the dummy password before sending to API
+    // At this point, all fields have passed validation including password.
+    // Note: In edit mode, the callback should exclude the dummy password from
+    // the API request (see onSubmit function where password is omitted).
     await callback(values)
   })
 }
@@ -349,12 +500,34 @@ const employees = computed(() => employeesData.value?.data || [])
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 const isDeleting = computed(() => deleteMutation.isPending.value)
 
+// Filter employees based on search query
+const filteredEmployees = computed(() => {
+  if (!searchQuery.value) {
+    return employees.value
+  }
+  const query = searchQuery.value.toLowerCase()
+  return employees.value.filter((emp) => {
+    const name = `${emp.user?.first_name || ''} ${emp.user?.last_name || ''}`.toLowerCase()
+    const email = emp.user?.email?.toLowerCase() || ''
+    const employeeId = emp.employee_id?.toLowerCase() || ''
+    return name.includes(query) || email.includes(query) || employeeId.includes(query)
+  })
+})
+
 const headers = [
-  { title: 'Employee ID', key: 'employee_id' },
-  { title: 'Name', key: 'user' },
-  { title: 'Email', key: 'user.email' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Employee ID', key: 'employee_id', sortable: true },
+  { title: 'Name', key: 'user', sortable: true },
+  { title: 'Email', key: 'email', sortable: true },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const }
 ]
+
+// Helper function to get user initials
+const getInitials = (user: { first_name?: string; last_name?: string } | undefined): string => {
+  if (!user) return '??'
+  const first = user.first_name?.charAt(0).toUpperCase() || ''
+  const last = user.last_name?.charAt(0).toUpperCase() || ''
+  return `${first}${last}` || '??'
+}
 
 // Methods
 const resetForm = () => {
@@ -478,6 +651,28 @@ const confirmDelete = async () => {
 </script>
 
 <style scoped>
+.employees-table :deep(.v-data-table__thead) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.employees-table :deep(.v-data-table__thead th) {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.employees-table :deep(.v-data-table__tbody tr:hover) {
+  background-color: rgba(25, 118, 210, 0.04);
+}
+
+.action-btn {
+  transition: transform 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Employee Drawer Styles */
 .employee-drawer {
   top: 0 !important;
   height: 100vh !important;
@@ -487,5 +682,23 @@ const confirmDelete = async () => {
 .employee-drawer :deep(.v-navigation-drawer__content) {
   height: 100% !important;
   overflow: hidden;
+}
+
+.employee-drawer-card {
+  background: #ffffff;
+}
+
+.employee-drawer-header {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(25, 118, 210, 0.02) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.employee-form-field :deep(.v-field) {
+  border-radius: 4px;
+}
+
+.employee-form-field :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 </style>
