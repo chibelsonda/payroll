@@ -32,7 +32,7 @@ class EmployeeService
     /**
      * Create a new employee record with associated user
      *
-     * @param array $data Employee and user data including first_name, last_name, email, password, employee_id
+     * @param array $data Employee and user data including first_name, last_name, email, password, employee_no
      * @return Employee The created employee instance with user relationship loaded
      * @throws \Exception If employee creation fails
      */
@@ -42,7 +42,7 @@ class EmployeeService
         if (isset($data['user_id'])) {
             $employeeData = [
                 'user_id' => $data['user_id'],
-                'employee_no' => $data['employee_no'] ?? $data['employee_id'] ?? null,
+                'employee_no' => $data['employee_no'] ?? null,
             ];
 
             // Add optional fields if provided (use array_key_exists to allow null values)
@@ -72,7 +72,7 @@ class EmployeeService
 
             // Prepare employee data
             $employeeData = [
-                'employee_no' => $data['employee_no'] ?? $data['employee_id'] ?? null,
+                'employee_no' => $data['employee_no'] ?? null,
             ];
 
             // Add optional fields if provided (use array_key_exists to allow null values)
@@ -120,9 +120,6 @@ class EmployeeService
             } elseif (in_array($key, $employeeFieldKeys)) {
                 // Always include employee fields, even if null (to allow clearing values)
                 $employeeFields[$key] = $value;
-            } elseif ($key === 'employee_id' && !array_key_exists('employee_no', $data)) {
-                // Handle employee_id -> employee_no mapping for backward compatibility
-                $employeeFields['employee_no'] = $value;
             }
         }
 

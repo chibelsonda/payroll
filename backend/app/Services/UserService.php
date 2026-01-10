@@ -79,7 +79,7 @@ class UserService
     public function createEmployeeForUser(User $user, array $data): \App\Models\Employee
     {
         // Generate employee_no if not provided
-        $employeeNo = $data['employee_no'] ?? $data['employee_id'] ?? config('application.employee.id_prefix') . str_pad($user->id, 4, '0', STR_PAD_LEFT);
+        $employeeNo = $data['employee_no'] ?? config('application.employee.id_prefix') . str_pad($user->id, 4, '0', STR_PAD_LEFT);
         
         return $user->employee()->create([
             'employee_no' => $employeeNo,

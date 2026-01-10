@@ -23,7 +23,8 @@ class EmployeeUserSeeder extends Seeder
 
         \App\Models\Employee::create([
             'user_id' => $user->id,
-            'employee_id' => 'EMP0001',
+            'employee_no' => 'EMP0001',
+            'status' => 'active',
         ]);
     }
 }
