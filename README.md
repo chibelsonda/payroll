@@ -34,6 +34,28 @@ A modern full-stack payroll management system built with Laravel and Vue.js. Thi
   - Global loading indicators
   - Form validation with Zod and VeeValidate
 
+## 📸 Screenshots
+
+<div align="center">
+  <img src="screenshots/Screenshot1.png" alt="Screenshot 1" width="800"/>
+  <p><em>Screenshot 1</em></p>
+</div>
+
+<div align="center">
+  <img src="screenshots/Screenshot2.png" alt="Screenshot 2" width="800"/>
+  <p><em>Screenshot 2</em></p>
+</div>
+
+<div align="center">
+  <img src="screenshots/Screenshot3.png" alt="Screenshot 3" width="800"/>
+  <p><em>Screenshot 3</em></p>
+</div>
+
+<div align="center">
+  <img src="screenshots/Screenshot4.png" alt="Screenshot 4" width="800"/>
+  <p><em>Screenshot 4</em></p>
+</div>
+
 ## 🛠️ Tech Stack
 
 ### Backend
