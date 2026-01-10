@@ -2,10 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ConvertsUuidsToIds;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEmployeeRequest extends FormRequest
 {
+    use ConvertsUuidsToIds;
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -67,52 +70,7 @@ class UpdateEmployeeRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $data = $this->all();
-
-        // Convert UUIDs to IDs for internal processing
-        // Handle company_uuid - always set company_id if company_uuid is present in request
-        if (array_key_exists('company_uuid', $data)) {
-            if (!empty($data['company_uuid']) && is_string($data['company_uuid'])) {
-                $company = \App\Models\Company::where('uuid', $data['company_uuid'])->first();
-                if ($company) {
-                    $data['company_id'] = $company->id;
-                }
-                // If UUID is invalid, leave company_id unset - validation will catch it
-            } else {
-                // Null or empty value - explicitly set to null
-                $data['company_id'] = null;
-            }
-            // Don't unset company_uuid yet - let validation check it first
-        }
-
-        // Handle department_uuid
-        if (array_key_exists('department_uuid', $data)) {
-            if (!empty($data['department_uuid']) && is_string($data['department_uuid'])) {
-                $department = \App\Models\Department::where('uuid', $data['department_uuid'])->first();
-                if ($department) {
-                    $data['department_id'] = $department->id;
-                }
-                // If UUID is invalid, leave department_id unset - validation will catch it
-            } else {
-                // Null or empty value - explicitly set to null
-                $data['department_id'] = null;
-            }
-        }
-
-        // Handle position_uuid
-        if (array_key_exists('position_uuid', $data)) {
-            if (!empty($data['position_uuid']) && is_string($data['position_uuid'])) {
-                $position = \App\Models\Position::where('uuid', $data['position_uuid'])->first();
-                if ($position) {
-                    $data['position_id'] = $position->id;
-                }
-                // If UUID is invalid, leave position_id unset - validation will catch it
-            } else {
-                // Null or empty value - explicitly set to null
-                $data['position_id'] = null;
-            }
-        }
-
+        $data = $this->convertUuidsToIds($this->all());
         $this->merge($data);
     }
 
