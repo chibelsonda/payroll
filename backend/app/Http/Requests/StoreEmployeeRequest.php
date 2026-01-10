@@ -26,9 +26,9 @@ class StoreEmployeeRequest extends FormRequest
     {
         return [
             // User fields
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|string|email|max:100|unique:users',
             'password' => 'required|string|min:8',
 
             // Employee fields

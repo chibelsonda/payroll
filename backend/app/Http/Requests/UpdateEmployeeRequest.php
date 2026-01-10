@@ -36,8 +36,8 @@ class UpdateEmployeeRequest extends FormRequest
 
         $rules = [
             // User fields
-            'first_name' => 'sometimes|string|max:255',
-            'last_name' => 'sometimes|string|max:255',
+            'first_name' => 'sometimes|string|max:100',
+            'last_name' => 'sometimes|string|max:100',
 
             // Employee fields
             'employee_no' => 'sometimes|string|unique:employees,employee_no,' . ($employee ? $employee->id : 'NULL'),
