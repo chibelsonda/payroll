@@ -23,7 +23,7 @@
               </v-list-item>
               <v-list-item>
                 <v-list-item-title>Employee ID</v-list-item-title>
-                <v-list-item-subtitle>{{ auth.user?.employee?.employee_id || 'N/A' }}</v-list-item-subtitle>
+                <v-list-item-subtitle>{{ auth.user?.employee?.employee_no || 'N/A' }}</v-list-item-subtitle>
               </v-list-item>
             </v-list>
           </v-card-text>

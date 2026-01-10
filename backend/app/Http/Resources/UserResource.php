@@ -38,10 +38,8 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at?->toIso8601String(),
             'employee' => $this->whenLoaded('employee', function () {
                 return [
-                    'id' => $this->employee->id,
                     'uuid' => $this->employee->uuid,
-                    'user_id' => $this->employee->user_id,
-                    'employee_id' => $this->employee->employee_id,
+                    'employee_no' => $this->employee->employee_no,
                     'created_at' => $this->employee->created_at?->toIso8601String(),
                     'updated_at' => $this->employee->updated_at?->toIso8601String(),
                 ];

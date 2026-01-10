@@ -3,6 +3,9 @@
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\EmployeeController;
+use App\Http\Controllers\Api\V1\CompanyController;
+use App\Http\Controllers\Api\V1\DepartmentController;
+use App\Http\Controllers\Api\V1\PositionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -46,5 +49,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         // Existing resource routes
         Route::apiResource('employees', EmployeeController::class);
+        
+        // Dropdown data endpoints
+        Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
+        Route::get('departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::get('positions', [PositionController::class, 'index'])->name('positions.index');
     });
 });

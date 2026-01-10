@@ -2,8 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Employee;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class StudentUserSeeder extends Seeder
 {
@@ -13,17 +15,20 @@ class StudentUserSeeder extends Seeder
     public function run(): void
     {
         $user = \App\Models\User::factory()->create([
-            'first_name' => 'Student',
+            'uuid' => (string) Str::uuid(),
+            'first_name' => 'Employee',
             'last_name' => 'User',
-            'email' => 'student@example.com',
+            'email' => 'employee@example.com',
         ]);
 
-        // Assign user role using Spatie Permission (students use 'user' role)
+        // Assign user role using Spatie Permission (employees use 'user' role)
         $user->assignRole('user');
 
-        \App\Models\Student::create([
+        Employee::create([
+            'uuid' => (string) Str::uuid(),
             'user_id' => $user->id,
-            'student_id' => 'STU0001',
+            'employee_no' => 'EMP0001',
+            'status' => 'active',
         ]);
     }
 }

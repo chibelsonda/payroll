@@ -66,7 +66,7 @@
                 <tr class="filter-row">
                   <td>
                     <v-text-field
-                      v-model="filters.employeeId"
+                      v-model="filters.employeeNo"
                       density="compact"
                       variant="outlined"
                       hide-details
@@ -97,6 +97,42 @@
                       class="filter-input"
                     ></v-text-field>
                   </td>
+                  <td>
+                    <v-text-field
+                      v-model="filters.company"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model="filters.department"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td>
+                    <v-text-field
+                      v-model="filters.position"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      clearable
+                      placeholder="Filter..."
+                      class="filter-input"
+                    ></v-text-field>
+                  </td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                   <td></td>
                 </tr>
               </template>
@@ -145,14 +181,50 @@
                 </div>
               </template>
 
-              <template v-slot:[`item.employee_id`]="{ item }">
+              <template v-slot:[`item.employee_no`]="{ item }">
                 <v-chip
                   size="small"
                   variant="outlined"
                   color="primary"
                 >
-                  {{ item.employee_id }}
+                  {{ item.employee_no }}
                 </v-chip>
+              </template>
+
+              <template v-slot:[`item.company`]="{ item }">
+                <span class="text-body-2">{{ item.company?.name || '-' }}</span>
+              </template>
+
+              <template v-slot:[`item.department`]="{ item }">
+                <span class="text-body-2">{{ item.department?.name || '-' }}</span>
+              </template>
+
+              <template v-slot:[`item.position`]="{ item }">
+                <span class="text-body-2">{{ item.position?.title || '-' }}</span>
+              </template>
+
+              <template v-slot:[`item.employment_type`]="{ item }">
+                <v-chip
+                  size="small"
+                  :color="getEmploymentTypeColor(item.employment_type)"
+                  variant="tonal"
+                >
+                  {{ item.employment_type || '-' }}
+                </v-chip>
+              </template>
+
+              <template v-slot:[`item.status`]="{ item }">
+                <v-chip
+                  size="small"
+                  :color="getStatusColor(item.status)"
+                  variant="tonal"
+                >
+                  {{ item.status || 'active' }}
+                </v-chip>
+              </template>
+
+              <template v-slot:[`item.hire_date`]="{ item }">
+                <span class="text-body-2">{{ formatDate(item.hire_date) }}</span>
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
@@ -318,21 +390,146 @@
             <div class="mb-4">
               <div class="text-subtitle-2 font-weight-medium mb-4 text-primary">Employee Details</div>
 
-              <!-- Employee ID -->
+              <!-- Employee No -->
               <div class="mb-4">
-                <div class="text-body-2 mb-1 font-weight-medium">Employee ID</div>
-            <v-text-field
-                  v-model="employeeId"
-                  placeholder="Enter unique employee ID"
+                <div class="text-body-2 mb-1 font-weight-medium">Employee No</div>
+                <v-text-field
+                  v-model="employeeNo"
+                  placeholder="Enter unique employee number"
                   prepend-inner-icon="mdi-identifier"
-                  :error-messages="employeeIdError"
-                  :error="hasEmployeeIdError"
-              required
-              density="compact"
-              variant="outlined"
+                  :error-messages="employeeNoError"
+                  :error="hasEmployeeNoError"
+                  required
+                  density="compact"
+                  variant="outlined"
                   hide-details="auto"
                   class="employee-form-field"
-            ></v-text-field>
+                ></v-text-field>
+              </div>
+
+              <!-- Company -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Company</div>
+                <v-select
+                  v-model="companyUuid"
+                  :items="companies || []"
+                  item-title="name"
+                  item-value="uuid"
+                  placeholder="Select company"
+                  prepend-inner-icon="mdi-office-building"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                  clearable
+                ></v-select>
+              </div>
+
+              <!-- Department -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Department</div>
+                <v-select
+                  v-model="departmentUuid"
+                  :items="departments || []"
+                  item-title="name"
+                  item-value="uuid"
+                  placeholder="Select department"
+                  prepend-inner-icon="mdi-domain"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                  :disabled="!companyUuid"
+                  clearable
+                ></v-select>
+              </div>
+
+              <!-- Position -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Position</div>
+                <v-select
+                  v-model="positionUuid"
+                  :items="positions || []"
+                  item-title="title"
+                  item-value="uuid"
+                  placeholder="Select position"
+                  prepend-inner-icon="mdi-briefcase"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                  :disabled="!departmentUuid"
+                  clearable
+                ></v-select>
+              </div>
+
+              <!-- Employment Type -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Employment Type</div>
+                <v-select
+                  v-model="employmentType"
+                  :items="[
+                    { title: 'Regular', value: 'regular' },
+                    { title: 'Contractual', value: 'contractual' },
+                    { title: 'Probationary', value: 'probationary' }
+                  ]"
+                  placeholder="Select employment type"
+                  prepend-inner-icon="mdi-account-clock"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                  clearable
+                ></v-select>
+              </div>
+
+              <!-- Hire Date -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Hire Date</div>
+                <v-text-field
+                  v-model="hireDate"
+                  type="date"
+                  placeholder="Select hire date"
+                  prepend-inner-icon="mdi-calendar"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
+
+              <!-- Termination Date -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Termination Date</div>
+                <v-text-field
+                  v-model="terminationDate"
+                  type="date"
+                  placeholder="Select termination date"
+                  prepend-inner-icon="mdi-calendar-remove"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-text-field>
+              </div>
+
+              <!-- Status -->
+              <div class="mb-4">
+                <div class="text-body-2 mb-1 font-weight-medium">Status</div>
+                <v-select
+                  v-model="status"
+                  :items="[
+                    { title: 'Active', value: 'active' },
+                    { title: 'Inactive', value: 'inactive' },
+                    { title: 'Terminated', value: 'terminated' }
+                  ]"
+                  placeholder="Select status"
+                  prepend-inner-icon="mdi-account-check"
+                  density="compact"
+                  variant="outlined"
+                  hide-details="auto"
+                  class="employee-form-field"
+                ></v-select>
               </div>
             </div>
         </v-card-text>
@@ -392,12 +589,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   useEmployees,
   useCreateEmployee,
   useUpdateEmployee,
-  useDeleteEmployee
+  useDeleteEmployee,
+  useCompanies,
+  useDepartments,
+  usePositions
 } from '@/composables'
 import { useZodForm } from '@/composables/useZodForm'
 import { useNotification } from '@/composables/useNotification'
@@ -405,7 +605,7 @@ import {
   createEmployeeSchema,
   type CreateEmployeeFormData
 } from '@/validation'
-import type { Employee } from '@/types/auth'
+import type { Employee } from '@/types/employee'
 
 // Reactive state
 const showCreateDialog = ref(false)
@@ -417,9 +617,12 @@ const errorMessage = ref<string | null>(null)
 const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 // Column filters
 const filters = ref({
-  employeeId: '',
+  employeeNo: '',
   name: '',
   email: '',
+  company: '',
+  department: '',
+  position: '',
 })
 
 const notification = useNotification()
@@ -437,10 +640,17 @@ const {
 } = useZodForm<CreateEmployeeFormData>(
   createEmployeeSchema,
   {
-  first_name: '',
-  last_name: '',
-  email: '',
-  employee_id: '',
+    first_name: '',
+    last_name: '',
+    email: '',
+    employee_no: '',
+    company_uuid: null,
+    department_uuid: null,
+    position_uuid: null,
+    employment_type: null,
+    hire_date: null,
+    termination_date: null,
+    status: 'active',
     password: '',
   }
 )
@@ -478,7 +688,14 @@ const createFormHandler = (callback: (values: CreateEmployeeFormData) => Promise
 const firstNameField = createField('first_name')
 const lastNameField = createField('last_name')
 const emailField = createField('email')
-const employeeIdField = createField('employee_id')
+const employeeNoField = createField('employee_no')
+const companyUuidField = createField('company_uuid')
+const departmentUuidField = createField('department_uuid')
+const positionUuidField = createField('position_uuid')
+const employmentTypeField = createField('employment_type')
+const hireDateField = createField('hire_date')
+const terminationDateField = createField('termination_date')
+const statusField = createField('status')
 const passwordField = createField('password')
 
 // Bind field values
@@ -497,9 +714,44 @@ const email = computed({
   set: (value: string) => emailField.setValue(value),
 })
 
-const employeeId = computed({
-  get: () => employeeIdField.value.value as string,
-  set: (value: string) => employeeIdField.setValue(value),
+const employeeNo = computed({
+  get: () => employeeNoField.value.value as string,
+  set: (value: string) => employeeNoField.setValue(value),
+})
+
+const companyUuid = computed({
+  get: () => companyUuidField.value.value as string | null,
+  set: (value: string | null) => companyUuidField.setValue(value),
+})
+
+const departmentUuid = computed({
+  get: () => departmentUuidField.value.value as string | null,
+  set: (value: string | null) => departmentUuidField.setValue(value),
+})
+
+const positionUuid = computed({
+  get: () => positionUuidField.value.value as string | null,
+  set: (value: string | null) => positionUuidField.setValue(value),
+})
+
+const employmentType = computed({
+  get: () => employmentTypeField.value.value as 'regular' | 'contractual' | 'probationary' | null,
+  set: (value: 'regular' | 'contractual' | 'probationary' | null) => employmentTypeField.setValue(value),
+})
+
+const hireDate = computed({
+  get: () => hireDateField.value.value as string | null,
+  set: (value: string | null) => hireDateField.setValue(value),
+})
+
+const terminationDate = computed({
+  get: () => terminationDateField.value.value as string | null,
+  set: (value: string | null) => terminationDateField.setValue(value),
+})
+
+const status = computed({
+  get: () => statusField.value.value as 'active' | 'inactive' | 'terminated' | null,
+  set: (value: 'active' | 'inactive' | 'terminated' | null) => statusField.setValue(value),
 })
 
 const password = computed({
@@ -507,17 +759,45 @@ const password = computed({
   set: (value: string) => passwordField.setValue(value),
 })
 
+// Vue Query hooks for cascading dropdowns (after computed properties are defined)
+// Pass computed refs directly so they're reactive
+const { data: departments } = useDepartments(companyUuid)
+const { data: positions } = usePositions(departmentUuid)
+
+// Watch companyUuid to reset department and position when company changes
+// Only reset if it's an actual user change (not during edit initialization)
+watch(companyUuid, (newCompanyUuid, oldCompanyUuid) => {
+  // Only reset if both values are defined (not initial set during edit)
+  // This prevents resetting when loading employee data for editing
+  if (oldCompanyUuid !== null && oldCompanyUuid !== undefined && newCompanyUuid !== oldCompanyUuid) {
+    // Reset department and position when company changes
+    setFieldValue('department_uuid', null)
+    setFieldValue('position_uuid', null)
+  }
+})
+
+// Watch departmentUuid to reset position when department changes
+// Only reset if it's an actual user change (not during edit initialization)
+watch(departmentUuid, (newDepartmentUuid, oldDepartmentUuid) => {
+  // Only reset if both values are defined (not initial set during edit)
+  // This prevents resetting when loading employee data for editing
+  if (oldDepartmentUuid !== null && oldDepartmentUuid !== undefined && newDepartmentUuid !== oldDepartmentUuid) {
+    // Reset position when department changes
+    setFieldValue('position_uuid', null)
+  }
+})
+
 // Error messages
 const firstNameError = computed(() => firstNameField.errorMessage.value)
 const lastNameError = computed(() => lastNameField.errorMessage.value)
 const emailError = computed(() => emailField.errorMessage.value)
-const employeeIdError = computed(() => employeeIdField.errorMessage.value)
+const employeeNoError = computed(() => employeeNoField.errorMessage.value)
 const passwordError = computed(() => passwordField.errorMessage.value)
 
 const hasFirstNameError = computed(() => !!firstNameError.value)
 const hasLastNameError = computed(() => !!lastNameError.value)
 const hasEmailError = computed(() => !!emailError.value)
-const hasEmployeeIdError = computed(() => !!employeeIdError.value)
+const hasEmployeeNoError = computed(() => !!employeeNoError.value)
 const hasPasswordError = computed(() => !!passwordError.value)
 
 // Password validation is handled entirely by Zod schema
@@ -528,6 +808,7 @@ const { data: employeesData, isLoading, error, refetch } = useEmployees()
 const createMutation = useCreateEmployee()
 const updateMutation = useUpdateEmployee()
 const deleteMutation = useDeleteEmployee()
+const { data: companies } = useCompanies()
 
 // Computed properties
 const employees = computed(() => employeesData.value?.data || [])
@@ -536,18 +817,19 @@ const isDeleting = computed(() => deleteMutation.isPending.value)
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
-  return !!(filters.value.employeeId || filters.value.name || filters.value.email)
+  return !!(filters.value.employeeNo || filters.value.name || filters.value.email ||
+            filters.value.company || filters.value.department || filters.value.position)
 })
 
 // Filter employees based on column filters
 const filteredEmployees = computed(() => {
   let result = employees.value
 
-  // Filter by Employee ID
-  if (filters.value.employeeId) {
-    const query = filters.value.employeeId.toLowerCase()
+  // Filter by Employee No
+  if (filters.value.employeeNo) {
+    const query = filters.value.employeeNo.toLowerCase()
     result = result.filter((emp) =>
-      emp.employee_id?.toLowerCase().includes(query)
+      emp.employee_no?.toLowerCase().includes(query)
     )
   }
 
@@ -568,13 +850,43 @@ const filteredEmployees = computed(() => {
     )
   }
 
+  // Filter by Company
+  if (filters.value.company) {
+    const query = filters.value.company.toLowerCase()
+    result = result.filter((emp) =>
+      emp.company?.name?.toLowerCase().includes(query)
+    )
+  }
+
+  // Filter by Department
+  if (filters.value.department) {
+    const query = filters.value.department.toLowerCase()
+    result = result.filter((emp) =>
+      emp.department?.name?.toLowerCase().includes(query)
+    )
+  }
+
+  // Filter by Position
+  if (filters.value.position) {
+    const query = filters.value.position.toLowerCase()
+    result = result.filter((emp) =>
+      emp.position?.title?.toLowerCase().includes(query)
+    )
+  }
+
   return result
 })
 
 const headers = [
-  { title: 'Employee ID', key: 'employee_id', sortable: true },
+  { title: 'Employee No', key: 'employee_no', sortable: true },
   { title: 'Name', key: 'user', sortable: true },
   { title: 'Email', key: 'email', sortable: true },
+  { title: 'Company', key: 'company', sortable: true },
+  { title: 'Department', key: 'department', sortable: true },
+  { title: 'Position', key: 'position', sortable: true },
+  { title: 'Type', key: 'employment_type', sortable: true },
+  { title: 'Status', key: 'status', sortable: true },
+  { title: 'Hire Date', key: 'hire_date', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const }
 ]
 
@@ -584,6 +896,34 @@ const getInitials = (user: { first_name?: string; last_name?: string } | undefin
   const first = user.first_name?.charAt(0).toUpperCase() || ''
   const last = user.last_name?.charAt(0).toUpperCase() || ''
   return `${first}${last}` || '??'
+}
+
+// Helper functions for display
+const formatDate = (date: string | null | undefined): string => {
+  if (!date) return '-'
+  try {
+    return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return date
+  }
+}
+
+const getEmploymentTypeColor = (type: string | null | undefined): string => {
+  switch (type) {
+    case 'regular': return 'success'
+    case 'contractual': return 'warning'
+    case 'probationary': return 'info'
+    default: return 'grey'
+  }
+}
+
+const getStatusColor = (status: string | null | undefined): string => {
+  switch (status) {
+    case 'active': return 'success'
+    case 'inactive': return 'warning'
+    case 'terminated': return 'error'
+    default: return 'success'
+  }
 }
 
 // Methods
@@ -606,16 +946,53 @@ const closeDialog = () => {
   resetForm()
 }
 
-const editEmployee = (employee: Employee) => {
+const editEmployee = async (employee: Employee) => {
   editingEmployee.value = employee
   setFieldValue('first_name', employee.user?.first_name || '')
   setFieldValue('last_name', employee.user?.last_name || '')
   setFieldValue('email', employee.user?.email || '')
-  setFieldValue('employee_id', employee.employee_id || '')
+  setFieldValue('employee_no', employee.employee_no || '')
+
+  // Set other fields first
+  setFieldValue('employment_type', employee.employment_type || null)
+  setFieldValue('hire_date', employee.hire_date || null)
+  setFieldValue('termination_date', employee.termination_date || null)
+  setFieldValue('status', employee.status || 'active')
   // Set a dummy password that passes validation (required by createEmployeeSchema)
   // This won't be sent to the API - it's only for form validation
   setFieldValue('password', 'dummy_password_for_edit_validation')
+
+  // Open drawer first so queries can run
   showCreateDialog.value = true
+
+  // Wait for drawer to be rendered
+  await nextTick()
+
+  // Set company first - this will trigger departments query
+  if (employee.company_uuid) {
+    setFieldValue('company_uuid', employee.company_uuid)
+
+    // Wait a moment for the query to trigger and fetch departments
+    await new Promise(resolve => setTimeout(resolve, 300))
+
+    // Set department if employee has one (departments might be empty array if company has no departments)
+    if (employee.department_uuid && departments.value !== undefined) {
+      setFieldValue('department_uuid', employee.department_uuid)
+
+      // Wait a moment for positions query to trigger and fetch
+      await new Promise(resolve => setTimeout(resolve, 300))
+
+      // Set position if employee has one (positions might be empty array if department has no positions)
+      if (employee.position_uuid && positions.value !== undefined) {
+        setFieldValue('position_uuid', employee.position_uuid)
+      }
+    }
+  } else {
+    // No company, set to null
+    setFieldValue('company_uuid', null)
+    setFieldValue('department_uuid', null)
+    setFieldValue('position_uuid', null)
+  }
 }
 
 // Handle form submission with validation
@@ -625,15 +1002,23 @@ const onSubmit = createFormHandler(async (values: CreateEmployeeFormData) => {
 
   try {
     if (editingEmployee.value) {
-      // For updates, update user data and employee_id
+      // For updates, exclude password and dummy password
+      const updateData = {
+        first_name: values.first_name,
+        last_name: values.last_name,
+        email: values.email,
+        employee_no: values.employee_no,
+        company_uuid: values.company_uuid,
+        department_uuid: values.department_uuid,
+        position_uuid: values.position_uuid,
+        employment_type: values.employment_type,
+        hire_date: values.hire_date,
+        termination_date: values.termination_date,
+        status: values.status,
+      }
       await updateMutation.mutateAsync({
         uuid: editingEmployee.value.uuid,
-        data: {
-          first_name: values.first_name,
-          last_name: values.last_name,
-          email: values.email,
-          employee_id: values.employee_id
-        }
+        data: updateData
       })
       notification.showSuccess('Employee updated successfully!')
     } else {
@@ -648,7 +1033,14 @@ const onSubmit = createFormHandler(async (values: CreateEmployeeFormData) => {
         last_name: values.last_name,
         email: values.email,
         password: values.password,
-        employee_id: values.employee_id
+        employee_no: values.employee_no,
+        company_uuid: values.company_uuid,
+        department_uuid: values.department_uuid,
+        position_uuid: values.position_uuid,
+        employment_type: values.employment_type,
+        hire_date: values.hire_date,
+        termination_date: values.termination_date,
+        status: values.status || 'active',
       })
 
       notification.showSuccess('Employee created successfully!')

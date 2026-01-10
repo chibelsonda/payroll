@@ -1,7 +1,8 @@
 import { ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios, { webAxios } from '@/lib/axios'
-import type { User, LoginCredentials, RegisterData } from '@/types/auth'
+import type { User } from '@/types/user'
+import type { LoginCredentials, RegisterData } from '@/types/auth'
 
 // Fetch current user from API
 const fetchCurrentUser = async (): Promise<User | null> => {

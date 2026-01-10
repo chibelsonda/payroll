@@ -1,24 +1,4 @@
-export interface User {
-  uuid: string
-  first_name: string
-  last_name: string
-  email: string
-  role: 'admin' | 'employee'
-  email_verified_at?: string
-  created_at: string
-  updated_at: string
-  employee?: Employee
-}
-
-export interface Employee {
-  id: number
-  uuid: string
-  user_id: number
-  employee_id: string
-  created_at: string
-  updated_at: string
-  user?: User
-}
+import type { User } from './user'
 
 export interface LoginCredentials {
   email: string

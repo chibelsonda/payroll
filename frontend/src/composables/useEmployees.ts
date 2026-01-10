@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
-import type { Employee } from '@/types/auth'
+import type { Employee } from '@/types/employee'
 import type { PaginationMeta } from '@/types/pagination'
 
 // API functions
@@ -32,7 +32,14 @@ const createEmployee = async (data: {
   last_name: string
   email: string
   password: string
-  employee_id: string
+  employee_no: string
+  company_uuid?: string | null
+  department_uuid?: string | null
+  position_uuid?: string | null
+  employment_type?: 'regular' | 'contractual' | 'probationary' | null
+  hire_date?: string | null
+  termination_date?: string | null
+  status?: 'active' | 'inactive' | 'terminated' | null
 }): Promise<Employee> => {
   const response = await axios.post('/employees', data)
   return response.data.data
@@ -47,7 +54,14 @@ const updateEmployee = async ({
     first_name?: string
     last_name?: string
     email?: string
-    employee_id?: string
+    employee_no?: string
+    company_uuid?: string | null
+    department_uuid?: string | null
+    position_uuid?: string | null
+    employment_type?: 'regular' | 'contractual' | 'probationary' | null
+    hire_date?: string | null
+    termination_date?: string | null
+    status?: 'active' | 'inactive' | 'terminated' | null
   }
 }): Promise<Employee> => {
   const response = await axios.put(`/employees/${uuid}`, data)

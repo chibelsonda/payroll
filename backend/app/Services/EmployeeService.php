@@ -15,7 +15,7 @@ class EmployeeService
      */
     public function getAllEmployees()
     {
-        return Employee::with('user')->paginate(config('application.pagination.per_page'));
+        return Employee::with(['user', 'company', 'department', 'position'])->paginate(config('application.pagination.per_page'));
     }
 
     /**
@@ -40,10 +40,20 @@ class EmployeeService
     {
         // If user_id is provided, create employee for existing user (backward compatibility)
         if (isset($data['user_id'])) {
-            return Employee::create([
+            $employeeData = [
                 'user_id' => $data['user_id'],
-                'employee_id' => $data['employee_id'],
-            ]);
+                'employee_no' => $data['employee_no'] ?? $data['employee_id'] ?? null,
+            ];
+
+            // Add optional fields if provided (use array_key_exists to allow null values)
+            $optionalFields = ['company_id', 'department_id', 'position_id', 'employment_type', 'hire_date', 'termination_date', 'status'];
+            foreach ($optionalFields as $field) {
+                if (array_key_exists($field, $data)) {
+                    $employeeData[$field] = $data[$field];
+                }
+            }
+
+            return Employee::create($employeeData);
         }
 
         // Otherwise, create both user and employee in a transaction
@@ -60,13 +70,24 @@ class EmployeeService
             // Assign 'user' role (employees use 'user' role in Spatie)
             $user->assignRole('user');
 
-            // Create employee record
-            $employee = $user->employee()->create([
-                'employee_id' => $data['employee_id'],
-            ]);
+            // Prepare employee data
+            $employeeData = [
+                'employee_no' => $data['employee_no'] ?? $data['employee_id'] ?? null,
+            ];
 
-            // Load user relationship and return
-            return $employee->load('user');
+            // Add optional fields if provided (use array_key_exists to allow null values)
+            $optionalFields = ['company_id', 'department_id', 'position_id', 'employment_type', 'hire_date', 'termination_date', 'status'];
+            foreach ($optionalFields as $field) {
+                if (array_key_exists($field, $data)) {
+                    $employeeData[$field] = $data[$field];
+                }
+            }
+
+            // Create employee record
+            $employee = $user->employee()->create($employeeData);
+
+            // Load relationships and return
+            return $employee->load(['user', 'company', 'department', 'position']);
         });
     }
 
@@ -88,11 +109,20 @@ class EmployeeService
         $userFields = [];
         $employeeFields = [];
 
+        $userFieldKeys = ['first_name', 'last_name', 'email'];
+
+        // Define employee field keys that should always be included (even if null)
+        $employeeFieldKeys = ['employee_no', 'company_id', 'department_id', 'position_id', 'employment_type', 'hire_date', 'termination_date', 'status'];
+
         foreach ($data as $key => $value) {
-            if (in_array($key, ['first_name', 'last_name', 'email'])) {
+            if (in_array($key, $userFieldKeys)) {
                 $userFields[$key] = $value;
-            } else {
+            } elseif (in_array($key, $employeeFieldKeys)) {
+                // Always include employee fields, even if null (to allow clearing values)
                 $employeeFields[$key] = $value;
+            } elseif ($key === 'employee_id' && !array_key_exists('employee_no', $data)) {
+                // Handle employee_id -> employee_no mapping for backward compatibility
+                $employeeFields['employee_no'] = $value;
             }
         }
 
@@ -111,7 +141,7 @@ class EmployeeService
             $employee->update($employeeFields);
         }
 
-        return $employee->fresh(['user']);
+        return $employee->fresh(['user', 'company', 'department', 'position']);
     }
 
     /**
@@ -133,6 +163,6 @@ class EmployeeService
      */
     public function getEmployeeWithDetails(Employee $employee): Employee
     {
-        return $employee->load(['user']);
+        return $employee->load(['user', 'company', 'department', 'position']);
     }
 }

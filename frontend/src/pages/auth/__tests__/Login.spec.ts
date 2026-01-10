@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import Login from '@/views/Login.vue'
 import { mockAxios, mockRouter, mockAuthStore, mockNotification, mockVueQuery, createMountOptions, waitForNextTick } from '@/test/helpers'
-import type { User } from '@/types/auth'
+import type { User } from '@/types/user'
 
 describe('Login.vue', () => {
   let mockGet: ReturnType<typeof mockAxios>['mockGet']

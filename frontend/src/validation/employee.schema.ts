@@ -18,12 +18,19 @@ export const employeeSchema = z.object({
     .min(1, 'Email is required')
     .email('Please enter a valid email address')
     .max(255, 'Email must not exceed 255 characters'),
-  employee_id: z
+  employee_no: z
     .string()
-    .min(1, 'Employee ID is required')
-    .min(3, 'Employee ID must be at least 3 characters')
-    .max(20, 'Employee ID must not exceed 20 characters')
-    .regex(/^[A-Za-z0-9-]+$/, 'Employee ID can only contain letters, numbers, and hyphens'),
+    .min(1, 'Employee No is required')
+    .min(3, 'Employee No must be at least 3 characters')
+    .max(20, 'Employee No must not exceed 20 characters')
+    .regex(/^[A-Za-z0-9-]+$/, 'Employee No can only contain letters, numbers, and hyphens'),
+  company_uuid: z.string().uuid().optional().nullable(),
+  department_uuid: z.string().uuid().optional().nullable(),
+  position_uuid: z.string().uuid().optional().nullable(),
+  employment_type: z.enum(['regular', 'contractual', 'probationary']).optional().nullable(),
+  hire_date: z.string().optional().nullable(),
+  termination_date: z.string().optional().nullable(),
+  status: z.enum(['active', 'inactive', 'terminated']).optional().nullable(),
   password: z
     .union([
       z.string().min(8, 'Password must be at least 8 characters').max(100, 'Password must not exceed 100 characters'),
