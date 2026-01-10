@@ -56,6 +56,16 @@ A modern full-stack payroll management system built with Laravel and Vue.js. Thi
   <p><em>Screenshot 4</em></p>
 </div>
 
+<div align="center">
+  <img src="screenshots/Screenshot5.png" alt="Screenshot 5" width="800"/>
+  <p><em>Screenshot 5</em></p>
+</div>
+
+<div align="center">
+  <img src="screenshots/Screenshot6.png" alt="Screenshot 6" width="800"/>
+  <p><em>Screenshot 6</em></p>
+</div>
+
 ## 🛠️ Tech Stack
 
 ### Backend
