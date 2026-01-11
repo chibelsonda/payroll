@@ -49,7 +49,7 @@
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar app color="primary" dark elevation="2" class="app-bar">
+    <v-app-bar app elevation="2" class="app-bar">
       <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
 
       <!-- Search Box -->
@@ -86,10 +86,10 @@
               </span>
             </v-avatar>
             <div class="d-none d-sm-flex flex-column">
-              <span class="text-caption font-weight-medium">
+              <span class="text-caption font-weight-medium" style="color: rgba(0, 0, 0, 0.87);">
                 {{ getUserFullName() }}
               </span>
-              <span class="text-caption opacity-75">
+              <span class="text-caption" style="color: rgba(0, 0, 0, 0.6);">
                 {{ auth.user?.role === 'admin' ? 'Administrator' : 'Employee' }}
               </span>
             </div>
@@ -125,8 +125,10 @@
     </v-app-bar>
 
     <v-main>
-      <v-container fluid>
-        <router-view />
+      <v-container fluid class="pa-0">
+        <div class="pa-4">
+          <router-view />
+        </div>
       </v-container>
     </v-main>
   </v-app>
@@ -270,10 +272,14 @@ const handleLogout = async () => {
 
 /* App Bar Enhancements */
 .app-bar {
-  background: linear-gradient(135deg, rgb(25, 118, 210) 0%, rgb(13, 71, 161) 100%) !important;
+  background: rgb(227, 242, 253) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   height: 60px !important;
   min-height: 60px !important;
+}
+
+.app-bar :deep(.v-icon) {
+  color: rgba(0, 0, 0, 0.87) !important;
 }
 
 .app-bar :deep(.v-toolbar__content) {
@@ -284,6 +290,7 @@ const handleLogout = async () => {
 .app-bar :deep(.v-toolbar-title) {
   font-weight: 600;
   letter-spacing: 0.5px;
+  color: rgba(0, 0, 0, 0.87) !important;
 }
 
 /* Search Box Styling */
@@ -348,4 +355,5 @@ const handleLogout = async () => {
     display: none;
   }
 }
+
 </style>
