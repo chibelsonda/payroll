@@ -1047,7 +1047,6 @@ const onSubmit = createFormHandler(async (values: CreateEmployeeFormData) => {
     }
 
     closeDialog()
-    refetch()
   } catch (error: unknown) {
     handleSubmitError(error)
   }
