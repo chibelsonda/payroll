@@ -7,6 +7,7 @@ export * from './employee'
 export * from './company'
 export * from './department'
 export * from './position'
+export * from './payroll'
 
 // Utility types
 export * from './pagination'

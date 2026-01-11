@@ -265,7 +265,7 @@
       location="right"
       temporary
       width="500"
-      class="employee-drawer"
+      class="drawer employee-drawer"
     >
       <v-card class="d-flex flex-column employee-drawer-card" style="height: 100%; overflow: hidden;" elevation="0">
         <!-- Enhanced Header -->
@@ -1131,53 +1131,7 @@ const confirmDelete = async () => {
   transform: scale(1.1);
 }
 
-/* Employee Drawer Styles */
-.employee-drawer {
-  top: 0 !important;
-  height: 100vh !important;
-  z-index: 2000 !important;
-}
-
-.employee-drawer :deep(.v-navigation-drawer__content) {
-  height: 100% !important;
-  overflow: hidden;
-}
-
-.employee-drawer-card {
-  background: #ffffff;
-}
-
-.employee-drawer-header {
-  background: linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(25, 118, 210, 0.02) 100%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.employee-form-field :deep(.v-field) {
-  border-radius: 4px;
-}
-
-.employee-form-field :deep(.v-field__input) {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-/* Vertical centering for v-select dropdowns */
-.employee-form-field.v-select :deep(.v-field__input) {
-  display: flex;
-  align-items: center;
-  padding: 8px 8px !important;
-}
-
-.employee-form-field.v-select :deep(.v-field__input > div) {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.employee-form-field.v-select :deep(.v-select__selection) {
-  display: flex;
-  align-items: center;
-}
+/* Employee Drawer Styles - Moved to global drawer.css */
 
 .filter-row {
   background-color: rgba(0, 0, 0, 0.02);

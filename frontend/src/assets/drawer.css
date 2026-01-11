@@ -1,0 +1,92 @@
+/* Global Drawer Styles */
+
+/* Base drawer styles */
+.drawer,
+.employee-drawer,
+.payroll-run-drawer,
+.employee-payroll-drawer,
+.employee-payroll-details-drawer {
+  top: 0 !important;
+  height: 100vh !important;
+  z-index: 2000 !important;
+}
+
+/* Specific z-index for nested drawers */
+.employee-payroll-drawer {
+  z-index: 2100 !important;
+}
+
+.employee-payroll-details-drawer {
+  z-index: 2200 !important;
+}
+
+.drawer :deep(.v-navigation-drawer__content),
+.employee-drawer :deep(.v-navigation-drawer__content),
+.payroll-run-drawer :deep(.v-navigation-drawer__content),
+.employee-payroll-drawer :deep(.v-navigation-drawer__content),
+.employee-payroll-details-drawer :deep(.v-navigation-drawer__content) {
+  height: 100% !important;
+  overflow: hidden;
+}
+
+/* Drawer card styles */
+.drawer-card,
+.employee-drawer-card {
+  background: #ffffff;
+}
+
+/* Drawer header styles */
+.drawer-header,
+.employee-drawer-header {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(25, 118, 210, 0.02) 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  height: 60px !important;
+  min-height: 60px !important;
+  max-height: 60px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Override padding classes to maintain 60px height */
+.drawer-header.py-2,
+.employee-drawer-header.py-2 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.drawer-header.py-3,
+.employee-drawer-header.py-3 {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Form field styles */
+.employee-form-field :deep(.v-field) {
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.employee-form-field :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 32px;
+  font-size: 0.875rem;
+}
+
+/* Vertical centering for v-select dropdowns */
+.employee-form-field.v-select :deep(.v-field__input) {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px !important;
+}
+
+.employee-form-field.v-select :deep(.v-field__input > div) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.employee-form-field.v-select :deep(.v-select__selection) {
+  display: flex;
+  align-items: center;
+}

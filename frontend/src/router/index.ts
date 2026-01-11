@@ -29,19 +29,20 @@ const router = createRouter({
       props: {
         title: 'Admin Dashboard',
         appBarTitle: 'Payroll System - Admin',
-        menuItems: [
-          { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
-          { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
-          {
-            title: 'Settings',
-            icon: 'mdi-cog',
-            children: [
-              { title: 'General', to: '/admin/settings/general' },
-              { title: 'Notifications', to: '/admin/settings/notifications' },
-              { title: 'Security', to: '/admin/settings/security' },
-            ],
-          },
-        ],
+               menuItems: [
+                 { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
+                 { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
+                 { title: 'Payroll', to: '/admin/payroll', icon: 'mdi-cash-multiple' },
+                 {
+                   title: 'Settings',
+                   icon: 'mdi-cog',
+                   children: [
+                     { title: 'General', to: '/admin/settings/general' },
+                     { title: 'Notifications', to: '/admin/settings/notifications' },
+                     { title: 'Security', to: '/admin/settings/security' },
+                   ],
+                 },
+               ],
       },
       children: [
         {
@@ -49,12 +50,17 @@ const router = createRouter({
           name: 'admin-dashboard',
           component: AdminDashboard,
         },
-        {
-          path: 'employees',
-          name: 'admin-employees',
-          component: () => import('../components/EmployeesList.vue'),
-        },
-        // Add more admin routes here
+               {
+                 path: 'employees',
+                 name: 'admin-employees',
+                 component: () => import('../components/EmployeesList.vue'),
+               },
+               {
+                 path: 'payroll',
+                 name: 'admin-payroll',
+                 component: () => import('../components/PayrollRunList.vue'),
+               },
+               // Add more admin routes here
       ],
     },
     {

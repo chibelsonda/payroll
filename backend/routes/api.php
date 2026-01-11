@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\EmployeeController;
 use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\PositionController;
+use App\Http\Controllers\Api\V1\PayrollController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -49,10 +50,20 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
         // Existing resource routes
         Route::apiResource('employees', EmployeeController::class);
-        
+
         // Dropdown data endpoints
         Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::get('departments', [DepartmentController::class, 'index'])->name('departments.index');
         Route::get('positions', [PositionController::class, 'index'])->name('positions.index');
+
+        // Payroll routes
+        Route::prefix('payroll-runs')->name('payroll-runs.')->group(function () {
+            Route::get('/', [PayrollController::class, 'index'])->name('index');
+            Route::post('/', [PayrollController::class, 'store'])->name('store');
+            Route::get('/{payrollRunUuid}/payrolls', [PayrollController::class, 'getPayrolls'])->name('payrolls');
+            Route::post('/{payrollRunUuid}/generate', [PayrollController::class, 'generatePayroll'])->name('generate');
+            Route::post('/{payrollRunUuid}/finalize', [PayrollController::class, 'finalize'])->name('finalize');
+        });
+        Route::get('payrolls/{payrollUuid}', [PayrollController::class, 'show'])->name('payrolls.show');
     });
 });
