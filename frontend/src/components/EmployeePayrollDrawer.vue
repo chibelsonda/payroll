@@ -187,3 +187,28 @@ const getInitials = (user?: { first_name?: string; last_name?: string }): string
 }
 </script>
 
+<style scoped>
+/* Employee info card border */
+.v-card[class*="variant-outlined"] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Earnings and Deductions table card borders */
+.payroll-details-card :deep(.v-card[class*="variant-outlined"]) {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Table borders inside cards */
+.payroll-details-card :deep(.v-table) {
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.payroll-details-card :deep(.v-table thead) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.payroll-details-card :deep(.v-table tbody tr:not(:last-child)) {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+</style>

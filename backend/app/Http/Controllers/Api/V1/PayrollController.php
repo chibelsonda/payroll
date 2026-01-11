@@ -85,6 +85,24 @@ class PayrollController extends BaseApiController
     }
 
     /**
+     * Get a single payroll run by UUID
+     */
+    public function showPayrollRun(string $payrollRunUuid): JsonResponse
+    {
+        $payrollRun = $this->payrollService->findPayrollRunByUuid($payrollRunUuid);
+        if (!$payrollRun) {
+            return $this->errorResponse('Payroll run not found', [], [], 404);
+        }
+
+        $payrollRun->load('company');
+
+        return $this->successResponse(
+            new PayrollRunResource($payrollRun),
+            'Payroll run retrieved successfully'
+        );
+    }
+
+    /**
      * Get a single payroll by UUID
      */
     public function show(string $payrollUuid): JsonResponse

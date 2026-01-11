@@ -124,15 +124,24 @@
           </template>
 
           <template v-slot:[`item.actions`]="{ item }">
-            <v-btn
-              color="primary"
-              size="small"
-              variant="text"
-              prepend-icon="mdi-eye"
-              @click="viewPayrollDetails(item)"
-            >
-              Details
-            </v-btn>
+            <v-menu attach=".employee-payroll-drawer">
+              <template #activator="{ props }">
+                <v-btn
+                  icon="mdi-dots-vertical"
+                  size="small"
+                  variant="text"
+                  v-bind="props"
+                  class="action-btn"
+                ></v-btn>
+              </template>
+              <v-list density="compact">
+                <v-list-item
+                  prepend-icon="mdi-eye"
+                  title="View Details"
+                  @click="viewPayrollDetails(item)"
+                ></v-list-item>
+              </v-list>
+            </v-menu>
           </template>
         </v-data-table>
         </div>
@@ -198,10 +207,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'close': []
-}>()
 
 const showPayrollDrawer = ref(false)
 const selectedPayrollUuid = ref<string | null>(null)
@@ -315,5 +320,13 @@ const viewPayrollDetails = (payroll: Payroll) => {
 
 .payrolls-table :deep(.v-data-table__tbody tr) {
   transition: background-color 0.2s ease;
+}
+
+.action-btn {
+  transition: transform 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
 }
 </style>

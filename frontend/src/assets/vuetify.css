@@ -29,3 +29,8 @@
 .v-overlay__content .v-list-item__content {
   padding-left: 0 !important;
 }
+
+/* Ensure menu overlays appear above drawers (z-index 2500 > drawer z-index 2100) */
+body > .v-overlay:has(.v-list) {
+  z-index: 2500 !important;
+}
