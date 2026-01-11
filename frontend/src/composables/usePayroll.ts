@@ -57,6 +57,41 @@ const finalizePayroll = async (payrollRunUuid: string): Promise<PayrollRun> => {
   return response.data.data
 }
 
+const exportPayrollRun = async (payrollRunUuid: string, periodStart: string, periodEnd: string): Promise<void> => {
+  try {
+    const response = await axios.get(`/payroll-runs/${payrollRunUuid}/export-excel`, {
+      responseType: 'blob',
+    })
+    
+    // Create blob URL and trigger download
+    const url = window.URL.createObjectURL(response.data)
+    const link = document.createElement('a')
+    link.href = url
+    const filename = `payroll_${periodStart.replace(/-/g, '_')}_${periodEnd.replace(/-/g, '_')}.xlsx`
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error: any) {
+    // Handle blob error responses (JSON errors wrapped in blob)
+    if (error.response?.data instanceof Blob) {
+      try {
+        const text = await error.response.data.text()
+        const errorData = JSON.parse(text)
+        throw new Error(errorData.message || 'Failed to export payroll')
+      } catch (parseError) {
+        throw new Error('Failed to export payroll')
+      }
+    }
+    // Handle regular JSON error responses
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message)
+    }
+    throw error
+  }
+}
+
 // Composables
 export const usePayrollRuns = (page = 1, keepPreviousData = true) => {
   return useQuery({
@@ -157,6 +192,13 @@ export const useFinalizePayroll = () => {
       })
       queryClient.setQueryData(['payroll-run', data.uuid], data)
     },
+  })
+}
+
+export const useExportPayrollRun = () => {
+  return useMutation({
+    mutationFn: ({ payrollRunUuid, periodStart, periodEnd }: { payrollRunUuid: string; periodStart: string; periodEnd: string }) =>
+      exportPayrollRun(payrollRunUuid, periodStart, periodEnd),
   })
 }
 

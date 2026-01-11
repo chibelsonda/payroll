@@ -61,6 +61,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('/', [PayrollController::class, 'index'])->name('index');
             Route::post('/', [PayrollController::class, 'store'])->name('store');
             Route::get('/{payrollRunUuid}/payrolls', [PayrollController::class, 'getPayrolls'])->name('payrolls');
+            Route::get('/{payrollRunUuid}/export-excel', [PayrollController::class, 'exportExcel'])->name('export-excel');
             Route::post('/{payrollRunUuid}/generate', [PayrollController::class, 'generatePayroll'])->name('generate');
             Route::post('/{payrollRunUuid}/finalize', [PayrollController::class, 'finalize'])->name('finalize');
         });

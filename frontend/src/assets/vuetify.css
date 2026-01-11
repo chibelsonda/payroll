@@ -1,0 +1,31 @@
+/* Reduce font size for all v-menu list items */
+.v-overlay__content .v-list-item-title,
+.v-overlay__content .v-list-item__content .v-list-item-title {
+  font-size: 0.8rem !important;
+  line-height: 1.2 !important;
+}
+
+.v-overlay__content .v-list {
+  min-width: 130px !important;
+}
+
+.v-overlay__content .v-list-item {
+  font-size: 0.8rem !important;
+  min-height: 32px !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.v-overlay__content .v-list-item__prepend {
+  margin-inline-end: -20px !important;
+}
+
+.v-overlay__content .v-list-item__prepend > .v-icon,
+.v-overlay__content .v-list-item__prepend .v-icon {
+  font-size: 18px !important;
+  margin-inline-end: 0 !important;
+}
+
+.v-overlay__content .v-list-item__content {
+  padding-left: 0 !important;
+}

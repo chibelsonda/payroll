@@ -7,7 +7,10 @@ use App\Http\Requests\StorePayrollRunRequest;
 use App\Http\Resources\PayrollResource;
 use App\Http\Resources\PayrollRunResource;
 use App\Services\PayrollService;
+use App\Exports\PayrollRunExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PayrollController extends BaseApiController
 {
@@ -110,6 +113,28 @@ class PayrollController extends BaseApiController
                 new PayrollRunResource($payrollRun->load('company')),
                 'Payroll finalized successfully'
             );
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), [], [], 422);
+        }
+    }
+
+    /**
+     * Export payroll run to Excel
+     */
+    public function exportExcel(string $payrollRunUuid): BinaryFileResponse|JsonResponse
+    {
+        try {
+            $payrollRun = $this->payrollService->findPayrollRunByUuid($payrollRunUuid);
+            if (!$payrollRun) {
+                return $this->errorResponse('Payroll run not found', [], [], 404);
+            }
+
+            // Authorization check
+            // $this->authorize('view', $payrollRun); // Uncomment when policy is ready
+
+            $filename = 'payroll_' . $payrollRun->period_start->format('Y-m-d') . '_' . $payrollRun->period_end->format('Y-m-d') . '.xlsx';
+
+            return Excel::download(new PayrollRunExport($payrollRun), $filename);
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), [], [], 422);
         }

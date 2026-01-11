@@ -66,21 +66,21 @@
         </v-alert>
 
         <!-- Payrolls Table -->
-        <v-data-table
-          v-else
-          :items="payrolls"
-          :headers="headers"
-          :loading="isLoading"
-          density="compact"
-          item-key="uuid"
-          class="payrolls-table"
-          :items-per-page="15"
-          :items-per-page-options="[10, 15, 25, 50]"
-          :hide-no-data="true"
-          :no-data-text="''"
-          :row-height="40"
-          elevation="0"
-        >
+        <div v-else class="payroll-table-wrapper">
+          <v-data-table
+            :items="payrolls"
+            :headers="headers"
+            :loading="isLoading"
+            density="compact"
+            item-key="uuid"
+            class="payrolls-table"
+            :items-per-page="15"
+            :items-per-page-options="[10, 15, 25, 50]"
+            :hide-no-data="true"
+            :no-data-text="''"
+            :row-height="40"
+            elevation="0"
+          >
           <template v-slot:[`body.append`]>
             <tr v-if="payrolls.length === 0">
               <td :colspan="headers.length" class="text-center py-8">
@@ -135,6 +135,7 @@
             </v-btn>
           </template>
         </v-data-table>
+        </div>
       </v-card-text>
 
       <!-- Summary Stats Footer -->
@@ -273,14 +274,24 @@ const viewPayrollDetails = (payroll: Payroll) => {
 </script>
 
 <style scoped>
+.payroll-table-wrapper {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
 .payrolls-table {
   border-radius: 8px;
   overflow: hidden;
 }
 
 .payrolls-table :deep(.v-data-table) {
-  border-radius: 8px;
+  border-radius: 5px;
   overflow: hidden;
+}
+
+.payrolls-table :deep(.v-data-table__wrapper) {
+  border-radius: 5px;
 }
 
 .payrolls-table :deep(.v-data-table__thead th) {
@@ -304,9 +315,5 @@ const viewPayrollDetails = (payroll: Payroll) => {
 
 .payrolls-table :deep(.v-data-table__tbody tr) {
   transition: background-color 0.2s ease;
-}
-
-.payrolls-table :deep(.v-data-table__wrapper) {
-  border-radius: 8px;
 }
 </style>

@@ -102,27 +102,39 @@
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
-                <v-btn
-                  v-if="item.status === 'draft'"
-                  color="primary"
-                  size="small"
-                  variant="text"
-                  prepend-icon="mdi-play"
-                  @click="generatePayroll(item)"
-                  :loading="generateMutation.isPending.value"
-                >
-                  Generate
-                </v-btn>
-                <v-btn
-                  v-else
-                  color="primary"
-                  size="small"
-                  variant="text"
-                  prepend-icon="mdi-eye"
-                  @click="viewPayrolls(item)"
-                >
-                  View
-                </v-btn>
+                <v-menu>
+                  <template #activator="{ props }">
+                    <v-btn
+                      icon="mdi-dots-vertical"
+                      size="small"
+                      variant="text"
+                      v-bind="props"
+                      class="action-btn"
+                    ></v-btn>
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item
+                      v-if="item.status === 'draft'"
+                      prepend-icon="mdi-play"
+                      title="Generate"
+                      @click="generatePayroll(item)"
+                      :disabled="generateMutation.isPending.value"
+                    ></v-list-item>
+                    <v-list-item
+                      v-if="item.status !== 'draft'"
+                      prepend-icon="mdi-eye"
+                      title="View Payrolls"
+                      @click="viewPayrolls(item)"
+                    ></v-list-item>
+                    <v-list-item
+                      v-if="item.status !== 'draft'"
+                      prepend-icon="mdi-file-excel"
+                      title="Export Excel"
+                      @click="exportPayroll(item)"
+                      :disabled="exportingPayrollRunUuid === item.uuid"
+                    ></v-list-item>
+                  </v-list>
+                </v-menu>
               </template>
             </v-data-table>
 
@@ -161,7 +173,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { usePayrollRuns, useGeneratePayroll } from '@/composables/usePayroll'
+import { usePayrollRuns, useGeneratePayroll, useExportPayrollRun } from '@/composables/usePayroll'
 import type { PayrollRun } from '@/types/payroll'
 import PayrollRunForm from './PayrollRunForm.vue'
 import EmployeePayrollTable from './EmployeePayrollTable.vue'
@@ -173,11 +185,15 @@ const notification = useNotification()
 const currentPage = ref(1)
 const { data: payrollRunsData, isLoading, error, refetch } = usePayrollRuns(currentPage.value, true)
 const generateMutation = useGeneratePayroll()
+const exportMutation = useExportPayrollRun()
 
 // Drawer state
 const showPayrollRunDrawer = ref(false)
 const showEmployeePayrollTable = ref(false)
 const selectedPayrollRunUuid = ref<string | null>(null)
+
+// Export loading state per payroll run
+const exportingPayrollRunUuid = ref<string | null>(null)
 
 // Computed
 const payrollRuns = computed(() => payrollRunsData.value?.data || [])
@@ -187,7 +203,7 @@ const headers = [
   { title: 'Period', key: 'period', sortable: false },
   { title: 'Pay Date', key: 'pay_date', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
+  { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
 // Methods
@@ -239,6 +255,24 @@ const viewPayrolls = (payrollRun: PayrollRun) => {
   selectedPayrollRunUuid.value = payrollRun.uuid
   showEmployeePayrollTable.value = true
 }
+
+const exportPayroll = async (payrollRun: PayrollRun) => {
+  exportingPayrollRunUuid.value = payrollRun.uuid
+  try {
+    await exportMutation.mutateAsync({
+      payrollRunUuid: payrollRun.uuid,
+      periodStart: payrollRun.period_start,
+      periodEnd: payrollRun.period_end,
+    })
+    notification.showSuccess('Payroll exported successfully!')
+  } catch (err: unknown) {
+    const error = err as { message?: string; response?: { data?: { message?: string } } }
+    const message = error?.message || error?.response?.data?.message || 'Failed to export payroll.'
+    notification.showError(message)
+  } finally {
+    exportingPayrollRunUuid.value = null
+  }
+}
 </script>
 
 <style scoped>
@@ -252,5 +286,13 @@ const viewPayrolls = (payrollRun: PayrollRun) => {
 .payroll-runs-table :deep(.v-data-table__tbody td) {
   padding: 8px 16px;
   font-size: 0.875rem;
+}
+
+.action-btn {
+  transition: transform 0.2s;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
 }
 </style>
