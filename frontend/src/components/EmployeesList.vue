@@ -420,7 +420,7 @@
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="employee-form-field"
+                  class="employee-form-field v-select"
                   clearable
                 ></v-select>
               </div>
@@ -438,7 +438,7 @@
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="employee-form-field"
+                  class="employee-form-field v-select"
                   :disabled="!companyUuid"
                   clearable
                 ></v-select>
@@ -457,7 +457,7 @@
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="employee-form-field"
+                  class="employee-form-field v-select"
                   :disabled="!departmentUuid"
                   clearable
                 ></v-select>
@@ -478,7 +478,7 @@
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="employee-form-field"
+                  class="employee-form-field v-select"
                   clearable
                 ></v-select>
               </div>
@@ -528,7 +528,7 @@
                   density="compact"
                   variant="outlined"
                   hide-details="auto"
-                  class="employee-form-field"
+                  class="employee-form-field v-select"
                 ></v-select>
               </div>
             </div>
@@ -1160,6 +1160,24 @@ const confirmDelete = async () => {
 .employee-form-field :deep(.v-field__input) {
   padding-top: 4px;
   padding-bottom: 4px;
+}
+
+/* Vertical centering for v-select dropdowns */
+.employee-form-field.v-select :deep(.v-field__input) {
+  display: flex;
+  align-items: center;
+  padding: 8px 8px !important;
+}
+
+.employee-form-field.v-select :deep(.v-field__input > div) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.employee-form-field.v-select :deep(.v-select__selection) {
+  display: flex;
+  align-items: center;
 }
 
 .filter-row {
