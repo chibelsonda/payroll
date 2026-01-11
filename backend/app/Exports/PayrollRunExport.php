@@ -9,13 +9,17 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Font;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
-class PayrollRunExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithColumnFormatting
+class PayrollRunExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithColumnFormatting, WithEvents
 {
     protected $payrollRun;
 
@@ -107,22 +111,75 @@ class PayrollRunExport implements FromCollection, WithHeadings, WithMapping, Wit
      */
     public function styles(Worksheet $sheet)
     {
-        return [
-            1 => [
-                'font' => [
-                    'bold' => true,
-                ],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => [
-                        'argb' => 'FFE0E0E0',
-                    ],
-                ],
-                'alignment' => [
-                    'horizontal' => Alignment::HORIZONTAL_CENTER,
+        $highestRow = $sheet->getHighestRow();
+        $highestColumn = $sheet->getHighestColumn();
+
+        // Style header row
+        $headerStyle = [
+            'font' => [
+                'bold' => true,
+                'size' => 11,
+                'color' => ['argb' => 'FFFFFFFF'],
+            ],
+            'fill' => [
+                'fillType' => Fill::FILL_SOLID,
+                'startColor' => ['argb' => 'FF1976D2'], // Primary blue color
+            ],
+            'alignment' => [
+                'horizontal' => Alignment::HORIZONTAL_CENTER,
+                'vertical' => Alignment::VERTICAL_CENTER,
+                'wrapText' => true,
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FF000000'],
                 ],
             ],
         ];
+
+        // Apply header style to all header cells
+        $headerRange = 'A1:' . $highestColumn . '1';
+        $sheet->getStyle($headerRange)->applyFromArray($headerStyle);
+
+        // Set header row height
+        $sheet->getRowDimension(1)->setRowHeight(25);
+
+        // Style data rows with borders
+        $dataRange = 'A2:' . $highestColumn . $highestRow;
+        $sheet->getStyle($dataRange)->applyFromArray([
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => 'FFCCCCCC'],
+                ],
+            ],
+            'alignment' => [
+                'vertical' => Alignment::VERTICAL_CENTER,
+            ],
+        ]);
+
+        // Set column alignments
+        $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('B2:E' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('F2:P' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        // Add alternating row colors
+        for ($row = 2; $row <= $highestRow; $row++) {
+            if ($row % 2 == 0) {
+                $sheet->getStyle('A' . $row . ':' . $highestColumn . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FFF5F5F5'],
+                    ],
+                ]);
+            }
+        }
+
+        // Freeze header row
+        $sheet->freezePane('A2');
+
+        return [];
     }
 
     /**
@@ -155,18 +212,92 @@ class PayrollRunExport implements FromCollection, WithHeadings, WithMapping, Wit
      */
     public function columnFormats(): array
     {
+        // Use number format with 2 decimal places (PHP format)
+        $numberFormat = '#,##0.00';
         return [
-            'F' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Basic Salary
-            'G' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Allowances Total
-            'H' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Overtime Total
-            'I' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Bonus Total
-            'J' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Gross Pay
-            'K' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Tax
-            'L' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // SSS
-            'M' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // PhilHealth
-            'N' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Pag-IBIG
-            'O' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Total Deductions
-            'P' => NumberFormat::FORMAT_CURRENCY_USD_SIMPLE,  // Net Pay
+            'F' => $numberFormat,  // Basic Salary
+            'G' => $numberFormat,  // Allowances Total
+            'H' => $numberFormat,  // Overtime Total
+            'I' => $numberFormat,  // Bonus Total
+            'J' => $numberFormat,  // Gross Pay
+            'K' => $numberFormat,  // Tax
+            'L' => $numberFormat,  // SSS
+            'M' => $numberFormat,  // PhilHealth
+            'N' => $numberFormat,  // Pag-IBIG
+            'O' => $numberFormat,  // Total Deductions
+            'P' => $numberFormat,  // Net Pay
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+
+                // Add totals row
+                $totalsRow = $highestRow + 2;
+
+                // Set "Totals" label
+                $sheet->setCellValue('E' . $totalsRow, 'TOTALS:');
+                $sheet->getStyle('E' . $totalsRow)->applyFromArray([
+                    'font' => [
+                        'bold' => true,
+                        'size' => 11,
+                    ],
+                    'alignment' => [
+                        'horizontal' => Alignment::HORIZONTAL_RIGHT,
+                    ],
+                ]);
+
+                // Calculate and set totals for currency columns
+                $currencyColumns = ['F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P'];
+                foreach ($currencyColumns as $column) {
+                    $cellAddress = $column . $totalsRow;
+                    $formula = '=SUM(' . $column . '2:' . $column . $highestRow . ')';
+                    $sheet->setCellValue($cellAddress, $formula);
+                    $sheet->getStyle($cellAddress)->applyFromArray([
+                        'font' => [
+                            'bold' => true,
+                            'size' => 11,
+                        ],
+                        'alignment' => [
+                            'horizontal' => Alignment::HORIZONTAL_RIGHT,
+                        ],
+                        'borders' => [
+                            'top' => [
+                                'borderStyle' => Border::BORDER_DOUBLE,
+                                'color' => ['argb' => 'FF000000'],
+                            ],
+                        ],
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['argb' => 'FFE3F2FD'],
+                        ],
+                    ]);
+                    // Set number format separately
+                    $sheet->getStyle($cellAddress)->getNumberFormat()->setFormatCode('#,##0.00');
+                }
+
+                // Style the totals label cell
+                $sheet->getStyle('E' . $totalsRow)->applyFromArray([
+                    'borders' => [
+                        'top' => [
+                            'borderStyle' => Border::BORDER_DOUBLE,
+                            'color' => ['argb' => 'FF000000'],
+                        ],
+                    ],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FFE3F2FD'],
+                    ],
+                ]);
+            },
         ];
     }
 }
