@@ -224,7 +224,7 @@ const handleLogout = async () => {
 }
 
 .sidebar-item :deep(.v-list-item__prepend) {
-  margin-inline-end: 12px;
+  margin-inline-end: -20px !important;
 }
 
 .sidebar-item :deep(.v-icon) {
@@ -250,6 +250,8 @@ const handleLogout = async () => {
 .sidebar-subitem {
   min-height: 36px !important;
   border-radius: 4px !important;
+  margin-left: -10px !important;
+  padding-left: 0 !important;
 }
 
 .sidebar-subitem.v-list-item--active {
@@ -267,7 +269,7 @@ const handleLogout = async () => {
 }
 
 .sidebar :deep(.v-list-group__items) {
-  padding-left: 8px;
+  padding-left: 0 !important;
 }
 
 /* App Bar Enhancements */
