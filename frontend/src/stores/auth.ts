@@ -14,11 +14,17 @@ export const useAuthStore = defineStore('auth', () => {
   const isEmployee = computed(() => user.value?.role === 'employee')
 
   const login = async (credentials: LoginCredentials) => {
-    return await loginMutation.mutateAsync(credentials)
+    const userData = await loginMutation.mutateAsync(credentials)
+    // Enable the query so auth.user becomes reactive (data is already in cache)
+    enable()
+    return userData
   }
 
   const register = async (data: RegisterData) => {
-    return await registerMutation.mutateAsync(data)
+    const userData = await registerMutation.mutateAsync(data)
+    // Enable the query so auth.user becomes reactive (data is already in cache)
+    enable()
+    return userData
   }
 
   const logout = async () => {

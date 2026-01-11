@@ -11,6 +11,5 @@ export const useCompanies = () => {
   return useQuery({
     queryKey: ['companies'],
     queryFn: fetchCompanies,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 }

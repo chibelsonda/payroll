@@ -20,6 +20,5 @@ export const usePositions = (departmentUuid: Ref<string | null | undefined> | ((
     queryKey: ['positions', computed(() => departmentUuidValue.value)],
     queryFn: () => fetchPositions(departmentUuidValue.value ?? undefined),
     enabled: computed(() => departmentUuidValue.value !== null && departmentUuidValue.value !== undefined), // Only fetch when department is selected
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 }

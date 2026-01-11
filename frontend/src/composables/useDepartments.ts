@@ -10,7 +10,7 @@ const fetchDepartments = async (companyUuid?: string | null): Promise<Department
 }
 
 export const useDepartments = (companyUuid: Ref<string | null | undefined> | (() => string | null | undefined) | string | null | undefined = undefined) => {
-  const companyUuidValue = typeof companyUuid === 'function' 
+  const companyUuidValue = typeof companyUuid === 'function'
     ? computed(companyUuid)
     : typeof companyUuid === 'object' && companyUuid !== null
     ? companyUuid
@@ -20,6 +20,5 @@ export const useDepartments = (companyUuid: Ref<string | null | undefined> | (()
     queryKey: ['departments', computed(() => companyUuidValue.value)],
     queryFn: () => fetchDepartments(companyUuidValue.value ?? undefined),
     enabled: computed(() => companyUuidValue.value !== null && companyUuidValue.value !== undefined), // Only fetch when company is selected
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   })
 }

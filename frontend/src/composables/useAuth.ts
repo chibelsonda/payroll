@@ -20,13 +20,14 @@ const fetchCurrentUser = async (): Promise<User | null> => {
   // }
 }
 
-// Login: get CSRF cookie, then login, then fetch user
+// Login: get CSRF cookie, then login (user is returned in response)
 const loginUser = async (credentials: LoginCredentials): Promise<User> => {
   await webAxios.get('/sanctum/csrf-cookie')
-  await webAxios.post('/login', credentials)
-  const user = await fetchCurrentUser()
+  const response = await webAxios.post('/login', credentials)
+  // The login endpoint returns the user data directly, use it instead of fetching
+  const user = response.data.data?.user
   if (!user) {
-    throw new Error('Failed to fetch user after login')
+    throw new Error('Failed to get user from login response')
   }
   return user
 }
@@ -55,6 +56,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: loginUser,
     onSuccess: (user) => {
+      // Set user data in cache so auth.user is available immediately
       queryClient.setQueryData(['user'], user)
     },
   })
@@ -66,6 +68,7 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: registerUser,
     onSuccess: (user) => {
+      // Set user data in cache so auth.user is available immediately
       queryClient.setQueryData(['user'], user)
     },
   })
@@ -93,6 +96,10 @@ export const useLogout = () => {
 
 export const useCurrentUser = () => {
   const isEnabled = ref(false)
+  const queryClient = useQueryClient()
+
+  // Get initial data from cache if available
+  const cachedData = queryClient.getQueryData<User>(['user'])
 
   const query = useQuery({
     queryKey: ['user'],
@@ -101,6 +108,10 @@ export const useCurrentUser = () => {
     staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 60 * 24,
     enabled: isEnabled,
+    // Use cached data as initial data so it's available immediately when query is enabled
+    initialData: cachedData || undefined,
+    // Also use as placeholder data for reactive updates
+    placeholderData: () => queryClient.getQueryData<User>(['user']) || undefined,
   })
 
   return {

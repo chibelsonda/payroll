@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '@/stores/auth'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
@@ -91,9 +92,22 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
+  const queryClient = useQueryClient()
 
   // Only fetch user if we don't have user data yet and we're going to a protected route
-  if (to.meta.requiresAuth && !auth.user) {
+  // Skip fetching if we just came from login/register (user data is already in cache)
+  const isComingFromAuth = from.name === 'login' || from.name === 'register'
+
+  // If coming from login/register, check cache directly since query might not be enabled yet
+  if (isComingFromAuth && to.meta.requiresAuth) {
+    const cachedUser = queryClient.getQueryData(['user'])
+    if (cachedUser && !auth.user) {
+      // Enable the query so auth.user becomes reactive
+      auth.fetchUser().catch(() => {
+        // Silently ignore errors
+      })
+    }
+  } else if (to.meta.requiresAuth && !auth.user && !isComingFromAuth) {
     try {
       await auth.fetchUser()
     } catch {
@@ -101,12 +115,17 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+  // Check authentication - use cached user if available when coming from auth pages
+  const cachedUser = isComingFromAuth ? queryClient.getQueryData<{ role?: string }>(['user']) : null
+  const user = auth.user || cachedUser
+  const isAuthenticated = !!user
+
+  if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (to.meta.role && auth.user?.role !== to.meta.role) {
-    if (auth.isAdmin) {
+  } else if (to.meta.role && user && user.role !== to.meta.role) {
+    if (user.role === 'admin') {
       next('/admin')
-    } else if (auth.isEmployee) {
+    } else if (user.role === 'employee') {
       next('/employee')
     } else {
       next('/login')
