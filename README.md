@@ -85,7 +85,7 @@ A modern full-stack payroll management system built with Laravel and Vue.js. Thi
 - **Form Validation**: VeeValidate + Zod
 - **Routing**: Vue Router 4
 - **Build Tool**: Vite
-- **Testing**: Vitest, Cypress, Playwright
+- **Testing**: Vitest
 
 ## 📋 Prerequisites
 
