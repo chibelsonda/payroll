@@ -44,10 +44,7 @@ const router = createRouter({
                    title: 'Settings',
                    icon: 'mdi-cog',
                    children: [
-                     { title: 'General', to: '/admin/settings/general' },
                      { title: 'Attendance', to: '/admin/settings/attendance' },
-                     { title: 'Notifications', to: '/admin/settings/notifications' },
-                     { title: 'Security', to: '/admin/settings/security' },
                    ],
                  },
                ],
