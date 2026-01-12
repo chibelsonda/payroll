@@ -33,6 +33,21 @@ class AttendanceProcessingService
             ->orderBy('log_time', 'asc')
             ->get();
 
+        // Check if attendance record exists
+        $existingAttendance = Attendance::with(['employee.user'])
+            ->where('employee_id', $employeeId)
+            ->whereDate('date', $date)
+            ->first();
+
+        // If no logs exist and attendance is not locked, delete the attendance record
+        if ($logs->isEmpty() && $existingAttendance && !$existingAttendance->is_locked) {
+            // Load relationships before deletion so we can return them
+            $existingAttendance->load(['employee.user']);
+            $existingAttendance->delete();
+            // Return the deleted attendance (for API consistency, though it's deleted from DB)
+            return $existingAttendance;
+        }
+
         $result = $this->computeAttendance($logs, $date, $settings, $employeeId);
 
         // Update or create attendance summary

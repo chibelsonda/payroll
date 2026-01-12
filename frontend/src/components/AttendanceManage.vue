@@ -472,19 +472,19 @@ const isTimeInOutLoading = (item: Attendance): boolean => {
 }
 
 const isRecalculating = (item: Attendance): boolean => {
-  return loadingStates.value[`recalc-${item.uuid}`] || recalculateMutation.isPending.value
+  return loadingStates.value[`recalc-${item.uuid}`] || false
 }
 
 const isApproving = (item: Attendance): boolean => {
-  return loadingStates.value[`approve-${item.uuid}`] || approveMutation.isPending.value
+  return loadingStates.value[`approve-${item.uuid}`] || false
 }
 
 const isMarkingIncomplete = (item: Attendance): boolean => {
-  return loadingStates.value[`incomplete-${item.uuid}`] || markIncompleteMutation.isPending.value
+  return loadingStates.value[`incomplete-${item.uuid}`] || false
 }
 
 const isLocking = (item: Attendance): boolean => {
-  return loadingStates.value[`lock-${item.uuid}`] || lockMutation.isPending.value
+  return loadingStates.value[`lock-${item.uuid}`] || false
 }
 
 const isSubmittingCorrection = computed(() => requestCorrectionMutation.isPending.value)

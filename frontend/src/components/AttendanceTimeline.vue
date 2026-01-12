@@ -171,6 +171,30 @@
         <p class="text-body-2 text-medium-emphasis">No attendance logs recorded yet</p>
       </div>
 
+      <!-- Summary Info -->
+      <v-card
+        v-if="attendanceSummary"
+        variant="tonal"
+        :color="getStatusColor(attendanceSummary.status)"
+        class="mt-4"
+        rounded="lg"
+      >
+        <v-card-text class="py-3">
+          <div class="d-flex align-center justify-space-between">
+            <div>
+              <div class="text-caption text-medium-emphasis">Total Hours</div>
+              <div class="text-h6 font-weight-bold">{{ attendanceSummary.hours_worked }} hrs</div>
+            </div>
+            <v-chip
+              :color="getStatusColor(attendanceSummary.status)"
+              size="small"
+              :prepend-icon="getStatusIcon(attendanceSummary.status)"
+            >
+              {{ formatStatus(attendanceSummary.status) }}
+            </v-chip>
+          </div>
+        </v-card-text>
+      </v-card>
     </v-card-text>
   </v-card>
 </template>
@@ -261,6 +285,17 @@ const getStatusColor = (status: string): string => {
     needs_review: 'warning',
   }
   return colorMap[status] || 'default'
+}
+
+const getStatusIcon = (status: string): string => {
+  const iconMap: Record<string, string> = {
+    present: 'mdi-check-circle',
+    absent: 'mdi-close-circle',
+    leave: 'mdi-calendar-remove',
+    incomplete: 'mdi-alert-circle',
+    needs_review: 'mdi-alert',
+  }
+  return iconMap[status] || 'mdi-circle'
 }
 
 const canDeleteLog = (log: AttendanceLog): boolean => {

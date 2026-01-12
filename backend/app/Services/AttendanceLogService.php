@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceLogService
 {
@@ -67,8 +68,18 @@ class AttendanceLogService
         $deleted = $log->delete();
 
         if ($deleted) {
-            // Recalculate attendance summary after deletion using the processing service
-            $this->attendanceProcessingService->processAttendance($employeeId, $date);
+            try {
+                // Recalculate attendance summary after deletion using the processing service
+                $this->attendanceProcessingService->processAttendance($employeeId, $date);
+            } catch (\Exception $e) {
+                // Log the error but don't fail the deletion
+                Log::error('Failed to recalculate attendance after log deletion', [
+                    'employee_id' => $employeeId,
+                    'date' => $date,
+                    'error' => $e->getMessage(),
+                ]);
+                // Still return true since the log was deleted successfully
+            }
         }
 
         return $deleted;

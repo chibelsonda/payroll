@@ -34,7 +34,7 @@ export const useAttendanceLogs = (employeeUuid?: string | Ref<string | undefined
   return useQuery({
     queryKey: ['attendance-logs', employeeUuidValue, dateValue],
     queryFn: () => fetchAttendanceLogs(employeeUuidValue, dateValue),
-    enabled: true,
+    enabled: !!employeeUuidValue || !!dateValue, // Enable if we have at least employee or date filter
     retry: false,
     // refetchOnMount is true by default (set in main.ts)
   })

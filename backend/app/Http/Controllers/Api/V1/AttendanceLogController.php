@@ -54,9 +54,18 @@ class AttendanceLogController extends BaseApiController
     /**
      * Delete an attendance log (admin only)
      */
-    public function destroy(AttendanceLog $attendanceLog): JsonResponse
+    public function destroy(AttendanceLog $log): JsonResponse
     {
-        $this->attendanceLogService->deleteAttendanceLog($attendanceLog);
-        return $this->noContentResponse('Attendance log deleted successfully');
+        try {
+            $this->attendanceLogService->deleteAttendanceLog($log);
+            return $this->noContentResponse('Attendance log deleted successfully');
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to delete attendance log: ' . $e->getMessage(),
+                [],
+                [],
+                500
+            );
+        }
     }
 }

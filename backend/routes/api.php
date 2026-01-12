@@ -9,8 +9,10 @@ use App\Http\Controllers\Api\V1\PositionController;
 use App\Http\Controllers\Api\V1\PayrollController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AttendanceLogController;
+use App\Http\Controllers\Api\V1\AttendanceCorrectionRequestController;
 use App\Http\Controllers\Api\V1\Admin\AttendanceFixController;
 use App\Http\Controllers\Api\V1\Admin\AttendanceResolveController;
+use App\Http\Controllers\Api\V1\Admin\AttendanceManageController;
 use App\Http\Controllers\Api\V1\LeaveRequestController;
 use App\Http\Controllers\Api\V1\LoanController;
 use App\Http\Controllers\Api\V1\DeductionController;
@@ -83,7 +85,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::prefix('attendance')->name('attendance.')->group(function () {
             Route::get('/summary', [AttendanceController::class, 'summary'])->name('summary');
             Route::apiResource('logs', AttendanceLogController::class)->only(['index', 'store', 'destroy']);
-            Route::post('/correction-request', [\App\Http\Controllers\Api\V1\AttendanceCorrectionRequestController::class, 'store'])->name('correction-request');
+            Route::post('/correction-request', [AttendanceCorrectionRequestController::class, 'store'])->name('correction-request');
         });
         Route::apiResource('attendances', AttendanceController::class)->except(['store', 'update']);
 
@@ -106,7 +108,6 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/', [LoanController::class, 'store'])->name('store');
             Route::get('/{loan}', [LoanController::class, 'show'])->name('show');
             Route::put('/{loan}', [LoanController::class, 'update'])->name('update');
-            Route::patch('/{loan}', [LoanController::class, 'update'])->name('update');
             Route::delete('/{loan}', [LoanController::class, 'destroy'])->name('destroy');
             Route::get('/{loan}/payments', [LoanController::class, 'payments'])->name('payments');
         });
@@ -152,14 +153,14 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::prefix('attendance')->name('attendance.')->group(function () {
                 Route::post('/{attendance}/fix', [AttendanceFixController::class, 'fix'])->name('fix');
                 Route::post('/{attendance}/resolve', [AttendanceResolveController::class, 'resolve'])->name('resolve');
-                Route::post('/recalculate', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'recalculate'])->name('recalculate');
-                Route::post('/approve', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'approve'])->name('approve');
-                Route::post('/mark-incomplete', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'markIncomplete'])->name('mark-incomplete');
-                Route::post('/lock', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'lock'])->name('lock');
+                Route::post('/recalculate', [AttendanceManageController::class, 'recalculate'])->name('recalculate');
+                Route::post('/approve', [AttendanceManageController::class, 'approve'])->name('approve');
+                Route::post('/mark-incomplete', [AttendanceManageController::class, 'markIncomplete'])->name('mark-incomplete');
+                Route::post('/lock', [AttendanceManageController::class, 'lock'])->name('lock');
             });
             // Admin attendance log routes (separate from attendance routes to avoid conflicts)
             Route::prefix('attendance')->name('attendance.')->group(function () {
-                Route::put('/logs/{attendanceLog}', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'updateLog'])->name('logs.update');
+                Route::put('/logs/{attendanceLog}', [AttendanceManageController::class, 'updateLog'])->name('logs.update');
             });
         });
     });
