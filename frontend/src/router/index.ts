@@ -33,6 +33,10 @@ const router = createRouter({
                  { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
                  { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
                  { title: 'Payroll', to: '/admin/payroll', icon: 'mdi-cash-multiple' },
+                 { title: 'Attendance', to: '/admin/attendance', icon: 'mdi-calendar-clock' },
+                 { title: 'Leave Requests', to: '/admin/leave-requests', icon: 'mdi-calendar-remove' },
+                 { title: 'Loans', to: '/admin/loans', icon: 'mdi-cash-multiple' },
+                 { title: 'Deductions', to: '/admin/deductions', icon: 'mdi-cash-minus' },
                  {
                    title: 'Settings',
                    icon: 'mdi-cog',
@@ -59,6 +63,21 @@ const router = createRouter({
                  path: 'payroll',
                  name: 'admin-payroll',
                  component: () => import('../components/PayrollRunList.vue'),
+               },
+               {
+                 path: 'attendance',
+                 name: 'admin-attendance',
+                 component: () => import('../components/AttendanceList.vue'),
+               },
+               {
+                 path: 'leave-requests',
+                 name: 'admin-leave-requests',
+                 component: () => import('../components/LeaveRequestList.vue'),
+               },
+               {
+                 path: 'loans',
+                 name: 'admin-loans',
+                 component: () => import('../components/LoanList.vue'),
                },
                // Add more admin routes here
       ],

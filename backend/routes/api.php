@@ -7,6 +7,10 @@ use App\Http\Controllers\Api\V1\CompanyController;
 use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\PositionController;
 use App\Http\Controllers\Api\V1\PayrollController;
+use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\LeaveRequestController;
+use App\Http\Controllers\Api\V1\LoanController;
+use App\Http\Controllers\Api\V1\DeductionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -67,5 +71,32 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::post('/{payrollRunUuid}/finalize', [PayrollController::class, 'finalize'])->name('finalize');
         });
         Route::get('payrolls/{payrollUuid}', [PayrollController::class, 'show'])->name('payrolls.show');
+
+        // Attendance routes
+        Route::apiResource('attendances', AttendanceController::class);
+
+        // Deduction routes
+        Route::apiResource('deductions', DeductionController::class);
+
+        // Leave Request routes
+        Route::prefix('leave-requests')->name('leave-requests.')->group(function () {
+            Route::get('/', [LeaveRequestController::class, 'index'])->name('index');
+            Route::post('/', [LeaveRequestController::class, 'store'])->name('store');
+            Route::get('/{leaveRequest}', [LeaveRequestController::class, 'show'])->name('show');
+            Route::post('/{leaveRequest}/approve', [LeaveRequestController::class, 'approve'])->name('approve');
+            Route::post('/{leaveRequest}/reject', [LeaveRequestController::class, 'reject'])->name('reject');
+            Route::delete('/{leaveRequest}', [LeaveRequestController::class, 'destroy'])->name('destroy');
+        });
+
+        // Loan routes
+        Route::prefix('loans')->name('loans.')->group(function () {
+            Route::get('/', [LoanController::class, 'index'])->name('index');
+            Route::post('/', [LoanController::class, 'store'])->name('store');
+            Route::get('/{loan}', [LoanController::class, 'show'])->name('show');
+            Route::put('/{loan}', [LoanController::class, 'update'])->name('update');
+            Route::patch('/{loan}', [LoanController::class, 'update'])->name('update');
+            Route::delete('/{loan}', [LoanController::class, 'destroy'])->name('destroy');
+            Route::get('/{loan}/payments', [LoanController::class, 'payments'])->name('payments');
+        });
     });
 });

@@ -11,6 +11,11 @@ trait ConvertsUuidsToIds
      * - company_uuid -> company_id
      * - department_uuid -> department_id
      * - position_uuid -> position_id
+     * - employee_uuid -> employee_id
+     * - deduction_uuid -> deduction_id
+     * - loan_uuid -> loan_id
+     * - payroll_uuid -> payroll_id
+     * - payroll_run_uuid -> payroll_run_id
      *
      * @param array $data The request data array
      * @return array The data array with ID fields added (UUID fields remain for validation)
@@ -30,6 +35,26 @@ trait ConvertsUuidsToIds
             'position_uuid' => [
                 'model' => \App\Models\Position::class,
                 'id_field' => 'position_id',
+            ],
+            'employee_uuid' => [
+                'model' => \App\Models\Employee::class,
+                'id_field' => 'employee_id',
+            ],
+            'deduction_uuid' => [
+                'model' => \App\Models\Deduction::class,
+                'id_field' => 'deduction_id',
+            ],
+            'loan_uuid' => [
+                'model' => \App\Models\Loan::class,
+                'id_field' => 'loan_id',
+            ],
+            'payroll_uuid' => [
+                'model' => \App\Models\Payroll::class,
+                'id_field' => 'payroll_id',
+            ],
+            'payroll_run_uuid' => [
+                'model' => \App\Models\PayrollRun::class,
+                'id_field' => 'payroll_run_id',
             ],
         ];
 

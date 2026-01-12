@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
 {
@@ -60,5 +61,53 @@ class Employee extends Model
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class);
+    }
+
+    /**
+     * Get all salaries for this employee
+     */
+    public function salaries(): HasMany
+    {
+        return $this->hasMany(Salary::class);
+    }
+
+    /**
+     * Get all employee deductions for this employee
+     */
+    public function employeeDeductions(): HasMany
+    {
+        return $this->hasMany(EmployeeDeduction::class);
+    }
+
+    /**
+     * Get all attendance records for this employee
+     */
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    /**
+     * Get all leave balances for this employee
+     */
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(Leave::class);
+    }
+
+    /**
+     * Get all leave requests for this employee
+     */
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /**
+     * Get all loans for this employee
+     */
+    public function loans(): HasMany
+    {
+        return $this->hasMany(Loan::class);
     }
 }

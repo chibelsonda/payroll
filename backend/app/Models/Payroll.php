@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payroll extends Model
 {
@@ -59,5 +60,29 @@ class Payroll extends Model
     public function deductions(): HasMany
     {
         return $this->hasMany(PayrollDeduction::class);
+    }
+
+    /**
+     * Get the payslip for this payroll
+     */
+    public function payslip(): HasOne
+    {
+        return $this->hasOne(Payslip::class);
+    }
+
+    /**
+     * Get the salary payment for this payroll
+     */
+    public function salaryPayment(): HasOne
+    {
+        return $this->hasOne(SalaryPayment::class);
+    }
+
+    /**
+     * Get all loan payments for this payroll
+     */
+    public function loanPayments(): HasMany
+    {
+        return $this->hasMany(LoanPayment::class);
     }
 }
