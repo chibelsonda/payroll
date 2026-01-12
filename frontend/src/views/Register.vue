@@ -227,12 +227,9 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     await auth.register(formData)
     notification.showSuccess('Registration successful!')
 
-    // Redirect based on role
-    if (auth.isAdmin) {
-      router.push('/admin')
-    } else {
-      router.push('/employee')
-    }
+    // After registration, user has no company yet
+    // Redirect to onboarding to create company
+    await router.push('/onboarding/create-company')
   } catch (error: unknown) {
     // Handle server-side validation errors
     const err = error as { response?: { data?: { errors?: Record<string, string | string[]>; message?: string } } }

@@ -23,7 +23,7 @@ class UpdateAttendanceSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_uuid' => 'required|string|exists:companies,uuid',
+            // company_id is automatically set by SetActiveCompany middleware
             'default_shift_start' => 'required|date_format:H:i:s',
             'default_break_start' => 'required|date_format:H:i:s',
             'default_break_end' => 'required|date_format:H:i:s',

@@ -72,6 +72,9 @@
 
       <v-spacer></v-spacer>
 
+      <!-- Company Switcher -->
+      <CompanySwitcher class="me-4" />
+
       <!-- User Info Section with Context Menu -->
       <v-menu>
         <template #activator="{ props }">
@@ -139,6 +142,7 @@ import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables'
+import CompanySwitcher from '@/components/common/CompanySwitcher.vue'
 
 interface MenuItem {
   title: string

@@ -14,16 +14,16 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        // Map Spatie roles to frontend role format
-        $role = 'employee'; // default
-        $roles = $this->getRoleNames();
-
-        if ($roles->contains('admin')) {
-            $role = 'admin';
-        } elseif ($roles->contains('user')) {
-            $role = 'employee';
-        } elseif ($roles->contains('staff')) {
-            $role = 'employee'; // or map to appropriate frontend role
+        // Get role from Spatie Permission (company-scoped)
+        $role = 'employee'; // Default
+        if ($this->relationLoaded('roles') && $this->roles->isNotEmpty()) {
+            $role = $this->roles->first()->name;
+        } elseif ($this->id) {
+            // Fallback: get role from Spatie (may be company-scoped)
+            $roleName = $this->getRoleNames()->first();
+            if ($roleName) {
+                $role = $roleName;
+            }
         }
 
         return [
@@ -32,7 +32,8 @@ class UserResource extends JsonResource
             'last_name' => $this->last_name,
             'name' => $this->name, // Full name accessor
             'email' => $this->email,
-            'role' => $role, // Mapped role for frontend
+            'has_company' => $this->company_id !== null, // Boolean flag instead of exposing company_id
+            'role' => $role,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

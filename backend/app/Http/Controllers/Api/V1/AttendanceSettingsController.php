@@ -13,30 +13,24 @@ use Illuminate\Http\Request;
 class AttendanceSettingsController extends BaseApiController
 {
     /**
-     * Get attendance settings for a company
-     * If company_uuid is provided, get that company's settings
-     * Otherwise, get settings for the first company (for admin convenience)
+     * Get attendance settings for the active company
+     * Company is set by SetActiveCompany middleware
      */
     public function show(Request $request): JsonResponse
     {
-        $companyUuid = $request->query('company_uuid');
+        $companyId = app('active_company_id');
         
-        if ($companyUuid) {
-            $company = Company::where('uuid', $companyUuid)->first();
-            if (!$company) {
-                return $this->notFoundResponse('Company not found');
-            }
-            $companyId = $company->id;
-        } else {
-            // Get first company for admin convenience
-            $company = Company::first();
-            if (!$company) {
-                return $this->errorResponse('No company found. Please create a company first.', [], [], 404);
-            }
-            $companyId = $company->id;
+        if (!$companyId) {
+            return $this->errorResponse('Active company not set', [], [], 400);
         }
 
-        $settings = AttendanceSettings::where('company_id', $companyId)->first();
+        $company = Company::find($companyId);
+        if (!$company) {
+            return $this->notFoundResponse('Company not found');
+        }
+
+        // AttendanceSettings model is company-scoped, so we can query directly
+        $settings = AttendanceSettings::first();
 
         // If no settings exist, return defaults
         if (!$settings) {
@@ -63,25 +57,28 @@ class AttendanceSettingsController extends BaseApiController
     }
 
     /**
-     * Update or create attendance settings for a company
+     * Update or create attendance settings for the active company
+     * Company is set by SetActiveCompany middleware
      */
     public function update(UpdateAttendanceSettingsRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        $companyUuid = $validated['company_uuid'];
+        $companyId = app('active_company_id');
         
-        $company = Company::where('uuid', $companyUuid)->first();
+        if (!$companyId) {
+            return $this->errorResponse('Active company not set', [], [], 400);
+        }
+
+        $company = Company::find($companyId);
         if (!$company) {
             return $this->notFoundResponse('Company not found');
         }
 
-        // Remove company_uuid from validated data as we'll use company_id
-        unset($validated['company_uuid']);
-        $validated['company_id'] = $company->id;
-
-        // Update or create settings
+        $validated = $request->validated();
+        
+        // company_id is automatically set by CompanyScopedModel when creating
+        // Update or create settings for the active company
         $settings = AttendanceSettings::updateOrCreate(
-            ['company_id' => $company->id],
+            ['company_id' => $companyId],
             $validated
         );
 

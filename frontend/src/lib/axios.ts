@@ -16,11 +16,19 @@ const commonConfig = {
 
 // Helper function to setup loading interceptors
 const setupLoadingInterceptors = (instance: ReturnType<typeof axios.create>) => {
-  // Request interceptor - increment loading counter
+  // Request interceptor - increment loading counter and add company header
   instance.interceptors.request.use(
     (config) => {
       const loadingStore = useLoadingStore()
       loadingStore.increment()
+      
+      // Add X-Company-ID header if active company is set
+      // Get from localStorage directly to avoid circular dependencies
+      const stored = localStorage.getItem('active_company_uuid')
+      if (stored) {
+        config.headers['X-Company-ID'] = stored
+      }
+      
       return config
     },
     (error) => {

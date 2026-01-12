@@ -22,6 +22,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'uuid',
+        'company_id',
         'first_name',
         'last_name',
         'email',
@@ -52,6 +53,14 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Get the company that this user belongs to
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 
     public function employee()

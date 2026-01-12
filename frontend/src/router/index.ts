@@ -6,6 +6,7 @@ import Register from '../views/Register.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import EmployeeDashboard from '../views/EmployeeDashboard.vue'
+import OwnerDashboard from '../views/OwnerDashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,12 @@ const router = createRouter({
       name: 'register',
       component: Register,
       meta: { guest: true },
+    },
+    {
+      path: '/onboarding/create-company',
+      name: 'onboarding-create-company',
+      component: () => import('../views/onboarding/CreateCompany.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/admin',
@@ -179,7 +186,10 @@ router.beforeEach(async (to, from, next) => {
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
-  } else if (to.meta.role && user && user.role !== to.meta.role) {
+    return
+  }
+
+  if (to.meta.role && user && user.role !== to.meta.role) {
     if (user.role === 'admin') {
       next('/admin')
     } else if (user.role === 'employee') {
@@ -187,9 +197,37 @@ router.beforeEach(async (to, from, next) => {
     } else {
       next('/login')
     }
-  } else {
-    next()
+    return
   }
+
+  // For authenticated routes, ensure company is selected
+  // BUT only for routes that require company context (not /user or /companies)
+  if (to.meta.requiresAuth && isAuthenticated && to.path !== '/user' && !to.path.startsWith('/companies')) {
+    const { useCompanyStore } = await import('@/stores/company')
+    const companyStore = useCompanyStore()
+
+    // Fetch companies if not loaded
+    // Note: companies is returned as data ref from Vue Query, Pinia auto-unwraps it
+    const companies = companyStore.companies
+    if (!companies || companies.length === 0) {
+      await companyStore.fetchCompanies()
+    }
+
+    // Re-access companies after potential fetch
+    const updatedCompanies = companyStore.companies
+    if (updatedCompanies && updatedCompanies.length > 0) {
+      const activeUuid = companyStore.activeCompanyUuid
+      const firstCompany = updatedCompanies[0]
+      if (!activeUuid && firstCompany) {
+        companyStore.setActiveCompany(firstCompany.uuid)
+      }
+    } else if (updatedCompanies && updatedCompanies.length === 0) {
+      // No companies available - this shouldn't happen but handle gracefully
+      console.warn('No companies available for user')
+    }
+  }
+
+  next()
 })
 
 export default router

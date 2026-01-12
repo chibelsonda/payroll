@@ -161,14 +161,21 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     const user = await auth.login(formData)
     notification.showSuccess('Login successful!')
 
-    // Redirect based on role from the returned user (don't rely on store state which might not be updated yet)
-    if (user.role === 'admin') {
+    // Check if user has a company
+    if (!user.has_company) {
+      // User doesn't have a company - redirect to onboarding
+      await router.push('/onboarding/create-company')
+      return
+    }
+
+    // User has a company - redirect based on role
+    if (user.role === 'owner' || user.role === 'admin') {
       await router.push('/admin')
-    } else if (user.role === 'employee') {
+    } else if (user.role === 'employee' || user.role === 'hr' || user.role === 'payroll') {
       await router.push('/employee')
     } else {
-      // Fallback: redirect to login if role is not determined
-      await router.push('/login')
+      // Fallback: redirect to onboarding if role is not determined
+      await router.push('/onboarding/create-company')
     }
   } catch (error: unknown) {
     // Handle server-side validation errors

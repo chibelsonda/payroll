@@ -25,9 +25,7 @@ class StorePayrollRunRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'company_uuid' => 'required|string|exists:companies,uuid',
-            // ID field (set by prepareForValidation, included here so it appears in validated())
-            'company_id' => 'required|exists:companies,id',
+            // company_id is automatically set by SetActiveCompany middleware
             'period_start' => 'required|date',
             'period_end' => 'required|date|after_or_equal:period_start',
             'pay_date' => 'required|date|after_or_equal:period_end',
@@ -35,26 +33,10 @@ class StorePayrollRunRequest extends FormRequest
     }
 
     /**
-     * Prepare the data for validation and convert UUIDs to IDs
-     */
-    protected function prepareForValidation(): void
-    {
-        $data = $this->convertUuidsToIds($this->all());
-        $this->merge($data);
-    }
-
-    /**
-     * Get validated data with UUIDs converted to IDs and UUID fields removed
+     * Get validated data (company_id is set automatically by middleware)
      */
     public function validated($key = null, $default = null): array
     {
-        $validated = parent::validated($key, $default);
-
-        // Remove UUID fields from validated data (IDs are already there)
-        if (is_array($validated)) {
-            unset($validated['company_uuid']);
-        }
-
-        return $validated;
+        return parent::validated($key, $default);
     }
 }

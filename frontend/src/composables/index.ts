@@ -32,6 +32,8 @@ export * from './salary/useSalaries'
 export * from './common/useAuth'
 export * from './common/useNotification'
 export * from './common/useZodForm'
-export * from './common/useCompanies'
 export * from './common/useDepartments'
 export * from './common/usePositions'
+
+// Company composables
+export * from './company/useCompanies'
