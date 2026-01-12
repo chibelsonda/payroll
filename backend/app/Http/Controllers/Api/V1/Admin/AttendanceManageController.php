@@ -33,8 +33,17 @@ class AttendanceManageController extends BaseApiController
             return $this->forbiddenResponse('Attendance record is locked and cannot be modified');
         }
 
+        // Parse log_time as naive datetime (no timezone conversion)
+        // The frontend sends "YYYY-MM-DDTHH:mm:ss" without timezone
+        // We parse it as UTC to store the exact time the user entered
+        $validated = $request->validated();
+        if (isset($validated['log_time'])) {
+            // Parse as UTC without timezone conversion - treat the time as-is
+            $validated['log_time'] = \Carbon\Carbon::createFromFormat('Y-m-d\TH:i:s', $validated['log_time'], 'UTC');
+        }
+
         // Update the log
-        $attendanceLog->update($request->validated());
+        $attendanceLog->update($validated);
 
         // Recalculate attendance if it exists
         if ($attendance) {

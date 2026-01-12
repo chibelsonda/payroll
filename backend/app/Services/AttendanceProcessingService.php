@@ -8,64 +8,99 @@ use App\Models\AttendanceSettings;
 use App\Models\Employee;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceProcessingService
 {
     /**
      * Process attendance logs and compute summary for a specific employee and date
      * Implements detailed rules for log pairing and auto-correction
+     *
+     * Uses database transaction to prevent race conditions when processing logs
      */
     public function processAttendance(int $employeeId, string $date): Attendance
     {
-        $employee = Employee::find($employeeId);
-        $companyId = $employee?->company_id;
-        $settings = $this->getCompanySettings($companyId);
+        return DB::transaction(function () use ($employeeId, $date) {
+            $employee = Employee::find($employeeId);
+            $companyId = $employee?->company_id;
+            $settings = $this->getCompanySettings($companyId);
 
-        // Delete existing auto-corrected logs for this date (they will be regenerated)
-        AttendanceLog::where('employee_id', $employeeId)
-            ->whereDate('log_time', $date)
-            ->where('is_auto_corrected', true)
-            ->delete();
+            // SAFEGUARD: Get all real logs FIRST before deleting auto-corrected ones
+            // This ensures we check for real OUT logs before making decisions
+            $realLogs = AttendanceLog::where('employee_id', $employeeId)
+                ->whereDate('log_time', $date)
+                ->where('is_auto_corrected', false)
+                ->orderBy('log_time', 'asc')
+                ->get();
 
-        // Get all real logs for the date, ordered chronologically
-        $logs = AttendanceLog::where('employee_id', $employeeId)
-            ->whereDate('log_time', $date)
-            ->orderBy('log_time', 'asc')
-            ->get();
+            // SAFEGUARD: Only delete auto-corrected logs if no real OUT exists
+            // This prevents deleting valid auto-corrected logs when real OUT is present
+            $hasRealOutLog = $realLogs->where('type', 'OUT')->isNotEmpty();
 
-        // Check if attendance record exists
-        $existingAttendance = Attendance::with(['employee.user'])
-            ->where('employee_id', $employeeId)
-            ->whereDate('date', $date)
-            ->first();
+            if (!$hasRealOutLog) {
+                // Delete existing auto-corrected logs for this date (they will be regenerated if needed)
+                $deletedCount = AttendanceLog::where('employee_id', $employeeId)
+                    ->whereDate('log_time', $date)
+                    ->where('is_auto_corrected', true)
+                    ->delete();
 
-        // If no logs exist and attendance is not locked, delete the attendance record
-        if ($logs->isEmpty() && $existingAttendance && !$existingAttendance->is_locked) {
-            // Load relationships before deletion so we can return them
-            $existingAttendance->load(['employee.user']);
-            $existingAttendance->delete();
-            // Return the deleted attendance (for API consistency, though it's deleted from DB)
-            return $existingAttendance;
-        }
+                // Log for debugging if auto-corrected logs were deleted
+                if ($deletedCount > 0) {
+                    Log::info('Deleted auto-corrected logs during attendance processing', [
+                        'employee_id' => $employeeId,
+                        'date' => $date,
+                        'deleted_count' => $deletedCount,
+                    ]);
+                }
+            } else {
+                // Log when real OUT exists to prevent auto-correction
+                Log::debug('Real OUT log exists, skipping auto-corrected log deletion', [
+                    'employee_id' => $employeeId,
+                    'date' => $date,
+                    'real_out_count' => $realLogs->where('type', 'OUT')->count(),
+                ]);
+            }
 
-        $result = $this->computeAttendance($logs, $date, $settings, $employeeId);
+            // Get all logs for the date (including any remaining auto-corrected ones), ordered chronologically
+            $logs = AttendanceLog::where('employee_id', $employeeId)
+                ->whereDate('log_time', $date)
+                ->orderBy('log_time', 'asc')
+                ->get();
 
-        // Update or create attendance summary
-        $attendance = Attendance::updateOrCreate(
-            [
-                'employee_id' => $employeeId,
-                'date' => $date,
-            ],
-            [
-                'hours_worked' => $result['hours_worked'],
-                'status' => $result['status'],
-                'is_incomplete' => $result['is_incomplete'],
-                'needs_review' => $result['needs_review'],
-                'is_auto_corrected' => $result['is_auto_corrected'],
-            ]
-        );
+            // Check if attendance record exists
+            $existingAttendance = Attendance::with(['employee.user'])
+                ->where('employee_id', $employeeId)
+                ->whereDate('date', $date)
+                ->first();
 
-        return $attendance->fresh(['employee.user']);
+            // If no logs exist and attendance is not locked, delete the attendance record
+            if ($logs->isEmpty() && $existingAttendance && !$existingAttendance->is_locked) {
+                // Load relationships before deletion so we can return them
+                $existingAttendance->load(['employee.user']);
+                $existingAttendance->delete();
+                // Return the deleted attendance (for API consistency, though it's deleted from DB)
+                return $existingAttendance;
+            }
+
+            $result = $this->computeAttendance($logs, $date, $settings, $employeeId);
+
+            // Update or create attendance summary
+            $attendance = Attendance::updateOrCreate(
+                [
+                    'employee_id' => $employeeId,
+                    'date' => $date,
+                ],
+                [
+                    'hours_worked' => $result['hours_worked'],
+                    'status' => $result['status'],
+                    'is_incomplete' => $result['is_incomplete'],
+                    'needs_review' => $result['needs_review'],
+                    'is_auto_corrected' => $result['is_auto_corrected'],
+                ]
+            );
+
+            return $attendance->fresh(['employee.user']);
+        });
     }
 
     /**
@@ -100,6 +135,10 @@ class AttendanceProcessingService
         $breakEnd = $dateCarbon->copy()->setTimeFromTimeString($settings['default_break_end']);
         $shiftEnd = $dateCarbon->copy()->setTimeFromTimeString($settings['default_shift_end']);
 
+        // SAFEGUARD: Check if there are any real OUT logs before processing
+        // This prevents auto-correction when real OUT logs exist
+        $hasRealOutLog = $logs->where('type', 'OUT')->where('is_auto_corrected', false)->isNotEmpty();
+
         // Process logs
         foreach ($logs as $log) {
             $logTime = $log->log_time; // Already a Carbon instance
@@ -107,11 +146,29 @@ class AttendanceProcessingService
             if ($log->type === 'IN') {
                 // RULE 6: Consecutive INs
                 if ($inTime !== null) {
-                    // Auto-close previous IN at break start
-                    $this->createAutoCorrectedLog($employeeId, $breakStart, 'OUT', 'Missing time-out auto-closed');
-                    $intervals[] = ['start' => $inTime, 'end' => $breakStart];
-                    $totalMinutes += $inTime->diffInMinutes($breakStart);
-                    $isAutoCorrected = true;
+                    // Only auto-close if no real OUT exists after the previous IN
+                    // Check if there's a real OUT between the previous IN and this IN
+                    $hasOutBetween = $logs
+                        ->where('type', 'OUT')
+                        ->where('is_auto_corrected', false)
+                        ->whereBetween('log_time', [$inTime, $logTime])
+                        ->isNotEmpty();
+
+                    if (!$hasOutBetween) {
+                        // Auto-close previous IN at break start
+                        // Check if auto-corrected OUT already exists at break start
+                        $existingAutoOut = $logs->where('type', 'OUT')
+                            ->where('is_auto_corrected', true)
+                            ->where('log_time', $breakStart)
+                            ->first();
+
+                        if (!$existingAutoOut) {
+                            $this->createAutoCorrectedLog($employeeId, $breakStart, 'OUT', 'Missing time-out auto-closed (consecutive INs)');
+                        }
+                        $intervals[] = ['start' => $inTime, 'end' => $breakStart];
+                        $totalMinutes += $inTime->diffInMinutes($breakStart);
+                        $isAutoCorrected = true;
+                    }
                 }
                 $inTime = $logTime;
             } elseif ($log->type === 'OUT') {
@@ -129,9 +186,18 @@ class AttendanceProcessingService
         }
 
         // RULE 7: End-of-Day OPEN IN
-        if ($inTime !== null) {
+        // SAFEGUARD: Only auto-close if no real OUT log exists for this date
+        if ($inTime !== null && !$hasRealOutLog) {
             if ($settings['auto_close_missing_out']) {
-                $this->createAutoCorrectedLog($employeeId, $shiftEnd, 'OUT', 'Missing time-out auto-closed');
+                // Validate that we're not creating a duplicate auto-corrected OUT
+                $existingAutoOut = $logs->where('type', 'OUT')
+                    ->where('is_auto_corrected', true)
+                    ->where('log_time', $shiftEnd)
+                    ->first();
+
+                if (!$existingAutoOut) {
+                    $this->createAutoCorrectedLog($employeeId, $shiftEnd, 'OUT', 'Missing time-out auto-closed');
+                }
                 $intervals[] = ['start' => $inTime, 'end' => $shiftEnd];
                 $totalMinutes += $inTime->diffInMinutes($shiftEnd);
                 $isAutoCorrected = true;
@@ -140,6 +206,19 @@ class AttendanceProcessingService
                 $needsReview = true;
                 $status = 'incomplete';
             }
+        } elseif ($inTime !== null && $hasRealOutLog) {
+            // EDGE CASE: If there's a real OUT but we still have an open IN, mark for review
+            // This can happen if there are multiple IN logs and the OUT doesn't match the last one
+            // Log this edge case for investigation
+            Log::warning('Open IN exists despite real OUT log present', [
+                'employee_id' => $employeeId,
+                'date' => $date,
+                'open_in_time' => $inTime->format('Y-m-d H:i:s'),
+                'real_out_count' => $logs->where('type', 'OUT')->where('is_auto_corrected', false)->count(),
+            ]);
+            $isIncomplete = true;
+            $needsReview = true;
+            $status = 'incomplete';
         }
 
         // RULE 4: Missing BOTH IN and OUT (single continuous shift with break deduction)
@@ -173,6 +252,38 @@ class AttendanceProcessingService
         }
 
         $hoursWorked = round($totalMinutes / 60, 2);
+
+        // EDGE CASE: Validate calculated hours
+        // If hours are negative (shouldn't happen, but protect against bugs), set to 0
+        if ($hoursWorked < 0) {
+            Log::warning('Negative hours calculated for attendance', [
+                'employee_id' => $employeeId,
+                'date' => $date,
+                'calculated_hours' => $hoursWorked,
+                'total_minutes' => $totalMinutes,
+            ]);
+            $hoursWorked = 0;
+            $needsReview = true;
+        }
+
+        // EDGE CASE: Validate interval consistency
+        // Check if intervals overlap (shouldn't happen with proper pairing)
+        if (count($intervals) > 1) {
+            for ($i = 0; $i < count($intervals) - 1; $i++) {
+                $current = $intervals[$i];
+                $next = $intervals[$i + 1];
+
+                if ($current['end']->gt($next['start'])) {
+                    Log::warning('Overlapping intervals detected in attendance processing', [
+                        'employee_id' => $employeeId,
+                        'date' => $date,
+                        'interval_1' => $current['start']->format('H:i') . '-' . $current['end']->format('H:i'),
+                        'interval_2' => $next['start']->format('H:i') . '-' . $next['end']->format('H:i'),
+                    ]);
+                    $needsReview = true;
+                }
+            }
+        }
 
         return [
             'hours_worked' => max(0, $hoursWorked), // Ensure non-negative

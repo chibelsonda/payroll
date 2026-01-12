@@ -32,11 +32,29 @@ export function useZodForm<T extends Record<string, unknown>>(
       validateOnValueUpdate: true,
     })
 
-    // Destructure to exclude 'name' property that conflicts with Vuetify components
-    const { name: _, ...fieldWithoutName } = field as typeof field & { name?: unknown }
+    // Create a computed property for modelValue that works with v-bind
+    const modelValue = computed({
+      get: () => field.value.value,
+      set: (val: unknown) => field.setValue(val),
+    })
+
+    // Get the original value ref - field.value is the ref itself
+    const originalValueRef = field.value
+
+    // Destructure to exclude properties that conflict with Vuetify components
+    // Note: field.value is the ref, not a property on the field object
+    const { 
+      name: _, 
+      ...fieldWithoutConflicts 
+    } = field as typeof field & { name?: unknown }
 
     return {
-      ...fieldWithoutName,
+      ...fieldWithoutConflicts,
+      // Expose value ref for backward compatibility (for components using field.value.value)
+      // This is the ref returned by useField, so field.value.value accesses the actual value
+      value: originalValueRef,
+      // Use modelValue for v-model binding (Vuetify 3+ uses modelValue)
+      modelValue,
       // Map VeeValidate errors to Vuetify format
       errorMessage: computed(() => field.errorMessage.value),
       hasError: computed(() => !!field.errorMessage.value),

@@ -206,8 +206,8 @@ import { useAttendanceSummary } from '@/composables/useAttendanceSummary'
 import { useUpdateAttendanceLog } from '@/composables/useAttendanceManagement'
 import { useNotification } from '@/composables/useNotification'
 import { useAuthStore } from '@/stores/auth'
+import { formatDateTimeForBackend, formatDateTimeForInput } from '@/lib/datetime'
 import type { AttendanceLog } from '@/types/attendanceLog'
-import type { Attendance } from '@/types/attendance'
 
 const props = withDefaults(defineProps<{
   employeeUuid?: string
@@ -252,8 +252,9 @@ const attendanceSummary = computed(() => {
 })
 
 const sortedLogs = computed(() => {
+  if (!selectedDate.value) return []
   return [...logs.value]
-    .filter(log => log.log_time.startsWith(selectedDate.value))
+    .filter(log => log.log_time.startsWith(selectedDate.value!))
     .sort((a, b) => new Date(a.log_time).getTime() - new Date(b.log_time).getTime())
 })
 
@@ -325,8 +326,8 @@ const deleteLog = async (log: AttendanceLog) => {
 
 const startEditLog = (log: AttendanceLog) => {
   editingLogUuid.value = log.uuid
-  const date = new Date(log.log_time)
-  editingLogTime.value = date.toISOString().slice(0, 16) // Format for datetime-local input
+  // Use helper function to format backend datetime for datetime-local input
+  editingLogTime.value = formatDateTimeForInput(log.log_time)
   editingLogType.value = log.type
 }
 
@@ -341,10 +342,13 @@ const saveLogEdit = async (log: AttendanceLog) => {
 
   savingLogUuid.value = log.uuid
   try {
+    // Use helper function to format datetime-local value for backend
+    const backendDateTime = formatDateTimeForBackend(editingLogTime.value)
+
     await updateLogMutation.mutateAsync({
       logUuid: log.uuid,
       data: {
-        log_time: new Date(editingLogTime.value).toISOString(),
+        log_time: backendDateTime,
         type: editingLogType.value,
       },
     })

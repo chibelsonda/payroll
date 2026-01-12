@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AttendanceLogService
@@ -33,28 +34,42 @@ class AttendanceLogService
 
     /**
      * Create a new attendance log
+     *
+     * Uses database transaction to ensure log creation and attendance processing are atomic
      */
     public function createAttendanceLog(array $data): AttendanceLog
     {
-        // Set log_time to now() if not provided
-        if (!isset($data['log_time'])) {
-            $data['log_time'] = now();
-        }
+        return DB::transaction(function () use ($data) {
+            // Set log_time to now() if not provided
+            if (!isset($data['log_time'])) {
+                $data['log_time'] = now();
+            }
 
-        // Convert log_time to Carbon if it's a string
-        if (is_string($data['log_time'])) {
-            $data['log_time'] = Carbon::parse($data['log_time']);
-        }
+            // Convert log_time to Carbon if it's a string
+            if (is_string($data['log_time'])) {
+                $data['log_time'] = Carbon::parse($data['log_time']);
+            }
 
-        $log = AttendanceLog::create($data);
+            // Validate log data before creating
+            if (!isset($data['employee_id'])) {
+                throw new \InvalidArgumentException('Employee ID is required for attendance log');
+            }
 
-        // Recalculate attendance summary for the log date using the processing service
-        $this->attendanceProcessingService->processAttendance(
-            $log->employee_id,
-            $log->log_time->toDateString()
-        );
+            if (!isset($data['type']) || !in_array($data['type'], ['IN', 'OUT'])) {
+                throw new \InvalidArgumentException('Log type must be IN or OUT');
+            }
 
-        return $log->load(['employee.user']);
+            $log = AttendanceLog::create($data);
+
+            // Recalculate attendance summary for the log date using the processing service
+            // This is done within the transaction to ensure consistency
+            $this->attendanceProcessingService->processAttendance(
+                $log->employee_id,
+                $log->log_time->toDateString()
+            );
+
+            return $log->load(['employee.user']);
+        });
     }
 
     /**

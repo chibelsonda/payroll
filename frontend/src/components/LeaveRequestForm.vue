@@ -113,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, nextTick } from 'vue'
 import { useZodForm } from '@/composables/useZodForm'
 import { z } from 'zod'
 import { useCreateLeaveRequest } from '@/composables/useLeaveRequests'
@@ -155,7 +155,7 @@ const leaveRequestSchema = z.object({
   path: ['end_date'],
 })
 
-const { handleSubmit, createField, isSubmitting } = useZodForm(leaveRequestSchema)
+const { handleSubmit, createField, isSubmitting, setFieldValue, resetForm } = useZodForm(leaveRequestSchema)
 
 const leaveTypeField = createField('leave_type')
 const startDateField = createField('start_date')
@@ -163,10 +163,14 @@ const endDateField = createField('end_date')
 
 watch(() => props.modelValue, (newVal) => {
   if (newVal) {
-    // Reset form
-    leaveTypeField.value.value = 'vacation'
-    startDateField.value.value = ''
-    endDateField.value.value = ''
+    // Reset form and set default values
+    resetForm()
+    // Use nextTick to ensure form is reset before setting values
+    nextTick(() => {
+      setFieldValue('leave_type', 'vacation')
+      setFieldValue('start_date', '')
+      setFieldValue('end_date', '')
+    })
   }
 })
 
