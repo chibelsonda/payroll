@@ -18,6 +18,8 @@ export * from './attendance'
 export * from './leave'
 export * from './loan'
 export * from './payslip'
+export * from './salary'
+export * from './contribution'
 export * from './salaryPayment'
 
 // Utility types

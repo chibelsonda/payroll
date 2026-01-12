@@ -25,6 +25,7 @@ class UpdateDeductionRequest extends FormRequest
         return [
             'name' => 'sometimes|required|string|max:255|unique:deductions,name,' . ($deduction ? $deduction->id : 'NULL'),
             'type' => 'sometimes|required|string|in:fixed,percentage',
+            'default_amount' => 'nullable|numeric|min:0',
         ];
     }
 }

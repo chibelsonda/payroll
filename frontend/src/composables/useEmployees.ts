@@ -85,8 +85,7 @@ export const useEmployees = (page = 1, keepPreviousData = true, enabled: boolean
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
     enabled: enabledValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 

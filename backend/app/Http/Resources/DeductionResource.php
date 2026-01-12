@@ -18,6 +18,7 @@ class DeductionResource extends JsonResource
             'uuid' => $this->uuid,
             'name' => $this->name,
             'type' => $this->type,
+            'default_amount' => $this->default_amount ? (string) $this->default_amount : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

@@ -61,8 +61,7 @@ export const useLoans = (page = 1, keepPreviousData = true) => {
     queryFn: () => fetchLoans(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 
@@ -73,8 +72,7 @@ export const useLoan = (uuid: string | Ref<string | null>) => {
     queryFn: () => fetchLoan(uuidValue!),
     enabled: !!uuidValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 
@@ -85,8 +83,7 @@ export const useLoanPayments = (loanUuid: string | Ref<string | null>) => {
     queryFn: () => fetchLoanPayments(loanUuidValue!),
     enabled: !!loanUuidValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 

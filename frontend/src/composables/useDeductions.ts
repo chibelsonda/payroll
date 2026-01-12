@@ -53,8 +53,7 @@ export const useDeductions = (page = 1, keepPreviousData = true) => {
     queryFn: () => fetchDeductions(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 
@@ -65,8 +64,7 @@ export const useDeduction = (uuid: string | Ref<string | null>) => {
     queryFn: () => fetchDeduction(uuidValue!),
     enabled: !!uuidValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 

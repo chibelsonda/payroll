@@ -168,16 +168,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { LeaveRequest } from '@/types/leave'
 import LeaveRequestForm from './LeaveRequestForm.vue'
+import { useLeaveRequests, useApproveLeaveRequest, useRejectLeaveRequest } from '@/composables/useLeaveRequests'
+import { useNotification } from '@/composables/useNotification'
 
-// TODO: Replace with actual composable when backend API is ready
-const isLoading = ref(false)
-const error = ref<Error | null>(null)
-const leaveRequests = ref<LeaveRequest[]>([])
+const { data, isLoading, error, refetch } = useLeaveRequests()
+const approveMutation = useApproveLeaveRequest()
+const rejectMutation = useRejectLeaveRequest()
+const { showNotification } = useNotification()
 
 const showLeaveRequestForm = ref(false)
+const selectedLeaveRequest = ref<LeaveRequest | null>(null)
+
+const leaveRequests = computed(() => data.value?.data || [])
 
 const headers = [
   { title: 'Employee', key: 'employee', sortable: true },
@@ -212,32 +217,41 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const approveLeaveRequest = (request: LeaveRequest) => {
-  // TODO: Implement approve
-  console.log('Approve leave request', request)
+const approveLeaveRequest = async (request: LeaveRequest) => {
+  try {
+    await approveMutation.mutateAsync(request.uuid)
+    showNotification('Leave request approved successfully', 'success')
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    const message = err?.response?.data?.message || 'Failed to approve leave request'
+    showNotification(message, 'error')
+  }
 }
 
-const rejectLeaveRequest = (request: LeaveRequest) => {
-  // TODO: Implement reject
-  console.log('Reject leave request', request)
+const rejectLeaveRequest = async (request: LeaveRequest) => {
+  try {
+    await rejectMutation.mutateAsync(request.uuid)
+    showNotification('Leave request rejected successfully', 'success')
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    const message = err?.response?.data?.message || 'Failed to reject leave request'
+    showNotification(message, 'error')
+  }
 }
 
 const viewLeaveRequest = (request: LeaveRequest) => {
-  // TODO: Implement view
+  selectedLeaveRequest.value = request
+  // TODO: Implement view dialog/modal if needed
   console.log('View leave request', request)
 }
 
 const handleSuccess = () => {
   showLeaveRequestForm.value = false
-  // TODO: Refetch data
+  refetch()
 }
 
 const handleClose = () => {
   showLeaveRequestForm.value = false
-}
-
-const refetch = () => {
-  // TODO: Implement refetch
 }
 </script>
 

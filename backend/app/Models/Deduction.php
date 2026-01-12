@@ -15,6 +15,11 @@ class Deduction extends Model
         'uuid',
         'name',
         'type',
+        'default_amount',
+    ];
+
+    protected $casts = [
+        'default_amount' => 'decimal:2',
     ];
 
     /**

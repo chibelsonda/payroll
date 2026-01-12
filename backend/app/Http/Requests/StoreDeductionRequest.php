@@ -24,6 +24,7 @@ class StoreDeductionRequest extends FormRequest
         return [
             'name' => 'required|string|max:255|unique:deductions,name',
             'type' => 'required|string|in:fixed,percentage',
+            'default_amount' => 'nullable|numeric|min:0',
         ];
     }
 }

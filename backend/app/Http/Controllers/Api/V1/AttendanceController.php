@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
-use App\Http\Requests\StoreAttendanceRequest;
-use App\Http\Requests\UpdateAttendanceRequest;
 use App\Http\Resources\AttendanceResource;
 use App\Models\Attendance;
 use App\Services\AttendanceService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AttendanceController extends BaseApiController
 {
@@ -43,14 +42,27 @@ class AttendanceController extends BaseApiController
     }
 
     /**
-     * Create a new attendance record
+     * Get attendance summary with optional filters
      */
-    public function store(StoreAttendanceRequest $request): JsonResponse
+    public function summary(Request $request): JsonResponse
     {
-        $attendance = $this->attendanceService->createAttendance($request->validated());
-        return $this->createdResponse(
-            new AttendanceResource($attendance->load(['employee.user'])),
-            'Attendance record created successfully'
+        $employeeId = null;
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $needsReview = $request->has('needs_review') ? filter_var($request->query('needs_review'), FILTER_VALIDATE_BOOLEAN) : null;
+
+        if ($request->has('employee_uuid')) {
+            $employee = \App\Models\Employee::where('uuid', $request->query('employee_uuid'))->first();
+            if ($employee) {
+                $employeeId = $employee->id;
+            }
+        }
+
+        $summary = $this->attendanceService->getAttendanceSummary($employeeId, $from, $to, $needsReview);
+
+        return $this->successResponse(
+            AttendanceResource::collection($summary),
+            'Attendance summary retrieved successfully'
         );
     }
 
@@ -63,18 +75,6 @@ class AttendanceController extends BaseApiController
         return $this->successResponse(
             new AttendanceResource($attendance),
             'Attendance record retrieved successfully'
-        );
-    }
-
-    /**
-     * Update an existing attendance record
-     */
-    public function update(UpdateAttendanceRequest $request, Attendance $attendance): JsonResponse
-    {
-        $attendance = $this->attendanceService->updateAttendance($attendance, $request->validated());
-        return $this->successResponse(
-            new AttendanceResource($attendance),
-            'Attendance record updated successfully'
         );
     }
 

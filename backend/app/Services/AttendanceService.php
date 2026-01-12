@@ -3,16 +3,42 @@
 namespace App\Services;
 
 use App\Models\Attendance;
-use App\Models\Employee;
 
 class AttendanceService
 {
+
     /**
      * Get all attendance records with pagination
      */
     public function getAllAttendances()
     {
         return Attendance::with(['employee.user'])->orderBy('date', 'desc')->paginate(config('application.pagination.per_page'));
+    }
+
+    /**
+     * Get attendance summary with optional filters
+     */
+    public function getAttendanceSummary(?int $employeeId = null, ?string $from = null, ?string $to = null, ?bool $needsReview = null)
+    {
+        $query = Attendance::with(['employee.user'])->orderBy('date', 'desc');
+
+        if ($employeeId) {
+            $query->where('employee_id', $employeeId);
+        }
+
+        if ($from) {
+            $query->whereDate('date', '>=', $from);
+        }
+
+        if ($to) {
+            $query->whereDate('date', '<=', $to);
+        }
+
+        if ($needsReview !== null) {
+            $query->where('needs_review', $needsReview);
+        }
+
+        return $query->get();
     }
 
     /**
@@ -24,24 +50,8 @@ class AttendanceService
     }
 
     /**
-     * Create a new attendance record
-     */
-    public function createAttendance(array $data): Attendance
-    {
-        return Attendance::create($data);
-    }
-
-    /**
-     * Update an existing attendance record
-     */
-    public function updateAttendance(Attendance $attendance, array $data): Attendance
-    {
-        $attendance->update($data);
-        return $attendance->fresh(['employee.user']);
-    }
-
-    /**
      * Delete an attendance record
+     * Note: This only deletes the summary. Logs should be deleted separately.
      */
     public function deleteAttendance(Attendance $attendance): bool
     {

@@ -133,6 +133,13 @@
                       @click="exportPayroll(item)"
                       :disabled="exportingPayrollRunUuid === item.uuid"
                     ></v-list-item>
+                    <v-list-item
+                      v-if="item.status === 'processed'"
+                      prepend-icon="mdi-check-circle"
+                      title="Finalize"
+                      @click="finalizePayroll(item)"
+                      :disabled="finalizeMutation.isPending.value"
+                    ></v-list-item>
                   </v-list>
                 </v-menu>
               </template>
@@ -173,7 +180,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { usePayrollRuns, useGeneratePayroll, useExportPayrollRun } from '@/composables/usePayroll'
+import { usePayrollRuns, useGeneratePayroll, useExportPayrollRun, useFinalizePayroll } from '@/composables/usePayroll'
 import type { PayrollRun } from '@/types/payroll'
 import PayrollRunForm from './PayrollRunForm.vue'
 import EmployeePayrollTable from './EmployeePayrollTable.vue'
@@ -186,6 +193,7 @@ const currentPage = ref(1)
 const { data: payrollRunsData, isLoading, error, refetch } = usePayrollRuns(currentPage.value, true)
 const generateMutation = useGeneratePayroll()
 const exportMutation = useExportPayrollRun()
+const finalizeMutation = useFinalizePayroll()
 
 // Drawer state
 const showPayrollRunDrawer = ref(false)
@@ -271,6 +279,20 @@ const exportPayroll = async (payrollRun: PayrollRun) => {
     notification.showError(message)
   } finally {
     exportingPayrollRunUuid.value = null
+  }
+}
+
+const finalizePayroll = async (payrollRun: PayrollRun) => {
+  if (!confirm('Are you sure you want to finalize this payroll? This action cannot be undone.')) {
+    return
+  }
+  try {
+    await finalizeMutation.mutateAsync(payrollRun.uuid)
+    notification.showSuccess('Payroll finalized successfully')
+    refetch()
+  } catch (error: unknown) {
+    const err = error as { message?: string; response?: { data?: { message?: string } } }
+    notification.showError(err?.message || err?.response?.data?.message || 'Failed to finalize payroll')
   }
 }
 </script>

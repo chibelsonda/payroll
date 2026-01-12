@@ -36,17 +36,19 @@
           <!-- Employee -->
           <div class="mb-4">
             <div class="text-body-2 mb-1 font-weight-medium">Employee</div>
-            <v-text-field
+            <v-select
               v-model="employeeField.value.value"
               :error-messages="employeeField.errorMessage.value"
+              :items="employees"
+              item-value="uuid"
+              item-title="display_name"
               placeholder="Select employee"
               variant="outlined"
               density="compact"
-              readonly
               prepend-inner-icon="mdi-account"
               hide-details="auto"
-              class="employee-form-field"
-            ></v-text-field>
+              class="employee-form-field v-select"
+            ></v-select>
           </div>
 
           <!-- Date -->
@@ -148,6 +150,9 @@
 import { ref, computed, watch } from 'vue'
 import { useZodForm } from '@/composables/useZodForm'
 import { z } from 'zod'
+import { useCreateAttendance, useUpdateAttendance, useAttendance } from '@/composables/useAttendance'
+import { useEmployees } from '@/composables/useEmployees'
+import { useNotification } from '@/composables/useNotification'
 
 const props = defineProps<{
   modelValue: boolean
@@ -160,9 +165,23 @@ const emit = defineEmits<{
   'close': []
 }>()
 
+const { showNotification } = useNotification()
+const createMutation = useCreateAttendance()
+const updateMutation = useUpdateAttendance()
+const { data: employeesData } = useEmployees()
+
+const employees = computed(() => {
+  if (!employeesData.value?.data) return []
+  return employeesData.value.data.map((emp) => ({
+    uuid: emp.uuid,
+    display_name: `${emp.user?.first_name} ${emp.user?.last_name} (${emp.employee_no})`,
+  }))
+})
+
 const isEdit = computed(() => !!props.attendanceUuid)
-const isSubmitting = ref(false)
 const formRef = ref()
+
+const { data: attendanceData } = useAttendance(computed(() => props.attendanceUuid))
 
 const attendanceSchema = z.object({
   employee_uuid: z.string().min(1, 'Employee is required'),
@@ -172,7 +191,13 @@ const attendanceSchema = z.object({
   hours_worked: z.string().optional(),
 })
 
-const { handleSubmit, createField } = useZodForm(attendanceSchema)
+const { handleSubmit, createField, isSubmitting, setFieldValue } = useZodForm(attendanceSchema, {
+  employee_uuid: '',
+  date: new Date().toISOString().split('T')[0],
+  time_in: '',
+  time_out: '',
+  hours_worked: '',
+})
 
 const employeeField = createField('employee_uuid')
 const dateField = createField('date')
@@ -181,28 +206,61 @@ const timeOutField = createField('time_out')
 const hoursWorkedField = createField('hours_worked')
 
 watch(() => props.modelValue, (newVal) => {
-  if (newVal && props.attendanceUuid) {
-    // TODO: Load attendance data for editing
+  if (newVal && props.attendanceUuid && attendanceData.value) {
+    // Load attendance data for editing
+    const attendance = attendanceData.value
+    setFieldValue('employee_uuid', attendance.employee?.uuid || attendance.employee_uuid || '')
+    setFieldValue('date', attendance.date || new Date().toISOString().split('T')[0])
+    setFieldValue('time_in', attendance.time_in || '')
+    setFieldValue('time_out', attendance.time_out || '')
+    setFieldValue('hours_worked', attendance.hours_worked || '')
   } else if (newVal) {
     // Reset form for new attendance
-    employeeField.value.value = ''
-    dateField.value.value = new Date().toISOString().split('T')[0]
-    timeInField.value.value = ''
-    timeOutField.value.value = ''
-    hoursWorkedField.value.value = ''
+    setFieldValue('employee_uuid', '')
+    setFieldValue('date', new Date().toISOString().split('T')[0])
+    setFieldValue('time_in', '')
+    setFieldValue('time_out', '')
+    setFieldValue('hours_worked', '')
+  }
+})
+
+watch(attendanceData, (attendance) => {
+  if (attendance && props.attendanceUuid && props.modelValue) {
+    // Load attendance data when it becomes available
+    setFieldValue('employee_uuid', attendance.employee?.uuid || attendance.employee_uuid || '')
+    setFieldValue('date', attendance.date || new Date().toISOString().split('T')[0])
+    setFieldValue('time_in', attendance.time_in || '')
+    setFieldValue('time_out', attendance.time_out || '')
+    setFieldValue('hours_worked', attendance.hours_worked || '')
   }
 })
 
 const onSubmit = handleSubmit(async (values) => {
-  isSubmitting.value = true
   try {
-    // TODO: Implement API call
-    console.log('Submit attendance:', values)
+    const payload = {
+      employee_uuid: values.employee_uuid,
+      date: values.date,
+      time_in: values.time_in || undefined,
+      time_out: values.time_out || undefined,
+      hours_worked: values.hours_worked ? parseFloat(values.hours_worked) : undefined,
+    }
+
+    if (isEdit.value && props.attendanceUuid) {
+      await updateMutation.mutateAsync({
+        uuid: props.attendanceUuid,
+        data: payload,
+      })
+      showNotification('Attendance record updated successfully', 'success')
+    } else {
+      await createMutation.mutateAsync(payload)
+      showNotification('Attendance record created successfully', 'success')
+    }
     emit('success')
-  } catch (error) {
-    console.error('Error submitting attendance:', error)
-  } finally {
-    isSubmitting.value = false
+    emit('update:modelValue', false)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    const message = err?.response?.data?.message || 'Failed to save attendance record'
+    showNotification(message, 'error')
   }
 })
 </script>

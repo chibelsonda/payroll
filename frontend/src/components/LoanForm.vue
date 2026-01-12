@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, watch, ref, nextTick } from 'vue'
 import { useZodForm } from '@/composables/useZodForm'
 import { loanSchema, type LoanFormData } from '@/validation'
 import { useCreateLoan, useUpdateLoan } from '@/composables/useLoans'
@@ -112,6 +112,10 @@ const { createField, handleSubmit: handleFormSubmit, isSubmitting, isValid, setF
   start_date: '',
 })
 
+// Create field refs for direct access
+const amountField = createField('amount')
+const balanceField = createField('balance')
+
 // Watch for loan changes to populate form
 watch(() => props.loan, (loan) => {
   if (loan) {
@@ -125,9 +129,15 @@ watch(() => props.loan, (loan) => {
 }, { immediate: true })
 
 // Auto-set balance to amount when amount changes (for new loans)
-watch(() => values.value.amount, (amount) => {
-  if (!props.loan && amount) {
+// Use field.value directly to avoid recursive updates
+const isUpdatingBalance = ref(false)
+watch(() => amountField.value.value, (amount, oldAmount) => {
+  if (!props.loan && amount && !isUpdatingBalance.value && amount !== oldAmount) {
+    isUpdatingBalance.value = true
     setFieldValue('balance', amount)
+    nextTick(() => {
+      isUpdatingBalance.value = false
+    })
   }
 })
 

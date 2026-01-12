@@ -59,8 +59,7 @@ export const useAttendances = (page = 1, keepPreviousData = true) => {
     queryFn: () => fetchAttendances(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 
@@ -71,8 +70,7 @@ export const useAttendance = (uuid: string | Ref<string | null>) => {
     queryFn: () => fetchAttendance(uuidValue!),
     enabled: !!uuidValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 

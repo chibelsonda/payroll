@@ -113,9 +113,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useZodForm } from '@/composables/useZodForm'
 import { z } from 'zod'
+import { useCreateLeaveRequest } from '@/composables/useLeaveRequests'
+import { useNotification } from '@/composables/useNotification'
+import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps<{
   modelValue: boolean
@@ -127,8 +130,12 @@ const emit = defineEmits<{
   'close': []
 }>()
 
-const isSubmitting = ref(false)
+const auth = useAuthStore()
+const createMutation = useCreateLeaveRequest()
+const { showNotification } = useNotification()
 const formRef = ref()
+
+const employeeUuid = computed(() => auth.user?.employee?.uuid)
 
 const leaveTypes = [
   { title: 'Vacation', value: 'vacation' },
@@ -148,7 +155,7 @@ const leaveRequestSchema = z.object({
   path: ['end_date'],
 })
 
-const { handleSubmit, createField } = useZodForm(leaveRequestSchema)
+const { handleSubmit, createField, isSubmitting } = useZodForm(leaveRequestSchema)
 
 const leaveTypeField = createField('leave_type')
 const startDateField = createField('start_date')
@@ -164,15 +171,25 @@ watch(() => props.modelValue, (newVal) => {
 })
 
 const onSubmit = handleSubmit(async (values) => {
-  isSubmitting.value = true
+  if (!employeeUuid.value) {
+    showNotification('Employee information not found. Please log in again.', 'error')
+    return
+  }
+
   try {
-    // TODO: Implement API call
-    console.log('Submit leave request:', values)
+    await createMutation.mutateAsync({
+      employee_uuid: employeeUuid.value,
+      leave_type: values.leave_type,
+      start_date: values.start_date,
+      end_date: values.end_date,
+    })
+    showNotification('Leave request submitted successfully', 'success')
     emit('success')
-  } catch (error) {
-    console.error('Error submitting leave request:', error)
-  } finally {
-    isSubmitting.value = false
+    emit('update:modelValue', false)
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    const message = err?.response?.data?.message || 'Failed to submit leave request'
+    showNotification(message, 'error')
   }
 })
 </script>

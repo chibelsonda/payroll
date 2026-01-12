@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,9 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payrolls', function (Blueprint $table) {
+        $driver = DB::getDriverName();
+
+        Schema::create('payrolls', function (Blueprint $table) use ($driver) {
             $table->id();
-            $table->uuid('uuid')->nullable()->unique()->index();
+            if ($driver === 'pgsql') {
+                $table->uuid('uuid')->default(DB::raw('gen_random_uuid()'))->unique()->index();
+            } else {
+                $table->uuid('uuid')->nullable()->unique()->index();
+            }
             $table->foreignId('payroll_run_id')->constrained('payroll_runs')->onDelete('cascade');
             $table->foreignId('employee_id')->constrained('employees')->onDelete('cascade');
             $table->decimal('basic_salary', 15, 2)->default(0);

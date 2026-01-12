@@ -8,6 +8,7 @@ use App\Models\Payroll;
 use App\Models\PayrollDeduction;
 use App\Models\PayrollEarning;
 use App\Models\PayrollRun;
+use App\Models\Salary;
 use Illuminate\Support\Facades\DB;
 
 class PayrollService
@@ -104,8 +105,15 @@ class PayrollService
             $generatedPayrolls = [];
 
             foreach ($employees as $employee) {
-                // For now, use a default basic salary (in production, this would come from employee records)
-                $basicSalary = 0; // TODO: Get from employee salary record
+                // Get the current salary for the employee
+                // Find the most recent salary that is effective on or before the payroll period end date
+                $currentSalary = Salary::where('employee_id', $employee->id)
+                    ->where('effective_from', '<=', $payrollRun->period_end)
+                    ->orderBy('effective_from', 'desc')
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                
+                $basicSalary = $currentSalary ? (float) $currentSalary->amount : 0;
 
                 // Create payroll
                 $payroll = Payroll::create([

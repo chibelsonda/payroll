@@ -33,10 +33,13 @@ const router = createRouter({
                  { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
                  { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
                  { title: 'Payroll', to: '/admin/payroll', icon: 'mdi-cash-multiple' },
-                 { title: 'Attendance', to: '/admin/attendance', icon: 'mdi-calendar-clock' },
+                 { title: 'Attendance Management', to: '/admin/attendance', icon: 'mdi-calendar-clock' },
                  { title: 'Leave Requests', to: '/admin/leave-requests', icon: 'mdi-calendar-remove' },
                  { title: 'Loans', to: '/admin/loans', icon: 'mdi-cash-multiple' },
                  { title: 'Deductions', to: '/admin/deductions', icon: 'mdi-cash-minus' },
+                 { title: 'Contributions', to: '/admin/contributions', icon: 'mdi-account-cash' },
+                 { title: 'Salaries', to: '/admin/salaries', icon: 'mdi-cash' },
+                 { title: 'Attendance Review', to: '/admin/attendance-review', icon: 'mdi-alert-circle-outline' },
                  {
                    title: 'Settings',
                    icon: 'mdi-cog',
@@ -67,7 +70,7 @@ const router = createRouter({
                {
                  path: 'attendance',
                  name: 'admin-attendance',
-                 component: () => import('../components/AttendanceList.vue'),
+                 component: () => import('../components/AttendanceManage.vue'),
                },
                {
                  path: 'leave-requests',
@@ -84,6 +87,21 @@ const router = createRouter({
                  name: 'admin-deductions',
                  component: () => import('../components/DeductionList.vue'),
                },
+               {
+                 path: 'contributions',
+                 name: 'admin-contributions',
+                 component: () => import('../components/AdminContributionManager.vue'),
+               },
+               {
+                 path: 'salaries',
+                 name: 'admin-salaries',
+                 component: () => import('../components/AdminSalaryManager.vue'),
+               },
+               {
+                 path: 'attendance-review',
+                 name: 'admin-attendance-review',
+                 component: () => import('../components/AttendanceReviewQueue.vue'),
+               },
                // Add more admin routes here
       ],
     },
@@ -97,6 +115,7 @@ const router = createRouter({
         menuItems: [
           { title: 'Dashboard', to: '/employee', icon: 'mdi-view-dashboard' },
           { title: 'My Profile', to: '/employee/profile', icon: 'mdi-account' },
+          { title: 'Attendance', to: '/employee/attendance', icon: 'mdi-calendar-clock' },
         ],
       },
       children: [
@@ -109,6 +128,11 @@ const router = createRouter({
           path: 'profile',
           name: 'employee-profile',
           component: EmployeeDashboard, // Using same component for now, can be replaced with dedicated profile component
+        },
+        {
+          path: 'attendance',
+          name: 'employee-attendance',
+          component: () => import('../components/EmployeeAttendance.vue'),
         },
         // Add more employee routes here
       ],

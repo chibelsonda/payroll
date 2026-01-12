@@ -32,8 +32,11 @@ export function useZodForm<T extends Record<string, unknown>>(
       validateOnValueUpdate: true,
     })
 
+    // Destructure to exclude 'name' property that conflicts with Vuetify components
+    const { name: _, ...fieldWithoutName } = field as typeof field & { name?: unknown }
+
     return {
-      ...field,
+      ...fieldWithoutName,
       // Map VeeValidate errors to Vuetify format
       errorMessage: computed(() => field.errorMessage.value),
       hasError: computed(() => !!field.errorMessage.value),

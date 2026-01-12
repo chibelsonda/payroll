@@ -110,4 +110,21 @@ class Employee extends Model
     {
         return $this->hasMany(Loan::class);
     }
+
+    /**
+     * Get all contributions assigned to this employee
+     */
+    public function employeeContributions(): HasMany
+    {
+        return $this->hasMany(EmployeeContribution::class);
+    }
+
+    /**
+     * Get contributions through pivot table
+     */
+    public function contributions(): BelongsToMany
+    {
+        return $this->belongsToMany(Contribution::class, 'employee_contributions')
+            ->withTimestamps();
+    }
 }

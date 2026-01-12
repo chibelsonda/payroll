@@ -118,7 +118,8 @@
 
     <!-- Deduction Form Drawer -->
     <v-navigation-drawer
-      v-model="drawer"
+      :model-value="drawer"
+      @update:model-value="drawer = $event"
       location="right"
       temporary
       width="500"
@@ -151,7 +152,6 @@
         <v-form ref="formRef" @submit.prevent="handleFormSubmit" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
           <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
             <DeductionForm
-              v-if="drawer"
               ref="deductionFormRef"
               :deduction="editingDeduction"
             />

@@ -57,8 +57,7 @@ export const useLeaveRequests = (page = 1, keepPreviousData = true) => {
     queryFn: () => fetchLeaveRequests(page),
     placeholderData: keepPreviousData ? (previousData) => previousData : undefined,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 
@@ -69,8 +68,7 @@ export const useLeaveRequest = (uuid: string | Ref<string | null>) => {
     queryFn: () => fetchLeaveRequest(uuidValue!),
     enabled: !!uuidValue,
     retry: false,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount is true by default (set in main.ts)
   })
 }
 

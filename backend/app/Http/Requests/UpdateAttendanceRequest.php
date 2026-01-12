@@ -40,6 +40,15 @@ class UpdateAttendanceRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $data = $this->convertUuidsToIds($this->all());
+        
+        // Convert H:i format to H:i:s format for time fields (HTML5 time inputs send H:i)
+        if (isset($data['time_in']) && !empty($data['time_in']) && strlen($data['time_in']) === 5) {
+            $data['time_in'] = $data['time_in'] . ':00';
+        }
+        if (isset($data['time_out']) && !empty($data['time_out']) && strlen($data['time_out']) === 5) {
+            $data['time_out'] = $data['time_out'] . ':00';
+        }
+        
         $this->merge($data);
     }
 

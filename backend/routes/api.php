@@ -8,9 +8,16 @@ use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\PositionController;
 use App\Http\Controllers\Api\V1\PayrollController;
 use App\Http\Controllers\Api\V1\AttendanceController;
+use App\Http\Controllers\Api\V1\AttendanceLogController;
+use App\Http\Controllers\Api\V1\Admin\AttendanceFixController;
+use App\Http\Controllers\Api\V1\Admin\AttendanceResolveController;
 use App\Http\Controllers\Api\V1\LeaveRequestController;
 use App\Http\Controllers\Api\V1\LoanController;
 use App\Http\Controllers\Api\V1\DeductionController;
+use App\Http\Controllers\Api\V1\SalaryController;
+use App\Http\Controllers\Api\V1\ContributionController;
+use App\Http\Controllers\Api\V1\EmployeeDeductionController;
+use App\Http\Controllers\Api\V1\EmployeeContributionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -73,7 +80,12 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('payrolls/{payrollUuid}', [PayrollController::class, 'show'])->name('payrolls.show');
 
         // Attendance routes
-        Route::apiResource('attendances', AttendanceController::class);
+        Route::prefix('attendance')->name('attendance.')->group(function () {
+            Route::get('/summary', [AttendanceController::class, 'summary'])->name('summary');
+            Route::apiResource('logs', AttendanceLogController::class)->only(['index', 'store', 'destroy']);
+            Route::post('/correction-request', [\App\Http\Controllers\Api\V1\AttendanceCorrectionRequestController::class, 'store'])->name('correction-request');
+        });
+        Route::apiResource('attendances', AttendanceController::class)->except(['store', 'update']);
 
         // Deduction routes
         Route::apiResource('deductions', DeductionController::class);
@@ -97,6 +109,58 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::patch('/{loan}', [LoanController::class, 'update'])->name('update');
             Route::delete('/{loan}', [LoanController::class, 'destroy'])->name('destroy');
             Route::get('/{loan}/payments', [LoanController::class, 'payments'])->name('payments');
+        });
+
+        // Admin-only routes for salary, contribution, and employee assignment management
+        Route::middleware('role:admin')->group(function () {
+            // Salary routes
+            Route::prefix('salaries')->name('salaries.')->group(function () {
+                Route::get('/', [SalaryController::class, 'index'])->name('index');
+                Route::post('/', [SalaryController::class, 'store'])->name('store');
+                Route::get('/{salary}', [SalaryController::class, 'show'])->name('show');
+                Route::put('/{salary}', [SalaryController::class, 'update'])->name('update');
+                Route::delete('/{salary}', [SalaryController::class, 'destroy'])->name('destroy');
+            });
+
+            // Employee salary history
+            Route::get('employees/{employeeUuid}/salaries', [SalaryController::class, 'employeeSalaries'])->name('employees.salaries');
+
+            // Contribution routes
+            Route::prefix('contributions')->name('contributions.')->group(function () {
+                Route::get('/', [ContributionController::class, 'index'])->name('index');
+                Route::post('/', [ContributionController::class, 'store'])->name('store');
+                Route::get('/{contribution}', [ContributionController::class, 'show'])->name('show');
+                Route::put('/{contribution}', [ContributionController::class, 'update'])->name('update');
+                Route::delete('/{contribution}', [ContributionController::class, 'destroy'])->name('destroy');
+            });
+
+            // Employee deduction assignment routes
+            Route::prefix('employees/{employeeUuid}/deductions')->name('employees.deductions.')->group(function () {
+                Route::get('/', [EmployeeDeductionController::class, 'index'])->name('index');
+                Route::post('/', [EmployeeDeductionController::class, 'store'])->name('store');
+                Route::delete('/{deductionUuid}', [EmployeeDeductionController::class, 'destroy'])->name('destroy');
+            });
+
+            // Employee contribution assignment routes
+            Route::prefix('employees/{employeeUuid}/contributions')->name('employees.contributions.')->group(function () {
+                Route::get('/', [EmployeeContributionController::class, 'index'])->name('index');
+                Route::post('/', [EmployeeContributionController::class, 'store'])->name('store');
+                Route::delete('/{contributionUuid}', [EmployeeContributionController::class, 'destroy'])->name('destroy');
+            });
+
+            // Admin attendance routes
+            Route::prefix('attendance')->name('attendance.')->group(function () {
+                Route::post('/{attendance}/fix', [AttendanceFixController::class, 'fix'])->name('fix');
+                Route::post('/{attendance}/resolve', [AttendanceResolveController::class, 'resolve'])->name('resolve');
+                Route::post('/recalculate', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'recalculate'])->name('recalculate');
+                Route::post('/approve', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'approve'])->name('approve');
+                Route::post('/mark-incomplete', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'markIncomplete'])->name('mark-incomplete');
+                Route::post('/lock', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'lock'])->name('lock');
+            });
+            // Admin attendance log routes (separate from attendance routes to avoid conflicts)
+            Route::prefix('attendance')->name('attendance.')->group(function () {
+                Route::put('/logs/{attendanceLog}', [\App\Http\Controllers\Api\V1\Admin\AttendanceManageController::class, 'updateLog'])->name('logs.update');
+            });
         });
     });
 });

@@ -56,6 +56,10 @@ trait ConvertsUuidsToIds
                 'model' => \App\Models\PayrollRun::class,
                 'id_field' => 'payroll_run_id',
             ],
+            'contribution_uuid' => [
+                'model' => \App\Models\Contribution::class,
+                'id_field' => 'contribution_id',
+            ],
         ];
 
         foreach ($uuidMappings as $uuidField => $mapping) {

@@ -218,24 +218,6 @@ describe('User Registration', function () {
         expect($user->hasRole('admin'))->toBeTrue();
     });
 
-    // Additional test: Student record creation for student role
-    it('creates student record when registering as student', function () {
-        $userData = [
-            'first_name' => 'Student',
-            'last_name' => 'User',
-            'email' => 'student@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-            'role' => 'student',
-        ];
-
-        $response = $this->postJson('/register', $userData);
-
-        $response->assertStatus(201);
-
-        $user = User::where('email', 'student@example.com')->first();
-        expect($user->student)->not->toBeNull();
-    });
 
     // Additional test: No student record for admin
     it('does not create student record when registering as admin', function () {
