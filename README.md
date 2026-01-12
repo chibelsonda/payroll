@@ -250,18 +250,7 @@ php artisan test
 **Unit Tests:**
 ```bash
 cd frontend
-npm run test:unit
-```
-
-**E2E Tests (Cypress):**
-```bash
-npm run test:e2e:dev
-```
-
-**E2E Tests (Playwright):**
-```bash
-npx playwright install
-npm run test:e2e
+npm run test
 ```
 
 **Type Checking:**
