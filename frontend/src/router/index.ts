@@ -79,6 +79,11 @@ const router = createRouter({
                  name: 'admin-loans',
                  component: () => import('../components/LoanList.vue'),
                },
+               {
+                 path: 'deductions',
+                 name: 'admin-deductions',
+                 component: () => import('../components/DeductionList.vue'),
+               },
                // Add more admin routes here
       ],
     },

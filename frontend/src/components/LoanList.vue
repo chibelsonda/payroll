@@ -10,7 +10,7 @@
                 color="primary"
                 size="small"
                 prepend-icon="mdi-plus"
-                @click="showLoanForm = true"
+                @click="openDrawer"
               >
                 Add Loan
               </v-btn>
@@ -64,13 +64,13 @@
                 <tr v-if="loans.length === 0">
                   <td :colspan="headers.length" class="text-center py-8">
                     <v-icon size="48" color="grey-lighten-1" class="mb-3">mdi-cash-multiple</v-icon>
-                    <p class="text-subtitle-1 font-weight-medium mb-1">No loans</p>
+                    <p class="text-subtitle-1 font-weight-medium mb-1">No loans yet</p>
                     <p class="text-body-2 text-medium-emphasis mb-3">Start by adding a new loan</p>
                     <v-btn
                       color="primary"
                       size="small"
                       prepend-icon="mdi-plus"
-                      @click="showLoanForm = true"
+                      @click="openDrawer"
                     >
                       Add Loan
                     </v-btn>
@@ -101,9 +101,7 @@
               </template>
 
               <template v-slot:[`item.balance`]="{ item }">
-                <span :class="parseFloat(item.balance) > 0 ? 'text-error' : 'text-success'">
-                  {{ formatCurrency(item.balance) }}
-                </span>
+                {{ formatCurrency(item.balance) }}
               </template>
 
               <template v-slot:[`item.start_date`]="{ item }">
@@ -123,6 +121,11 @@
                   </template>
                   <v-list density="compact">
                     <v-list-item
+                      prepend-icon="mdi-pencil"
+                      title="Edit"
+                      @click="editLoan(item)"
+                    ></v-list-item>
+                    <v-list-item
                       prepend-icon="mdi-eye"
                       title="View Details"
                       @click="viewLoanDetails(item)"
@@ -141,25 +144,102 @@
       </v-col>
     </v-row>
 
-    <!-- Loan Form Drawer (to be implemented) -->
-    <!-- <LoanForm
-      v-model="showLoanForm"
-      @success="handleSuccess"
-      @close="handleClose"
-    /> -->
+    <!-- Loan Form Drawer -->
+    <v-navigation-drawer
+      v-model="drawer"
+      location="right"
+      temporary
+      width="500"
+      class="drawer loan-drawer"
+    >
+      <v-card class="h-100 d-flex flex-column" flat>
+        <v-card-title class="employee-drawer-header flex-shrink-0 py-3 px-5">
+          <div class="d-flex align-center w-100">
+            <v-avatar color="primary" size="40" class="me-3">
+              <v-icon color="white">mdi-cash-multiple</v-icon>
+            </v-avatar>
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-bold">{{ editingLoan ? 'Edit Loan' : 'Add Loan' }}</div>
+              <div class="text-caption text-medium-emphasis mt-1">
+                {{ editingLoan ? 'Update loan details' : 'Add a new employee loan' }}
+              </div>
+            </div>
+            <v-btn icon="mdi-close" variant="text" size="small" @click="closeDrawer" class="ml-2"></v-btn>
+          </div>
+        </v-card-title>
+
+        <v-divider class="flex-shrink-0"></v-divider>
+
+        <v-form ref="formRef" @submit.prevent="handleFormSubmit" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
+          <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
+            <LoanForm
+              v-if="drawer"
+              ref="loanFormRef"
+              :loan="editingLoan"
+            />
+          </v-card-text>
+
+          <v-divider class="flex-shrink-0"></v-divider>
+
+          <v-card-actions class="pa-4 flex-shrink-0 bg-grey-lighten-5">
+            <v-btn
+              type="button"
+              variant="outlined"
+              @click="closeDrawer"
+              class="flex-grow-1"
+              size="small"
+            >
+              Cancel
+            </v-btn>
+            <v-spacer class="mx-2"></v-spacer>
+            <v-btn
+              type="submit"
+              color="primary"
+              variant="flat"
+              size="small"
+              :loading="isSubmitting"
+              :disabled="!isValid"
+              class="flex-grow-1"
+              :prepend-icon="editingLoan ? 'mdi-content-save' : 'mdi-check'"
+            >
+              {{ editingLoan ? 'Update Loan' : 'Create Loan' }}
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-navigation-drawer>
   </v-container>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useLoans, useDeleteLoan } from '@/composables/useLoans'
 import type { Loan } from '@/types/loan'
+import LoanForm from './LoanForm.vue'
+import { useNotification } from '@/composables/useNotification'
 
-// TODO: Replace with actual composable when backend API is ready
-const isLoading = ref(false)
-const error = ref<Error | null>(null)
-const loans = ref<Loan[]>([])
+const page = ref(1)
+const drawer = ref(false)
+const editingLoan = ref<Loan | null>(null)
+const formRef = ref()
+const loanFormRef = ref<InstanceType<typeof LoanForm> | null>(null)
 
-const showLoanForm = ref(false)
+const { data, isLoading, error, refetch } = useLoans(page)
+const { showNotification } = useNotification()
+const deleteLoan = useDeleteLoan()
+
+const loans = computed(() => data.value?.data || [])
+const meta = computed(() => data.value?.meta || {
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0,
+  from: null,
+  to: null,
+})
+
+const isSubmitting = computed(() => loanFormRef.value?.isSubmitting || false)
+const isValid = computed(() => loanFormRef.value?.isValid || false)
 
 const headers = [
   { title: 'Employee', key: 'employee', sortable: true },
@@ -193,28 +273,37 @@ const getInitials = (user?: { first_name?: string; last_name?: string }): string
   return `${first}${last}` || '??'
 }
 
+const openDrawer = () => {
+  editingLoan.value = null
+  drawer.value = true
+}
+
+const closeDrawer = () => {
+  drawer.value = false
+  editingLoan.value = null
+}
+
+const editLoan = (loan: Loan) => {
+  editingLoan.value = loan
+  drawer.value = true
+}
+
+const handleFormSubmit = async () => {
+  if (loanFormRef.value) {
+    await loanFormRef.value.handleSubmit()
+    closeDrawer()
+    refetch()
+  }
+}
+
 const viewLoanDetails = (loan: Loan) => {
-  // TODO: Implement view details functionality
+  // TODO: Implement view details
   console.log('View loan details:', loan)
 }
 
 const viewPaymentHistory = (loan: Loan) => {
-  // TODO: Implement payment history functionality
+  // TODO: Implement payment history
   console.log('View payment history:', loan)
-}
-
-const refetch = () => {
-  // TODO: Implement refetch functionality
-  console.log('Refetch loans')
-}
-
-const handleSuccess = () => {
-  showLoanForm.value = false
-  refetch()
-}
-
-const handleClose = () => {
-  showLoanForm.value = false
 }
 </script>
 

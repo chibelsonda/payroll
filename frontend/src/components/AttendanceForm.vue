@@ -32,89 +32,109 @@
       <v-divider class="flex-shrink-0"></v-divider>
 
       <v-form ref="formRef" @submit.prevent="onSubmit" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
-        <v-card-text class="flex-grow-1 overflow-y-auto pa-5" style="min-height: 0;">
-          <v-row>
-            <v-col cols="12">
-              <v-text-field
-                v-model="employeeField.value.value"
-                :error-messages="employeeField.errorMessage.value"
-                label="Employee"
-                placeholder="Select employee"
-                variant="outlined"
-                density="compact"
-                readonly
-                prepend-inner-icon="mdi-account"
-              ></v-text-field>
-            </v-col>
+        <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
+          <!-- Employee -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Employee</div>
+            <v-text-field
+              v-model="employeeField.value.value"
+              :error-messages="employeeField.errorMessage.value"
+              placeholder="Select employee"
+              variant="outlined"
+              density="compact"
+              readonly
+              prepend-inner-icon="mdi-account"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
 
-            <v-col cols="12">
-              <v-text-field
-                v-model="dateField.value.value"
-                :error-messages="dateField.errorMessage.value"
-                label="Date"
-                type="date"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar"
-              ></v-text-field>
-            </v-col>
+          <!-- Date -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Date</div>
+            <v-text-field
+              v-model="dateField.value.value"
+              :error-messages="dateField.errorMessage.value"
+              type="date"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-calendar"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="timeInField.value.value"
-                :error-messages="timeInField.errorMessage.value"
-                label="Time In"
-                type="time"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-clock-in"
-              ></v-text-field>
-            </v-col>
+          <!-- Time In -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Time In</div>
+            <v-text-field
+              v-model="timeInField.value.value"
+              :error-messages="timeInField.errorMessage.value"
+              type="time"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-clock-in"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="timeOutField.value.value"
-                :error-messages="timeOutField.errorMessage.value"
-                label="Time Out"
-                type="time"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-clock-out"
-              ></v-text-field>
-            </v-col>
+          <!-- Time Out -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Time Out</div>
+            <v-text-field
+              v-model="timeOutField.value.value"
+              :error-messages="timeOutField.errorMessage.value"
+              type="time"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-clock-out"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
 
-            <v-col cols="12">
-              <v-text-field
-                v-model="hoursWorkedField.value.value"
-                :error-messages="hoursWorkedField.errorMessage.value"
-                label="Hours Worked"
-                type="number"
-                step="0.01"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-timer"
-                suffix="hrs"
-              ></v-text-field>
-            </v-col>
-          </v-row>
+          <!-- Hours Worked -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Hours Worked</div>
+            <v-text-field
+              v-model="hoursWorkedField.value.value"
+              :error-messages="hoursWorkedField.errorMessage.value"
+              type="number"
+              step="0.01"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-timer"
+              suffix="hrs"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
         </v-card-text>
 
         <v-divider class="flex-shrink-0"></v-divider>
 
-        <v-card-actions class="flex-shrink-0 px-5 py-3">
-          <v-spacer></v-spacer>
+        <v-card-actions class="pa-4 flex-shrink-0 bg-grey-lighten-5">
           <v-btn
-            variant="text"
+            type="button"
+            variant="outlined"
             @click="$emit('update:modelValue', false)"
             :disabled="isSubmitting"
+            class="flex-grow-1"
+            size="small"
           >
             Cancel
           </v-btn>
+          <v-spacer class="mx-2"></v-spacer>
           <v-btn
-            color="primary"
             type="submit"
+            color="primary"
+            variant="flat"
             :loading="isSubmitting"
             :disabled="isSubmitting"
+            class="flex-grow-1"
+            size="small"
+            :prepend-icon="isEdit ? 'mdi-content-save' : 'mdi-check'"
           >
             {{ isEdit ? 'Update' : 'Save' }}
           </v-btn>

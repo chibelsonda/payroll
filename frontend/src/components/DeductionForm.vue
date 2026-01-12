@@ -1,39 +1,41 @@
 <template>
-  <form @submit.prevent="handleSubmit">
-    <v-text-field
-      v-bind="createField('name')"
-      label="Name"
-      prepend-inner-icon="mdi-text"
-      variant="outlined"
-      density="compact"
-    />
+  <v-row>
+    <v-col cols="12">
+      <div class="mb-4">
+        <div class="text-body-2 mb-1 font-weight-medium">Name</div>
+        <v-text-field
+          v-bind="createField('name')"
+          placeholder="Enter deduction name"
+          prepend-inner-icon="mdi-text"
+          variant="outlined"
+          density="compact"
+          hide-details="auto"
+          class="employee-form-field"
+        />
+      </div>
+    </v-col>
 
-    <v-select
-      v-bind="createField('type')"
-      :items="typeOptions"
-      label="Type"
-      prepend-inner-icon="mdi-format-list-bulleted-type"
-      variant="outlined"
-      density="compact"
-    />
-
-    <div class="d-flex justify-end gap-2 mt-4">
-      <v-btn variant="text" @click="$emit('cancel')"> Cancel </v-btn>
-      <v-btn
-        type="submit"
-        color="primary"
-        :loading="isSubmitting"
-        :disabled="!isValid"
-      >
-        {{ deduction ? 'Update' : 'Create' }}
-      </v-btn>
-    </div>
-  </form>
+    <v-col cols="12">
+      <div class="mb-4">
+        <div class="text-body-2 mb-1 font-weight-medium">Type</div>
+        <v-select
+          v-bind="createField('type')"
+          :items="typeOptions"
+          placeholder="Select type"
+          prepend-inner-icon="mdi-format-list-bulleted-type"
+          variant="outlined"
+          density="compact"
+          hide-details="auto"
+          class="employee-form-field v-select"
+        />
+      </div>
+    </v-col>
+  </v-row>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useZodForm } from '@/composables'
+import { watch } from 'vue'
+import { useZodForm } from '@/composables/useZodForm'
 import { deductionSchema, type DeductionFormData } from '@/validation'
 import { useCreateDeduction, useUpdateDeduction } from '@/composables'
 import type { Deduction } from '@/types/deduction'
@@ -56,18 +58,25 @@ const { showNotification } = useNotification()
 const createDeduction = useCreateDeduction()
 const updateDeduction = useUpdateDeduction()
 
-const { createField, handleSubmit: handleFormSubmit, isSubmitting, isValid } = useZodForm({
-  schema: deductionSchema,
-  initialValues: computed(() => ({
-    name: props.deduction?.name || '',
-    type: (props.deduction?.type as 'fixed' | 'percentage') || 'fixed',
-  })),
+const { createField, handleSubmit: handleFormSubmit, isSubmitting, isValid, setFieldValue, resetForm } = useZodForm(deductionSchema, {
+  name: '',
+  type: 'fixed' as const,
 })
 
 const typeOptions = [
   { title: 'Fixed', value: 'fixed' },
   { title: 'Percentage', value: 'percentage' },
 ]
+
+// Watch for deduction changes to populate form
+watch(() => props.deduction, (deduction) => {
+  if (deduction) {
+    setFieldValue('name', deduction.name)
+    setFieldValue('type', deduction.type as 'fixed' | 'percentage')
+  } else {
+    resetForm()
+  }
+}, { immediate: true })
 
 const handleSubmit = async () => {
   await handleFormSubmit(async (values: DeductionFormData) => {
@@ -83,11 +92,19 @@ const handleSubmit = async () => {
         showNotification('Deduction created successfully', 'success')
       }
       emit('submit')
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'Failed to save deduction'
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } }
+      const message = err?.response?.data?.message || 'Failed to save deduction'
       showNotification(message, 'error')
       throw error
     }
   })
 }
+
+// Expose submit handler and state to parent
+defineExpose({
+  handleSubmit,
+  isSubmitting,
+  isValid,
+})
 </script>

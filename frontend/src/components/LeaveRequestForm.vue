@@ -32,62 +32,77 @@
       <v-divider class="flex-shrink-0"></v-divider>
 
       <v-form ref="formRef" @submit.prevent="onSubmit" class="d-flex flex-column flex-grow-1" style="min-height: 0;">
-        <v-card-text class="flex-grow-1 overflow-y-auto pa-5" style="min-height: 0;">
-          <v-row>
-            <v-col cols="12">
-              <v-select
-                v-model="leaveTypeField.value.value"
-                :error-messages="leaveTypeField.errorMessage.value"
-                :items="leaveTypes"
-                label="Leave Type"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-question"
-              ></v-select>
-            </v-col>
+        <v-card-text class="flex-grow-1 overflow-y-auto pa-6" style="min-height: 0;">
+          <!-- Leave Type -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Leave Type</div>
+            <v-select
+              v-model="leaveTypeField.value.value"
+              :error-messages="leaveTypeField.errorMessage.value"
+              :items="leaveTypes"
+              placeholder="Select leave type"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-calendar-question"
+              hide-details="auto"
+              class="employee-form-field v-select"
+            ></v-select>
+          </div>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="startDateField.value.value"
-                :error-messages="startDateField.errorMessage.value"
-                label="Start Date"
-                type="date"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-start"
-              ></v-text-field>
-            </v-col>
+          <!-- Start Date -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">Start Date</div>
+            <v-text-field
+              v-model="startDateField.value.value"
+              :error-messages="startDateField.errorMessage.value"
+              type="date"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-calendar-start"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
 
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="endDateField.value.value"
-                :error-messages="endDateField.errorMessage.value"
-                label="End Date"
-                type="date"
-                variant="outlined"
-                density="compact"
-                prepend-inner-icon="mdi-calendar-end"
-              ></v-text-field>
-            </v-col>
-          </v-row>
+          <!-- End Date -->
+          <div class="mb-4">
+            <div class="text-body-2 mb-1 font-weight-medium">End Date</div>
+            <v-text-field
+              v-model="endDateField.value.value"
+              :error-messages="endDateField.errorMessage.value"
+              type="date"
+              variant="outlined"
+              density="compact"
+              prepend-inner-icon="mdi-calendar-end"
+              hide-details="auto"
+              class="employee-form-field"
+            ></v-text-field>
+          </div>
         </v-card-text>
 
         <v-divider class="flex-shrink-0"></v-divider>
 
-        <v-card-actions class="flex-shrink-0 px-5 py-3">
-          <v-spacer></v-spacer>
+        <v-card-actions class="pa-4 flex-shrink-0 bg-grey-lighten-5">
           <v-btn
-            variant="text"
+            type="button"
+            variant="outlined"
             @click="$emit('update:modelValue', false)"
             :disabled="isSubmitting"
+            class="flex-grow-1"
+            size="small"
           >
             Cancel
           </v-btn>
+          <v-spacer class="mx-2"></v-spacer>
           <v-btn
-            color="primary"
             type="submit"
+            color="primary"
+            variant="flat"
             :loading="isSubmitting"
             :disabled="isSubmitting"
+            class="flex-grow-1"
+            size="small"
+            prepend-icon="mdi-send"
           >
             Submit Request
           </v-btn>

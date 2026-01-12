@@ -97,23 +97,23 @@
               </template>
 
               <template v-slot:[`item.leave_type`]="{ item }">
-                <v-chip
-                  :color="item.leave_type === 'vacation' ? 'blue' : 'orange'"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ item.leave_type === 'vacation' ? 'Vacation' : 'Sick' }}
+                <v-chip size="small" :color="item.leave_type === 'vacation' ? 'blue' : 'orange'">
+                  {{ item.leave_type }}
                 </v-chip>
               </template>
 
-              <template v-slot:[`item.date_range`]="{ item }">
-                {{ formatDate(item.start_date) }} - {{ formatDate(item.end_date) }}
+              <template v-slot:[`item.start_date`]="{ item }">
+                {{ formatDate(item.start_date) }}
+              </template>
+
+              <template v-slot:[`item.end_date`]="{ item }">
+                {{ formatDate(item.end_date) }}
               </template>
 
               <template v-slot:[`item.status`]="{ item }">
                 <v-chip
-                  :color="getStatusColor(item.status)"
                   size="small"
+                  :color="getStatusColor(item.status)"
                   variant="tonal"
                 >
                   {{ item.status }}
@@ -182,64 +182,62 @@ const showLeaveRequestForm = ref(false)
 const headers = [
   { title: 'Employee', key: 'employee', sortable: true },
   { title: 'Leave Type', key: 'leave_type', sortable: true },
-  { title: 'Date Range', key: 'date_range', sortable: true },
+  { title: 'Start Date', key: 'start_date', sortable: true },
+  { title: 'End Date', key: 'end_date', sortable: true },
   { title: 'Status', key: 'status', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString()
 }
 
-const getInitials = (user?: { first_name?: string; last_name?: string }): string => {
+const getInitials = (user: any) => {
   if (!user) return '??'
-  const first = user.first_name?.charAt(0).toUpperCase() || ''
-  const last = user.last_name?.charAt(0).toUpperCase() || ''
-  return `${first}${last}` || '??'
+  const first = user.first_name?.charAt(0) || ''
+  const last = user.last_name?.charAt(0) || ''
+  return `${first}${last}`.toUpperCase() || '??'
 }
 
-const getStatusColor = (status: string): string => {
+const getStatusColor = (status: string) => {
   switch (status) {
     case 'approved':
       return 'success'
     case 'rejected':
       return 'error'
-    default:
+    case 'pending':
       return 'warning'
+    default:
+      return 'default'
   }
 }
 
-const approveLeaveRequest = (leaveRequest: LeaveRequest) => {
-  // TODO: Implement approve functionality
-  console.log('Approve leave request:', leaveRequest)
+const approveLeaveRequest = (request: LeaveRequest) => {
+  // TODO: Implement approve
+  console.log('Approve leave request', request)
 }
 
-const rejectLeaveRequest = (leaveRequest: LeaveRequest) => {
-  // TODO: Implement reject functionality
-  console.log('Reject leave request:', leaveRequest)
+const rejectLeaveRequest = (request: LeaveRequest) => {
+  // TODO: Implement reject
+  console.log('Reject leave request', request)
 }
 
-const viewLeaveRequest = (leaveRequest: LeaveRequest) => {
-  // TODO: Implement view functionality
-  console.log('View leave request:', leaveRequest)
-}
-
-const refetch = () => {
-  // TODO: Implement refetch functionality
-  console.log('Refetch leave requests')
+const viewLeaveRequest = (request: LeaveRequest) => {
+  // TODO: Implement view
+  console.log('View leave request', request)
 }
 
 const handleSuccess = () => {
   showLeaveRequestForm.value = false
-  refetch()
+  // TODO: Refetch data
 }
 
 const handleClose = () => {
   showLeaveRequestForm.value = false
+}
+
+const refetch = () => {
+  // TODO: Implement refetch
 }
 </script>
 

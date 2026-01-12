@@ -109,7 +109,7 @@
               </template>
 
               <template v-slot:[`item.hours_worked`]="{ item }">
-                {{ item.hours_worked }} hrs
+                {{ item.hours_worked ? `${item.hours_worked} hrs` : '-' }}
               </template>
 
               <template v-slot:[`item.actions`]="{ item }">
@@ -154,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import type { Attendance } from '@/types/attendance'
 import AttendanceForm from './AttendanceForm.vue'
 
@@ -171,23 +171,19 @@ const headers = [
   { title: 'Date', key: 'date', sortable: true },
   { title: 'Time In', key: 'time_in', sortable: true },
   { title: 'Time Out', key: 'time_out', sortable: true },
-  { title: 'Hours Worked', key: 'hours_worked', sortable: true, align: 'end' as const },
+  { title: 'Hours Worked', key: 'hours_worked', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
-const formatDate = (date: string): string => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString()
 }
 
-const getInitials = (user?: { first_name?: string; last_name?: string }): string => {
+const getInitials = (user: any) => {
   if (!user) return '??'
-  const first = user.first_name?.charAt(0).toUpperCase() || ''
-  const last = user.last_name?.charAt(0).toUpperCase() || ''
-  return `${first}${last}` || '??'
+  const first = user.first_name?.charAt(0) || ''
+  const last = user.last_name?.charAt(0) || ''
+  return `${first}${last}`.toUpperCase() || '??'
 }
 
 const editAttendance = (attendance: Attendance) => {
@@ -196,24 +192,23 @@ const editAttendance = (attendance: Attendance) => {
 }
 
 const deleteAttendance = (attendance: Attendance) => {
-  // TODO: Implement delete functionality
-  console.log('Delete attendance:', attendance)
-}
-
-const refetch = () => {
-  // TODO: Implement refetch functionality
-  console.log('Refetch attendance')
+  // TODO: Implement delete
+  console.log('Delete attendance', attendance)
 }
 
 const handleSuccess = () => {
   showAttendanceForm.value = false
   selectedAttendanceUuid.value = null
-  refetch()
+  // TODO: Refetch data
 }
 
 const handleClose = () => {
   showAttendanceForm.value = false
   selectedAttendanceUuid.value = null
+}
+
+const refetch = () => {
+  // TODO: Implement refetch
 }
 </script>
 
