@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\V1\PayrollController;
 use App\Http\Controllers\Api\V1\AttendanceController;
 use App\Http\Controllers\Api\V1\AttendanceLogController;
 use App\Http\Controllers\Api\V1\AttendanceCorrectionRequestController;
+use App\Http\Controllers\Api\V1\AttendanceSettingsController;
 use App\Http\Controllers\Api\V1\Admin\AttendanceFixController;
 use App\Http\Controllers\Api\V1\Admin\AttendanceResolveController;
 use App\Http\Controllers\Api\V1\Admin\AttendanceManageController;
@@ -161,6 +162,12 @@ Route::prefix('v1')->name('v1.')->group(function () {
             // Admin attendance log routes (separate from attendance routes to avoid conflicts)
             Route::prefix('attendance')->name('attendance.')->group(function () {
                 Route::put('/logs/{attendanceLog}', [AttendanceManageController::class, 'updateLog'])->name('logs.update');
+            });
+
+            // Attendance Settings routes (admin only)
+            Route::prefix('attendance-settings')->name('attendance-settings.')->group(function () {
+                Route::get('/', [AttendanceSettingsController::class, 'show'])->name('show');
+                Route::put('/', [AttendanceSettingsController::class, 'update'])->name('update');
             });
         });
     });

@@ -208,6 +208,17 @@
                       title="View Logs"
                     ></v-btn>
 
+                    <!-- Add Missing Log (only if not locked) -->
+                    <v-btn
+                      v-if="!item.is_locked"
+                      icon="mdi-plus-circle"
+                      size="small"
+                      variant="text"
+                      color="success"
+                      @click="addMissingLog(item)"
+                      title="Add Missing Time In/Out"
+                    ></v-btn>
+
                     <!-- Edit Logs -->
                     <v-btn
                       v-if="!item.is_locked"
@@ -343,6 +354,70 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Add Missing Log Dialog (Admin Only) -->
+    <v-dialog v-model="showAddLogDialog" max-width="500">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon class="me-2" color="success">mdi-plus-circle</v-icon>
+          Add Missing Time In/Out
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" @click="showAddLogDialog = false"></v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pt-4">
+          <div v-if="selectedAttendance" class="mb-4">
+            <div class="text-caption text-medium-emphasis mb-1">Employee</div>
+            <div class="text-body-1 font-weight-medium">
+              {{ selectedAttendance.employee?.user?.first_name }}
+              {{ selectedAttendance.employee?.user?.last_name }}
+            </div>
+            <div class="text-caption text-medium-emphasis mb-3">
+              Date: {{ formatDate(selectedAttendance.date) }}
+            </div>
+          </div>
+
+          <v-select
+            v-model="newLogType"
+            :items="[
+              { title: 'Time In', value: 'IN' },
+              { title: 'Time Out', value: 'OUT' }
+            ]"
+            label="Log Type"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-clock-outline"
+            class="mb-4"
+          ></v-select>
+
+          <v-text-field
+            v-model="newLogTime"
+            type="datetime-local"
+            label="Date & Time"
+            variant="outlined"
+            density="compact"
+            prepend-inner-icon="mdi-calendar-clock"
+            :min="selectedAttendance ? getMinDateTime(selectedAttendance.date) : undefined"
+            :max="selectedAttendance ? getMaxDateTime(selectedAttendance.date) : undefined"
+            hint="Select the date and time for this log entry"
+            persistent-hint
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showAddLogDialog = false">Cancel</v-btn>
+          <v-btn
+            color="success"
+            variant="flat"
+            @click="submitNewLog"
+            :loading="isSubmittingNewLog"
+            :disabled="!newLogType || !newLogTime"
+          >
+            Add Log
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -358,8 +433,10 @@ import {
   useMarkIncomplete,
   useLockAttendance,
 } from '@/composables/useAttendanceManagement'
+import { useCreateAttendanceLog } from '@/composables/useAttendanceLogs'
 import { useNotification } from '@/composables/useNotification'
 import { useAuthStore } from '@/stores/auth'
+import { formatDateTimeForBackend } from '@/lib/datetime'
 import AttendanceTimeline from './AttendanceTimeline.vue'
 
 const authStore = useAuthStore()
@@ -379,14 +456,18 @@ const recalculateMutation = useRecalculateAttendance()
 const approveMutation = useApproveAttendance()
 const markIncompleteMutation = useMarkIncomplete()
 const lockMutation = useLockAttendance()
+const createLogMutation = useCreateAttendanceLog()
 
 const attendanceRecords = computed(() => data.value?.data || [])
 
 const showLogsDialog = ref(false)
 const showEditLogsDialog = ref(false)
 const showCorrectionDialog = ref(false)
+const showAddLogDialog = ref(false)
 const selectedAttendance = ref<Attendance | null>(null)
 const correctionReason = ref('')
+const newLogType = ref<'IN' | 'OUT' | null>(null)
+const newLogTime = ref('')
 const loadingStates = ref<Record<string, boolean>>({})
 
 const headers = [
@@ -601,6 +682,61 @@ const toggleLock = async (item: Attendance) => {
 const handleLogUpdated = () => {
   refetch()
 }
+
+const getMaxDateTime = (date?: string): string => {
+  if (!date) return ''
+  // Allow logs up to end of the selected date (23:59)
+  return `${date}T23:59`
+}
+
+const getMinDateTime = (date?: string): string => {
+  if (!date) return ''
+  // Allow logs from start of the selected date (00:00)
+  return `${date}T00:00`
+}
+
+const addMissingLog = (item: Attendance) => {
+  selectedAttendance.value = item
+  newLogType.value = null
+  // Set default time to the date at 08:00 (typical shift start)
+  newLogTime.value = `${item.date}T08:00`
+  showAddLogDialog.value = true
+}
+
+const submitNewLog = async () => {
+  if (!selectedAttendance.value || !newLogType.value || !newLogTime.value) return
+
+  const employeeUuid = selectedAttendance.value.employee_uuid || selectedAttendance.value.employee?.uuid
+  if (!employeeUuid) {
+    showNotification('Employee UUID not found', 'error')
+    return
+  }
+
+  loadingStates.value['add-log'] = true
+  try {
+    // Format datetime for backend
+    const formattedDateTime = formatDateTimeForBackend(newLogTime.value)
+
+    await createLogMutation.mutateAsync({
+      employee_uuid: employeeUuid,
+      type: newLogType.value,
+      log_time: formattedDateTime,
+    })
+
+    showNotification('Attendance log added successfully', 'success')
+    showAddLogDialog.value = false
+    newLogType.value = null
+    newLogTime.value = ''
+    await refetch()
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: { message?: string } } }
+    showNotification(err?.response?.data?.message || 'Failed to add log', 'error')
+  } finally {
+    loadingStates.value['add-log'] = false
+  }
+}
+
+const isSubmittingNewLog = computed(() => loadingStates.value['add-log'] || createLogMutation.isPending.value)
 </script>
 
 <style scoped>

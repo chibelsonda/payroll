@@ -19,11 +19,14 @@ class AttendanceSettings extends Model
         'max_shift_hours',
         'auto_close_missing_out',
         'auto_deduct_break',
+        'enable_auto_correction',
     ];
 
     protected $casts = [
         'max_shift_hours' => 'integer',
         'auto_close_missing_out' => 'boolean',
+        'auto_deduct_break' => 'boolean',
+        'enable_auto_correction' => 'boolean',
     ];
 
     // Note: default_break_start and default_break_end are TIME columns
@@ -43,6 +46,7 @@ class AttendanceSettings extends Model
             'max_shift_hours' => 8,
             'auto_close_missing_out' => true,
             'auto_deduct_break' => true,
+            'enable_auto_correction' => true, // Master switch for all auto-corrections
         ];
     }
 

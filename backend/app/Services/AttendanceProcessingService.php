@@ -155,19 +155,29 @@ class AttendanceProcessingService
                         ->isNotEmpty();
 
                     if (!$hasOutBetween) {
-                        // Auto-close previous IN at break start
-                        // Check if auto-corrected OUT already exists at break start
-                        $existingAutoOut = $logs->where('type', 'OUT')
-                            ->where('is_auto_corrected', true)
-                            ->where('log_time', $breakStart)
-                            ->first();
+                        // RULE 6: Consecutive INs - Auto-close previous IN at break start
+                        // Only if auto-correction is enabled
+                        if ($settings['enable_auto_correction'] ?? true) {
+                            // Check if auto-corrected OUT already exists at break start
+                            $existingAutoOut = $logs->where('type', 'OUT')
+                                ->where('is_auto_corrected', true)
+                                ->where('log_time', $breakStart)
+                                ->first();
 
-                        if (!$existingAutoOut) {
-                            $this->createAutoCorrectedLog($employeeId, $breakStart, 'OUT', 'Missing time-out auto-closed (consecutive INs)');
+                            if (!$existingAutoOut) {
+                                $this->createAutoCorrectedLog($employeeId, $breakStart, 'OUT', 'Missing time-out auto-closed (consecutive INs)');
+                            }
+                            $intervals[] = ['start' => $inTime, 'end' => $breakStart];
+                            $totalMinutes += $inTime->diffInMinutes($breakStart);
+                            $isAutoCorrected = true;
+                        } else {
+                            // Auto-correction disabled - mark for review instead
+                            $needsReview = true;
+                            $isIncomplete = true;
+                            if ($status === 'present') {
+                                $status = 'incomplete';
+                            }
                         }
-                        $intervals[] = ['start' => $inTime, 'end' => $breakStart];
-                        $totalMinutes += $inTime->diffInMinutes($breakStart);
-                        $isAutoCorrected = true;
                     }
                 }
                 $inTime = $logTime;
@@ -188,7 +198,10 @@ class AttendanceProcessingService
         // RULE 7: End-of-Day OPEN IN
         // SAFEGUARD: Only auto-close if no real OUT log exists for this date
         if ($inTime !== null && !$hasRealOutLog) {
-            if ($settings['auto_close_missing_out']) {
+            // Check if auto-correction is enabled (master switch)
+            $autoCorrectionEnabled = $settings['enable_auto_correction'] ?? true;
+
+            if ($autoCorrectionEnabled && ($settings['auto_close_missing_out'] ?? true)) {
                 // Validate that we're not creating a duplicate auto-corrected OUT
                 $existingAutoOut = $logs->where('type', 'OUT')
                     ->where('is_auto_corrected', true)
@@ -202,6 +215,7 @@ class AttendanceProcessingService
                 $totalMinutes += $inTime->diffInMinutes($shiftEnd);
                 $isAutoCorrected = true;
             } else {
+                // Auto-correction disabled or auto_close_missing_out is false
                 $isIncomplete = true;
                 $needsReview = true;
                 $status = 'incomplete';
@@ -222,7 +236,8 @@ class AttendanceProcessingService
         }
 
         // RULE 4: Missing BOTH IN and OUT (single continuous shift with break deduction)
-        if (count($intervals) === 1 && $settings['auto_deduct_break']) {
+        // Only apply if auto-correction is enabled
+        if (count($intervals) === 1 && ($settings['enable_auto_correction'] ?? true) && ($settings['auto_deduct_break'] ?? true)) {
             $interval = $intervals[0];
 
             // If the interval spans the entire shift, deduct break
@@ -343,6 +358,7 @@ class AttendanceProcessingService
                     'max_shift_hours' => $settings->max_shift_hours,
                     'auto_close_missing_out' => $settings->auto_close_missing_out,
                     'auto_deduct_break' => $settings->auto_deduct_break,
+                    'enable_auto_correction' => $settings->enable_auto_correction ?? true,
                 ];
             }
         }

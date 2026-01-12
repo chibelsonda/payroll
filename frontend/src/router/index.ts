@@ -45,6 +45,7 @@ const router = createRouter({
                    icon: 'mdi-cog',
                    children: [
                      { title: 'General', to: '/admin/settings/general' },
+                     { title: 'Attendance', to: '/admin/settings/attendance' },
                      { title: 'Notifications', to: '/admin/settings/notifications' },
                      { title: 'Security', to: '/admin/settings/security' },
                    ],
@@ -101,6 +102,11 @@ const router = createRouter({
                  path: 'attendance-review',
                  name: 'admin-attendance-review',
                  component: () => import('../components/AttendanceReviewQueue.vue'),
+               },
+               {
+                 path: 'settings/attendance',
+                 name: 'admin-settings-attendance',
+                 component: () => import('../components/AttendanceSettings.vue'),
                },
                // Add more admin routes here
       ],
