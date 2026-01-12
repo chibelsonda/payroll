@@ -138,7 +138,7 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { useNotification } from '@/composables/useNotification'
+import { useNotification } from '@/composables'
 
 interface MenuItem {
   title: string

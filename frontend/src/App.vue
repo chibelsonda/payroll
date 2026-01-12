@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import GlobalLoading from './components/GlobalLoading.vue';
-import NotificationSnackbar from './components/NotificationSnackbar.vue'
+import GlobalLoading from './components/common/GlobalLoading.vue';
+import NotificationSnackbar from './components/common/NotificationSnackbar.vue'
 </script>
 
 <template>

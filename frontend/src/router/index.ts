@@ -58,52 +58,52 @@ const router = createRouter({
                {
                  path: 'employees',
                  name: 'admin-employees',
-                 component: () => import('../components/EmployeesList.vue'),
+                 component: () => import('../components/employee/EmployeesList.vue'),
                },
                {
                  path: 'payroll',
                  name: 'admin-payroll',
-                 component: () => import('../components/PayrollRunList.vue'),
+                 component: () => import('../components/payroll/PayrollRunList.vue'),
                },
                {
                  path: 'attendance',
                  name: 'admin-attendance',
-                 component: () => import('../components/AttendanceManage.vue'),
+                 component: () => import('../components/attendance/AttendanceManage.vue'),
                },
                {
                  path: 'leave-requests',
                  name: 'admin-leave-requests',
-                 component: () => import('../components/LeaveRequestList.vue'),
+                 component: () => import('../components/leave/LeaveRequestList.vue'),
                },
                {
                  path: 'loans',
                  name: 'admin-loans',
-                 component: () => import('../components/LoanList.vue'),
+                 component: () => import('../components/loan/LoanList.vue'),
                },
                {
                  path: 'deductions',
                  name: 'admin-deductions',
-                 component: () => import('../components/DeductionList.vue'),
+                 component: () => import('../components/deduction/DeductionList.vue'),
                },
                {
                  path: 'contributions',
                  name: 'admin-contributions',
-                 component: () => import('../components/AdminContributionManager.vue'),
+                 component: () => import('../components/contribution/AdminContributionManager.vue'),
                },
                {
                  path: 'salaries',
                  name: 'admin-salaries',
-                 component: () => import('../components/AdminSalaryManager.vue'),
+                 component: () => import('../components/salary/AdminSalaryManager.vue'),
                },
                {
                  path: 'attendance-review',
                  name: 'admin-attendance-review',
-                 component: () => import('../components/AttendanceReviewQueue.vue'),
+                 component: () => import('../components/attendance/AttendanceReviewQueue.vue'),
                },
                {
                  path: 'settings/attendance',
                  name: 'admin-settings-attendance',
-                 component: () => import('../components/AttendanceSettings.vue'),
+                 component: () => import('../components/attendance/AttendanceSettings.vue'),
                },
                // Add more admin routes here
       ],
@@ -135,7 +135,7 @@ const router = createRouter({
         {
           path: 'attendance',
           name: 'employee-attendance',
-          component: () => import('../components/EmployeeAttendance.vue'),
+          component: () => import('../components/attendance/EmployeeAttendance.vue'),
         },
         // Add more employee routes here
       ],

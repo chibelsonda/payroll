@@ -106,8 +106,8 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
-import { useNotification } from '@/composables/useNotification'
-import { useZodForm } from '@/composables/useZodForm'
+import { useNotification } from '@/composables'
+import { useZodForm } from '@/composables'
 import { loginSchema, type LoginFormData } from '@/validation'
 
 const auth = useAuthStore()

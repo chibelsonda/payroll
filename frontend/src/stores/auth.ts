@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
-import { useLogin, useRegister, useLogout, useCurrentUser } from '@/composables/useAuth'
+import { useLogin, useRegister, useLogout, useCurrentUser } from '@/composables'
 import type { LoginCredentials, RegisterData } from '@/types/auth'
 
 export const useAuthStore = defineStore('auth', () => {
