@@ -178,7 +178,7 @@ const allContributions = computed(() => contributionsData.value?.data || [])
 // Filter out already assigned contributions
 const availableContributions = computed(() => {
   const assignedIds = new Set(assignedContributions.value.map(ec => ec.contribution?.uuid).filter(Boolean))
-  return allContributions.filter(c => !assignedIds.has(c.uuid))
+  return allContributions.value.filter(c => !assignedIds.has(c.uuid))
 })
 
 const assigningContribution = ref<string | null>(null)

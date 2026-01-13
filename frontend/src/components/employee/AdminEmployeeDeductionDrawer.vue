@@ -185,7 +185,7 @@ const allDeductions = computed(() => deductionsData.value?.data || [])
 // Filter out already assigned deductions
 const availableDeductions = computed(() => {
   const assignedIds = new Set(assignedDeductions.value.map(ed => ed.deduction?.uuid).filter(Boolean))
-  return allDeductions.filter(d => !assignedIds.has(d.uuid))
+  return allDeductions.value.filter(d => !assignedIds.has(d.uuid))
 })
 
 const assigningDeduction = ref<string | null>(null)
