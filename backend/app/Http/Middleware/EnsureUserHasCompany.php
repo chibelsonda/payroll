@@ -21,8 +21,10 @@ class EnsureUserHasCompany
             abort(401, 'Unauthenticated');
         }
 
-        // If user doesn't have a company, redirect to onboarding
-        if (!$user->company_id) {
+        // Check if user belongs to any company
+        $userHasCompanies = $user->companies()->exists();
+
+        if (!$userHasCompanies) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,

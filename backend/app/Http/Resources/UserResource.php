@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class UserResource extends JsonResource
 {
@@ -17,32 +18,44 @@ class UserResource extends JsonResource
         // Get role from Spatie Permission (company-scoped)
         $role = 'employee'; // Default
 
-        // Set Spatie team context if user has a company_id
-        if ($this->company_id && $this->id) {
+        // Get active company ID from middleware, or fallback to user's latest company
+        $activeCompanyId = app()->bound('active_company_id') ? app('active_company_id') : null;
+
+        // If no active company is set, use the user's most recently created company
+        if (!$activeCompanyId && $this->id) {
+            $latestCompany = $this->fresh()->companies()->orderBy('created_at', 'desc')->first();
+            if ($latestCompany) {
+                $activeCompanyId = $latestCompany->id;
+            }
+        }
+
+        // Set Spatie team context and retrieve role
+        if ($activeCompanyId && $this->id) {
             $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
             $previousTeamId = $registrar->getPermissionsTeamId();
 
             try {
-                // Set team context before getting roles
-                $registrar->setPermissionsTeamId($this->company_id);
-
-                // Clear cached permissions to ensure fresh lookup
+                $registrar->setPermissionsTeamId($activeCompanyId);
                 $registrar->forgetCachedPermissions();
 
-                // Query roles directly from the pivot table with company_id filter
-                // This bypasses potential caching issues with getRoleNames()
-                $userRoles = $this->roles()->wherePivot('company_id', $this->company_id)->get();
-                if ($userRoles->isNotEmpty()) {
-                    $role = $userRoles->first()->name;
+                $roleNames = $this->getRoleNames();
+                if ($roleNames->isNotEmpty()) {
+                    $role = $roleNames->first();
                 } else {
-                    // Fallback to getRoleNames() if direct query doesn't work
-                    $roleNames = $this->getRoleNames();
-                    if ($roleNames->isNotEmpty()) {
-                        $role = $roleNames->first();
+                    // Fallback: check database directly if Spatie cache is stale
+                    $dbRole = DB::table('model_has_roles as mhr')
+                        ->where('mhr.model_id', $this->id)
+                        ->where('mhr.model_type', 'App\Models\User')
+                        ->where('mhr.company_id', $activeCompanyId)
+                        ->join('roles', 'mhr.role_id', '=', 'roles.id')
+                        ->select('roles.name')
+                        ->first();
+
+                    if ($dbRole) {
+                        $role = $dbRole->name;
                     }
                 }
             } finally {
-                // Restore previous team context
                 $registrar->setPermissionsTeamId($previousTeamId);
             }
         }
@@ -53,7 +66,7 @@ class UserResource extends JsonResource
             'last_name' => $this->last_name,
             'name' => $this->name, // Full name accessor
             'email' => $this->email,
-            'has_company' => $this->company_id !== null, // Boolean flag instead of exposing company_id
+            'has_company' => $this->companies()->exists(), // Check if user belongs to any company
             'role' => $role,
             'email_verified_at' => $this->email_verified_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),

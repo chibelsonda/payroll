@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useZodForm } from '@/composables'
 import { useCreateCompany } from '@/composables'
@@ -106,7 +106,6 @@ const {
   isValid,
   setServerErrors,
   clearServerErrors,
-  formRef,
 } = useZodForm<CreateCompanyFormData>(createCompanySchema, {
   name: '',
   registration_no: null,
@@ -134,19 +133,27 @@ const handleSubmit = baseHandleSubmit(async (values: unknown) => {
 
     notification.showSuccess('Company created successfully!')
 
-    // Set the created company as the active company in the store
+    // Set the created company as the active company in the store FIRST
+    // This ensures the X-Company-ID header is set before fetching user data
     if (createdCompany?.uuid) {
       companyStore.setActiveCompany(createdCompany.uuid)
+      // Small delay to ensure localStorage is updated and axios interceptor picks it up
+      await new Promise(resolve => setTimeout(resolve, 100))
     }
 
-    // Invalidate user query to get updated company_id
+    // Invalidate and refetch user query to get updated role with company context
     await queryClient.invalidateQueries({ queryKey: ['user'] })
     // Invalidate companies query to refetch and include the new company
     await queryClient.invalidateQueries({ queryKey: ['companies'] })
+    // Fetch user data with the new company context and wait for it to complete
     await auth.fetchUser()
 
-    // Redirect to dashboard based on role
-    const user = auth.user
+    // Wait a bit more to ensure the user data is fully updated
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    // Get fresh user data from the query - ensure we have the latest data
+    const userData = queryClient.getQueryData<{ role?: string }>(['user'])
+    const user = (userData || auth.user) as { role?: string } | null
     if (user?.role === 'owner') {
       await router.push('/owner')
     } else if (user?.role === 'admin') {

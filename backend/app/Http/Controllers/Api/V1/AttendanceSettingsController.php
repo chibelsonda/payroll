@@ -19,7 +19,7 @@ class AttendanceSettingsController extends BaseApiController
     public function show(Request $request): JsonResponse
     {
         $companyId = app('active_company_id');
-        
+
         if (!$companyId) {
             return $this->errorResponse('Active company not set', [], [], 400);
         }
@@ -63,7 +63,7 @@ class AttendanceSettingsController extends BaseApiController
     public function update(UpdateAttendanceSettingsRequest $request): JsonResponse
     {
         $companyId = app('active_company_id');
-        
+
         if (!$companyId) {
             return $this->errorResponse('Active company not set', [], [], 400);
         }
@@ -74,7 +74,7 @@ class AttendanceSettingsController extends BaseApiController
         }
 
         $validated = $request->validated();
-        
+
         // company_id is automatically set by CompanyScopedModel when creating
         // Update or create settings for the active company
         $settings = AttendanceSettings::updateOrCreate(

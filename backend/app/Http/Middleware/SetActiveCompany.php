@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Company;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,28 +19,45 @@ class SetActiveCompany
      */
     public function handle(Request $request, Closure $next): Response
     {
+        /** @var User|null $user */
         $user = Auth::user();
 
         if (!$user) {
             abort(401, 'Unauthenticated');
         }
 
-        // Use user's company_id directly (users belong to one company)
-        if (!$user->company_id) {
-            abort(403, 'User does not belong to a company');
+        // Get company UUID from X-Company-ID header or query parameter
+        $companyUuid = $request->header('X-Company-ID') ?: $request->query('company_id');
+
+        // For /api/v1/user endpoint, make company optional (UserResource will use fallback)
+        $isUserEndpoint = $request->routeIs('v1.auth.user')
+            || $request->is('api/v1/user')
+            || $request->path() === 'api/v1/user';
+
+        if (!$companyUuid && $isUserEndpoint) {
+            return $next($request);
         }
 
-        // Find company by ID
-        $company = Company::find($user->company_id);
+        if (!$companyUuid && !$isUserEndpoint) {
+            abort(403, 'Company ID is required. Please provide X-Company-ID header.');
+        }
+
+        // Find company by UUID
+        $company = Company::where('uuid', $companyUuid)->first();
 
         if (!$company) {
             abort(404, 'Company not found');
         }
 
-        // Store active company ID globally
-        app()->instance('active_company_id', $company->id);
+        // Verify user belongs to this company
+        $userBelongsToCompany = $user->companies()->where('companies.id', $company->id)->exists();
 
-        // Set Spatie team context
+        if (!$userBelongsToCompany) {
+            abort(403, 'User does not belong to this company');
+        }
+
+        // Store active company ID globally and set Spatie team context
+        app()->instance('active_company_id', $company->id);
         app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);
 
         // Make company available in request

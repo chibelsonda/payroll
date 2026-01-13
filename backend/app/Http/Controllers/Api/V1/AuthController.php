@@ -28,6 +28,10 @@ class AuthController extends BaseApiController
     public function register(RegisterRequest $request): JsonResponse
     {
         $result = $this->authService->register($request->validated());
+
+        // Explicitly save the session to ensure the cookie is set before response
+        $request->session()->save();
+
         return $this->createdResponse([
             'user' => new UserResource($result['user']),
         ], 'User registered successfully');

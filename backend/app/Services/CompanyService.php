@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Company;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class CompanyService
 {
@@ -36,6 +38,47 @@ class CompanyService
     public function createCompany(array $data): Company
     {
         return Company::create($data);
+    }
+
+    /**
+     * Assign owner role to user for a company
+     *
+     * @param \App\Models\User $user The user to assign the role to
+     * @param \App\Models\Company $company The company to assign the role for
+     * @return void
+     */
+    public function assignOwnerRoleToUser(\App\Models\User $user, \App\Models\Company $company): void
+    {
+        $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        try {
+            // Set team context BEFORE assigning role
+            $registrar->setPermissionsTeamId($company->id);
+
+            // Clear permission cache to ensure fresh lookup
+            $registrar->forgetCachedPermissions();
+
+            // Remove any existing roles first (for this company)
+            // Manually delete from model_has_roles table to ensure proper cleanup
+            DB::table('model_has_roles')
+                ->where('model_id', $user->id)
+                ->where('model_type', 'App\Models\User')
+                ->where('company_id', $company->id)
+                ->delete();
+
+            // Clear cache after removing roles
+            $registrar->forgetCachedPermissions();
+
+            // Assign 'owner' role (scoped to this company_id)
+            $user->assignRole('owner');
+
+            // Clear cache to ensure the assignment is reflected
+            $registrar->forgetCachedPermissions();
+        } finally {
+            // Restore previous team context
+            $registrar->setPermissionsTeamId($previousTeamId);
+        }
     }
 
     /**

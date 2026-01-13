@@ -26,9 +26,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->name('v1.')->group(function () {
     // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {
-        // Auth routes (no company context needed)
-        Route::get('/user', [AuthController::class, 'user'])->name('auth.user');
-        
+        // Auth routes (no company context needed, but try to set it if header is present)
+        Route::middleware('active.company')->get('/user', [AuthController::class, 'user'])->name('auth.user');
+
         // Companies routes
         // GET: Requires company (for existing users)
         // POST: No company required (for onboarding)

@@ -131,6 +131,9 @@ class AuthService
         /** @var User $user */
         $user = $request->user();
 
+        // Get fresh user instance to ensure we have latest data (including newly attached companies)
+        $user = $user->fresh();
+
         // Load employee and roles relationships
         $user->load(['employee', 'roles']);
 

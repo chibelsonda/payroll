@@ -22,7 +22,6 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'uuid',
-        'company_id',
         'first_name',
         'last_name',
         'email',
@@ -56,11 +55,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the company that this user belongs to
+     * Get all companies that this user belongs to
      */
-    public function company()
+    public function companies()
     {
-        return $this->belongsTo(Company::class);
+        return $this->belongsToMany(Company::class)->withTimestamps();
     }
 
     public function employee()
