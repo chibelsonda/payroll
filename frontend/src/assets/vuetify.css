@@ -34,3 +34,8 @@
 body > .v-overlay:has(.v-list) {
   z-index: 2500 !important;
 }
+
+/* Prevent button text capitalization globally */
+.v-btn {
+  text-transform: none !important;
+}

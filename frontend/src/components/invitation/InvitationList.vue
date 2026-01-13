@@ -141,6 +141,19 @@
       v-model="showInvitationForm"
       @success="handleInvitationSent"
     />
+
+    <!-- Delete Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showDeleteDialog"
+      title="Cancel Invitation"
+      :message="deleteMessage"
+      warning="This action cannot be undone."
+      confirm-text="Cancel"
+      cancel-text="Keep"
+      type="danger"
+      :loading="cancellingInvitation !== null"
+      @confirm="handleConfirmCancel"
+    />
   </v-container>
 </template>
 
@@ -149,11 +162,14 @@ import { computed, ref } from 'vue'
 import { useInvitations, useCancelInvitation } from '@/composables'
 import type { Invitation } from '@/types/invitation'
 import InvitationForm from './InvitationForm.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { formatDateForDisplay } from '@/lib/datetime'
 
 const { data: invitations, isLoading, error, refetch } = useInvitations()
 const cancelInvitationMutation = useCancelInvitation()
 const showInvitationForm = ref(false)
+const showDeleteDialog = ref(false)
+const invitationToCancel = ref<Invitation | null>(null)
 const cancellingInvitation = ref<string | null>(null)
 
 const headers = [
@@ -193,14 +209,24 @@ const formatDate = (dateString: string) => {
   }
 }
 
-const handleCancel = async (invitation: Invitation) => {
-  if (!confirm(`Are you sure you want to cancel the invitation to ${invitation.email}?`)) {
-    return
-  }
+const deleteMessage = computed(() => {
+  if (!invitationToCancel.value) return ''
+  return `Are you sure you want to cancel the invitation to ${invitationToCancel.value.email}?`
+})
 
-  cancellingInvitation.value = invitation.uuid
+const handleCancel = (invitation: Invitation) => {
+  invitationToCancel.value = invitation
+  showDeleteDialog.value = true
+}
+
+const handleConfirmCancel = async () => {
+  if (!invitationToCancel.value) return
+
+  cancellingInvitation.value = invitationToCancel.value.uuid
   try {
-    await cancelInvitationMutation.mutateAsync(invitation.uuid)
+    await cancelInvitationMutation.mutateAsync(invitationToCancel.value.uuid)
+    showDeleteDialog.value = false
+    invitationToCancel.value = null
   } finally {
     cancellingInvitation.value = null
   }
