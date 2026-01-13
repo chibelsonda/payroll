@@ -114,6 +114,18 @@
               </v-col>
               <v-col cols="12" sm="6" md="3">
                 <v-btn
+                  to="/owner/invitations"
+                  color="purple"
+                  variant="elevated"
+                  block
+                  size="large"
+                  prepend-icon="mdi-email-plus"
+                >
+                  Invite Team
+                </v-btn>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-btn
                   to="/owner/settings"
                   color="secondary"
                   variant="elevated"

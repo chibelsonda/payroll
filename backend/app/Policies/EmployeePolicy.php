@@ -14,7 +14,7 @@ class EmployeePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('hr');
+        return $user->hasRole('owner') || $user->hasRole('admin') || $user->hasRole('hr');
     }
 
     /**
@@ -23,7 +23,7 @@ class EmployeePolicy
      */
     public function view(User $user, Employee $employee): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('hr');
+        return $user->hasRole('owner') || $user->hasRole('admin') || $user->hasRole('hr');
     }
 
     /**
@@ -32,7 +32,7 @@ class EmployeePolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('hr');
+        return $user->hasRole('owner') || $user->hasRole('admin') || $user->hasRole('hr');
     }
 
     /**
@@ -41,7 +41,7 @@ class EmployeePolicy
      */
     public function update(User $user, Employee $employee): bool
     {
-        return $user->hasRole('admin') || $user->hasRole('hr');
+        return $user->hasRole('owner') || $user->hasRole('admin') || $user->hasRole('hr');
     }
 
     /**
@@ -50,7 +50,7 @@ class EmployeePolicy
      */
     public function delete(User $user, Employee $employee): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasRole('owner') || $user->hasRole('admin');
     }
 
     /**

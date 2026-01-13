@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\V1\SalaryController;
 use App\Http\Controllers\Api\V1\ContributionController;
 use App\Http\Controllers\Api\V1\EmployeeDeductionController;
 use App\Http\Controllers\Api\V1\EmployeeContributionController;
+use App\Http\Controllers\Api\V1\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -35,11 +36,18 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
         Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
 
+        // Accept invitation (no company context needed - user might not have company yet)
+        Route::post('invitations/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
+
         // Company-scoped routes (require active company context)
         Route::middleware(['ensure.user.has.company', 'active.company'])->group(function () {
+            // Invitations routes
+            Route::get('invitations', [InvitationController::class, 'index'])->name('invitations.index');
+            Route::post('invitations', [InvitationController::class, 'store'])->name('invitations.store');
+            Route::delete('invitations/{invitation:uuid}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
             // Example: Routes protected by role middleware
-            Route::middleware('role:admin')->group(function () {
-                // Admin-only routes can go here
+            Route::middleware('role:owner|admin')->group(function () {
+                // Owner/Admin-only routes can go here
             });
 
             // Example: Routes protected by permission middleware
@@ -66,8 +74,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
             });
 
             // Alternative: Using role_or_permission middleware
-            Route::middleware('role_or_permission:admin|manage users')->group(function () {
-                // Routes accessible by admin role OR manage users permission
+            Route::middleware('role_or_permission:owner|admin|manage users')->group(function () {
+                // Routes accessible by owner/admin role OR manage users permission
             });
 
             // Existing resource routes
@@ -120,8 +128,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 Route::get('/{loan}/payments', [LoanController::class, 'payments'])->name('payments');
             });
 
-            // Admin-only routes for salary, contribution, and employee assignment management
-            Route::middleware('role:admin')->group(function () {
+            // Owner/Admin-only routes for salary, contribution, and employee assignment management
+            Route::middleware('role:owner|admin')->group(function () {
             // Salary routes
             Route::prefix('salaries')->name('salaries.')->group(function () {
                 Route::get('/', [SalaryController::class, 'index'])->name('index');

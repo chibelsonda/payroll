@@ -21,6 +21,7 @@ export * from './payslip'
 export * from './salary'
 export * from './contribution'
 export * from './salaryPayment'
+export * from './invitation'
 
 // Utility types
 export * from './pagination'

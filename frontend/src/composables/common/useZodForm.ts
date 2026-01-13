@@ -93,6 +93,18 @@ export function useZodForm<T extends Record<string, unknown>>(
     form.resetForm({ values: initialValues || {} })
   }
 
+  /**
+   * Get error messages for a specific field
+   * Returns an array of error messages (or empty array if no errors)
+   * Useful for Vuetify's :error-messages prop
+   */
+  const fieldErrors = (fieldName: keyof T): string[] => {
+    const error = form.errors.value[fieldName as string]
+    if (!error) return []
+    // VeeValidate errors can be strings or arrays
+    return Array.isArray(error) ? error : [error]
+  }
+
   return {
     // Form state
     form,
@@ -113,6 +125,7 @@ export function useZodForm<T extends Record<string, unknown>>(
 
     // Helpers
     createField,
+    fieldErrors,
     setServerErrors,
     clearServerErrors,
   }

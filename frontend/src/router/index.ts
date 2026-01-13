@@ -133,6 +133,7 @@ const router = createRouter({
           { title: 'Contributions', to: '/owner/contributions', icon: 'mdi-account-cash' },
           { title: 'Salaries', to: '/owner/salaries', icon: 'mdi-cash' },
           { title: 'Attendance Review', to: '/owner/attendance-review', icon: 'mdi-alert-circle-outline' },
+          { title: 'Invitations', to: '/owner/invitations', icon: 'mdi-email-plus' },
           {
             title: 'Settings',
             icon: 'mdi-cog',
@@ -192,6 +193,11 @@ const router = createRouter({
           path: 'attendance-review',
           name: 'owner-attendance-review',
           component: () => import('../components/attendance/AttendanceReviewQueue.vue'),
+        },
+        {
+          path: 'invitations',
+          name: 'owner-invitations',
+          component: () => import('../components/invitation/InvitationList.vue'),
         },
         {
           path: 'settings/attendance',
