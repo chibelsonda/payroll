@@ -15,6 +15,9 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Get fresh user instance to ensure we have latest data (including newly attached companies)
+        $user = $this->fresh();
+
         // Get role from Spatie Permission (company-scoped)
         $role = 'employee'; // Default
 
@@ -22,15 +25,15 @@ class UserResource extends JsonResource
         $activeCompanyId = app()->bound('active_company_id') ? app('active_company_id') : null;
 
         // If no active company is set, use the user's most recently created company
-        if (!$activeCompanyId && $this->id) {
-            $latestCompany = $this->fresh()->companies()->orderBy('created_at', 'desc')->first();
+        if (!$activeCompanyId && $user->id) {
+            $latestCompany = $user->companies()->orderBy('created_at', 'desc')->first();
             if ($latestCompany) {
                 $activeCompanyId = $latestCompany->id;
             }
         }
 
         // Set Spatie team context and retrieve role
-        if ($activeCompanyId && $this->id) {
+        if ($activeCompanyId && $user->id) {
             $registrar = app(\Spatie\Permission\PermissionRegistrar::class);
             $previousTeamId = $registrar->getPermissionsTeamId();
 
@@ -38,21 +41,26 @@ class UserResource extends JsonResource
                 $registrar->setPermissionsTeamId($activeCompanyId);
                 $registrar->forgetCachedPermissions();
 
-                $roleNames = $this->getRoleNames();
+                $roleNames = $user->getRoleNames();
                 if ($roleNames->isNotEmpty()) {
-                    $role = $roleNames->first();
+                    $spatieRole = $roleNames->first();
+                    // Map 'user' back to 'employee' for frontend consistency
+                    // (Spatie stores 'employee' invitations as 'user' role)
+                    $role = $spatieRole === 'user' ? 'employee' : $spatieRole;
                 } else {
                     // Fallback: check database directly if Spatie cache is stale
                     $dbRole = DB::table('model_has_roles as mhr')
-                        ->where('mhr.model_id', $this->id)
+                        ->where('mhr.model_id', $user->id)
                         ->where('mhr.model_type', 'App\Models\User')
                         ->where('mhr.company_id', $activeCompanyId)
-                        ->join('roles', 'mhr.role_id', '=', 'roles.id')
-                        ->select('roles.name')
+                        ->join('roles as r', 'mhr.role_id', '=', 'r.id')
+                        ->select('r.name')
                         ->first();
 
                     if ($dbRole) {
-                        $role = $dbRole->name;
+                        $spatieRole = $dbRole->name;
+                        // Map 'user' back to 'employee' for frontend consistency
+                        $role = $spatieRole === 'user' ? 'employee' : $spatieRole;
                     }
                 }
             } finally {
@@ -60,25 +68,26 @@ class UserResource extends JsonResource
             }
         }
 
+        // Check if user belongs to any company (using fresh model)
+        $hasCompany = $user->companies()->exists();
+
         return [
-            'uuid' => $this->uuid,
-            'first_name' => $this->first_name,
-            'last_name' => $this->last_name,
-            'name' => $this->name, // Full name accessor
-            'email' => $this->email,
-            'has_company' => $this->companies()->exists(), // Check if user belongs to any company
+            'uuid' => $user->uuid,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'name' => $user->name, // Full name accessor
+            'email' => $user->email,
+            'has_company' => $hasCompany, // Check if user belongs to any company (using fresh model)
             'role' => $role,
-            'email_verified_at' => $this->email_verified_at?->toIso8601String(),
-            'created_at' => $this->created_at?->toIso8601String(),
-            'updated_at' => $this->updated_at?->toIso8601String(),
-            'employee' => $this->whenLoaded('employee', function () {
-                return [
-                    'uuid' => $this->employee->uuid,
-                    'employee_no' => $this->employee->employee_no,
-                    'created_at' => $this->employee->created_at?->toIso8601String(),
-                    'updated_at' => $this->employee->updated_at?->toIso8601String(),
-                ];
-            }),
+            'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+            'created_at' => $user->created_at?->toIso8601String(),
+            'updated_at' => $user->updated_at?->toIso8601String(),
+            'employee' => $user->relationLoaded('employee') && $user->employee ? [
+                'uuid' => $user->employee->uuid,
+                'employee_no' => $user->employee->employee_no,
+                'created_at' => $user->employee->created_at?->toIso8601String(),
+                'updated_at' => $user->employee->updated_at?->toIso8601String(),
+            ] : null,
         ];
     }
 }

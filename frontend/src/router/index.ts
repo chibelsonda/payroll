@@ -24,6 +24,12 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/accept-invitation',
+      name: 'accept-invitation',
+      component: () => import('../views/AcceptInvitation.vue'),
+      meta: { requiresAuth: false }, // Allow both authenticated and guest users
+    },
+    {
       path: '/onboarding/create-company',
       name: 'onboarding-create-company',
       component: () => import('../views/onboarding/CreateCompany.vue'),
@@ -247,45 +253,27 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const auth = useAuthStore()
-  const queryClient = useQueryClient()
 
-  // Only fetch user if we don't have user data yet and we're going to a protected route
-  // Skip fetching if we just came from login/register (user data is already in cache)
-  const isComingFromAuth = from.name === 'login' || from.name === 'register'
-
-  // If coming from login/register, check cache directly since query might not be enabled yet
-  if (isComingFromAuth && to.meta.requiresAuth) {
-    const cachedUser = queryClient.getQueryData(['user'])
-    if (cachedUser && !auth.user) {
-      // Enable the query so auth.user becomes reactive
-      auth.fetchUser().catch(() => {
-        // Silently ignore errors
-      })
-    }
-  } else if (to.meta.requiresAuth && !auth.user && !isComingFromAuth) {
-    try {
-      await auth.fetchUser()
-    } catch {
-      // Silently fail - user is not authenticated
+  // For protected routes, ALWAYS check backend - never rely only on frontend state
+  if (to.meta.requiresAuth) {
+    // If we don't have user in store, fetch from backend
+    if (!auth.user) {
+      const isAuthenticated = await auth.fetchUser()
+      if (!isAuthenticated) {
+        next('/login')
+        return
+      }
     }
   }
 
-  // Check authentication - use cached user if available when coming from auth pages
-  const cachedUser = isComingFromAuth ? queryClient.getQueryData<{ role?: string }>(['user']) : null
-  const user = auth.user || cachedUser
-  const isAuthenticated = !!user
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-    return
-  }
-
-  if (to.meta.role && user && user.role !== to.meta.role) {
-    if (user.role === 'owner') {
+  // Check role-based access
+  if (to.meta.role && auth.user && auth.user.role !== to.meta.role) {
+    // Redirect to appropriate dashboard based on user's role
+    if (auth.user.role === 'owner') {
       next('/owner')
-    } else if (user.role === 'admin') {
+    } else if (auth.user.role === 'admin') {
       next('/admin')
-    } else if (user.role === 'employee') {
+    } else if (auth.user.role === 'employee' || auth.user.role === 'hr' || auth.user.role === 'payroll') {
       next('/employee')
     } else {
       next('/login')
@@ -295,12 +283,11 @@ router.beforeEach(async (to, from, next) => {
 
   // For authenticated routes, ensure company is selected
   // BUT only for routes that require company context (not /user or /companies)
-  if (to.meta.requiresAuth && isAuthenticated && to.path !== '/user' && !to.path.startsWith('/companies')) {
+  if (to.meta.requiresAuth && auth.user && to.path !== '/user' && !to.path.startsWith('/companies')) {
     const { useCompanyStore } = await import('@/stores/company')
     const companyStore = useCompanyStore()
 
     // Fetch companies if not loaded
-    // Note: companies is returned as data ref from Vue Query, Pinia auto-unwraps it
     const companies = companyStore.companies
     if (!companies || companies.length === 0) {
       await companyStore.fetchCompanies()

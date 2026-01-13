@@ -25,6 +25,9 @@ use App\Http\Controllers\Api\V1\InvitationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
+    // Public routes (no authentication required)
+    Route::get('invitations/token', [InvitationController::class, 'showByToken'])->name('invitations.show-by-token');
+    
     // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {
         // Auth routes (no company context needed, but try to set it if header is present)

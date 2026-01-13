@@ -64,10 +64,10 @@ export function useAcceptInvitation() {
     mutationFn: async (data: AcceptInvitationData) => {
       // Get CSRF cookie first (required for Sanctum)
       await webAxios.get('/sanctum/csrf-cookie')
-      // Then make the POST request
-      return apiAxios
-        .post<{ data: Invitation }>('/invitations/accept', data)
-        .then((res) => res.data.data)
+      
+      // Make the POST request - backend will regenerate session
+      const response = await apiAxios.post<{ data: Invitation }>('/invitations/accept', data)
+      return response.data.data
     },
     onSuccess: () => {
       // Invalidate user and companies queries to get updated data

@@ -105,13 +105,14 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables'
 import { useZodForm } from '@/composables'
 import { loginSchema, type LoginFormData } from '@/validation'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
 const showPassword = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -160,6 +161,16 @@ const onSubmit = handleSubmit(async (values: unknown) => {
   try {
     const user = await auth.login(formData)
     notification.showSuccess('Login successful!')
+
+    // Check if there's a redirect query parameter (e.g., from invitation link)
+    const redirect = route.query.redirect as string | undefined
+    const token = route.query.token as string | undefined
+
+    if (redirect && token) {
+      // Redirect to the specified path with token
+      await router.push(`${redirect}?token=${token}`)
+      return
+    }
 
     // Check if user has a company
     if (!user.has_company) {

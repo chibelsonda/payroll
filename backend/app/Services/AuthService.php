@@ -29,7 +29,22 @@ class AuthService
         // Users don't get roles until they create/join a company
         unset($data['role']);
 
-        $user = $this->userService->createUser($data);
+        // Check if user already exists (e.g., from a pending invitation)
+        $existingUser = User::where('email', $data['email'])->first();
+
+        if ($existingUser) {
+            // User already exists - update their password and profile info
+            // This handles the case where a user was invited but hasn't registered yet
+            $existingUser->update([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'password' => Hash::make($data['password']),
+            ]);
+            $user = $existingUser->fresh();
+        } else {
+            // Create new user
+            $user = $this->userService->createUser($data);
+        }
 
         // Do NOT assign roles during registration - user has no company yet
         // Roles will be assigned when user creates a company (becomes owner/admin)

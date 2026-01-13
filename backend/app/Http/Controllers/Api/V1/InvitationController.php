@@ -11,6 +11,7 @@ use App\Models\Invitation;
 use App\Services\InvitationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class InvitationController extends BaseApiController
 {
@@ -65,6 +66,39 @@ class InvitationController extends BaseApiController
     }
 
     /**
+     * Get invitation details by token (public endpoint)
+     */
+    public function showByToken(Request $request): JsonResponse
+    {
+        $token = $request->query('token');
+
+        if (!$token) {
+            return $this->errorResponse('Token is required', [], [], 400);
+        }
+
+        $invitation = Invitation::where('token', $token)
+            ->with(['company', 'inviter'])
+            ->first();
+
+        if (!$invitation) {
+            return $this->errorResponse('Invitation not found', [], [], 404);
+        }
+
+        if ($invitation->status !== 'pending') {
+            return $this->errorResponse('This invitation is no longer valid', [], [], 422);
+        }
+
+        if ($invitation->isExpired()) {
+            return $this->errorResponse('This invitation has expired', [], [], 422);
+        }
+
+        return $this->successResponse(
+            new InvitationResource($invitation),
+            'Invitation retrieved successfully'
+        );
+    }
+
+    /**
      * Accept an invitation
      */
     public function accept(AcceptInvitationRequest $request): JsonResponse
@@ -72,15 +106,33 @@ class InvitationController extends BaseApiController
         $user = $request->user();
         $validated = $request->validated();
 
-        $invitation = $this->invitationService->acceptInvitation(
-            $validated['token'],
-            $user
-        );
+        try {
+            $invitation = $this->invitationService->acceptInvitation(
+                $validated['token'],
+                $user
+            );
 
-        return $this->successResponse(
-            new InvitationResource($invitation),
-            'Invitation accepted successfully'
-        );
+            // CRITICAL: Re-authenticate user using web guard and regenerate session
+            // This ensures the session cookie is properly set and maintained
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+            $request->session()->save();
+
+            // Refresh the user model to get updated relationships
+            $user->refresh();
+
+            return $this->successResponse(
+                new InvitationResource($invitation),
+                'Invitation accepted successfully'
+            );
+        } catch (InvitationException $e) {
+            return $this->errorResponse(
+                $e->getMessage(),
+                [],
+                [],
+                422
+            );
+        }
     }
 
     /**

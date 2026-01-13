@@ -34,8 +34,27 @@ class SetActiveCompany
             || $request->is('api/v1/user')
             || $request->path() === 'api/v1/user';
 
+        // If no company UUID provided and it's the user endpoint, skip company validation
         if (!$companyUuid && $isUserEndpoint) {
             return $next($request);
+        }
+
+        // If company UUID is provided but it's the user endpoint, still validate
+        // but allow it if user doesn't belong to company yet (they might have just been added)
+        if ($companyUuid && $isUserEndpoint) {
+            $company = Company::where('uuid', $companyUuid)->first();
+            if ($company) {
+                $userBelongsToCompany = $user->companies()->where('companies.id', $company->id)->exists();
+                // If user belongs to company, set it as active
+                if ($userBelongsToCompany) {
+                    app()->instance('active_company_id', $company->id);
+                    app(PermissionRegistrar::class)->setPermissionsTeamId($company->id);
+                    $request->attributes->set('active_company', $company);
+                }
+                // If user doesn't belong yet, continue anyway (they might have just been added)
+                // Don't abort - let the endpoint handle it
+                return $next($request);
+            }
         }
 
         if (!$companyUuid && !$isUserEndpoint) {

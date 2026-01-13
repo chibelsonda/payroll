@@ -100,7 +100,10 @@ class InvitationService
         }
 
         if ($invitation->email !== $user->email) {
-            throw new \Exception('This invitation is for a different email address');
+            throw new InvitationException(
+                "This invitation is for {$invitation->email}, but you're logged in as {$user->email}. " .
+                "Please log out and log in with the email address the invitation was sent to."
+            );
         }
 
         return DB::transaction(function () use ($invitation, $user) {
@@ -228,10 +231,10 @@ class InvitationService
             $registrar->forgetCachedPermissions();
 
             // Remove any existing roles for this company
-            DB::table('model_has_roles')
-                ->where('model_id', $user->id)
-                ->where('model_type', 'App\Models\User')
-                ->where('company_id', $company->id)
+            DB::table('model_has_roles as mhr')
+                ->where('mhr.model_id', $user->id)
+                ->where('mhr.model_type', 'App\Models\User')
+                ->where('mhr.company_id', $company->id)
                 ->delete();
 
             // Assign the new role (map 'employee' to 'user' for Spatie)

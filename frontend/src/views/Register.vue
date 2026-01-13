@@ -132,15 +132,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables'
 import { useZodForm } from '@/composables'
 import { registerSchema, type RegisterFormData } from '@/validation'
+import { webAxios } from '@/lib/axios'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
 const showPassword = ref(false)
 const showPasswordConfirm = ref(false)
@@ -155,11 +157,11 @@ const {
   setServerErrors,
   clearServerErrors,
 } = useZodForm<RegisterFormData>(registerSchema, {
-  first_name: '',
-  last_name: '',
+  first_name: 'try',
+  last_name: 'inv',
   email: '',
-  password: '',
-  password_confirmation: '',
+  password: 'Pass!234',
+  password_confirmation: 'Pass!234',
   role: 'employee',
 })
 
@@ -184,6 +186,14 @@ const lastName = computed({
 const email = computed({
   get: () => emailField.value.value as string,
   set: (value: string) => emailField.setValue(value),
+})
+
+// Pre-fill email from query parameter if coming from invitation
+onMounted(() => {
+  const emailFromQuery = route.query.email as string | undefined
+  if (emailFromQuery && !email.value) {
+    emailField.setValue(emailFromQuery)
+  }
 })
 
 const password = computed({
@@ -226,6 +236,31 @@ const onSubmit = handleSubmit(async (values: unknown) => {
   try {
     await auth.register(formData)
     notification.showSuccess('Registration successful!')
+
+    // CRITICAL: Ensure session is properly established
+    // Fetch CSRF cookie to ensure session cookie is set
+    try {
+      await webAxios.get('/sanctum/csrf-cookie')
+      await new Promise(resolve => setTimeout(resolve, 200))
+    } catch {
+      // If CSRF cookie fetch fails, continue anyway
+    }
+
+    // Ensure session is established and user data is loaded before redirecting
+    await auth.fetchUser()
+
+    // Longer delay to ensure session cookie is properly set and persisted
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Check if there's a redirect query parameter (e.g., from invitation link)
+    const redirect = route.query.redirect as string | undefined
+    const token = route.query.token as string | undefined
+
+    if (redirect && token) {
+      // Redirect to the specified path with token (e.g., accept invitation)
+      await router.push(`${redirect}?token=${token}`)
+      return
+    }
 
     // After registration, user has no company yet
     // Redirect to onboarding to create company
