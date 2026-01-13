@@ -38,16 +38,6 @@
               <v-btn color="primary" variant="flat" @click="handleRedirect">
                 Go to Dashboard
               </v-btn>
-              <!-- TEMPORARY DEBUG BUTTON -->
-              <v-btn
-                color="secondary"
-                variant="outlined"
-                size="small"
-                class="mt-2"
-                @click="debugSession"
-              >
-                Debug Session
-              </v-btn>
             </div>
           </div>
 
