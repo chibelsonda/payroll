@@ -147,7 +147,9 @@ const handleSubmit = baseHandleSubmit(async (values: unknown) => {
 
     // Redirect to dashboard based on role
     const user = auth.user
-    if (user?.role === 'owner' || user?.role === 'admin') {
+    if (user?.role === 'owner') {
+      await router.push('/owner')
+    } else if (user?.role === 'admin') {
       await router.push('/admin')
     } else {
       await router.push('/employee')

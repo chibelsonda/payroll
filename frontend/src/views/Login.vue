@@ -169,7 +169,9 @@ const onSubmit = handleSubmit(async (values: unknown) => {
     }
 
     // User has a company - redirect based on role
-    if (user.role === 'owner' || user.role === 'admin') {
+    if (user.role === 'owner') {
+      await router.push('/owner')
+    } else if (user.role === 'admin') {
       await router.push('/admin')
     } else if (user.role === 'employee' || user.role === 'hr' || user.role === 'payroll') {
       await router.push('/employee')

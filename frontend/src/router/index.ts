@@ -116,6 +116,91 @@ const router = createRouter({
       ],
     },
     {
+      path: '/owner',
+      component: DashboardLayout,
+      meta: { requiresAuth: true, role: 'owner' },
+      props: {
+        title: 'Owner Dashboard',
+        appBarTitle: 'Payroll System - Owner',
+        menuItems: [
+          { title: 'Dashboard', to: '/owner', icon: 'mdi-view-dashboard' },
+          { title: 'Manage Employees', to: '/owner/employees', icon: 'mdi-account-group' },
+          { title: 'Payroll', to: '/owner/payroll', icon: 'mdi-cash-multiple' },
+          { title: 'Attendance Management', to: '/owner/attendance', icon: 'mdi-calendar-clock' },
+          { title: 'Leave Requests', to: '/owner/leave-requests', icon: 'mdi-calendar-remove' },
+          { title: 'Loans', to: '/owner/loans', icon: 'mdi-cash-multiple' },
+          { title: 'Deductions', to: '/owner/deductions', icon: 'mdi-cash-minus' },
+          { title: 'Contributions', to: '/owner/contributions', icon: 'mdi-account-cash' },
+          { title: 'Salaries', to: '/owner/salaries', icon: 'mdi-cash' },
+          { title: 'Attendance Review', to: '/owner/attendance-review', icon: 'mdi-alert-circle-outline' },
+          {
+            title: 'Settings',
+            icon: 'mdi-cog',
+            children: [
+              { title: 'Attendance', to: '/owner/settings/attendance' },
+            ],
+          },
+        ],
+      },
+      children: [
+        {
+          path: '',
+          name: 'owner-dashboard',
+          component: OwnerDashboard,
+        },
+        {
+          path: 'employees',
+          name: 'owner-employees',
+          component: () => import('../components/employee/EmployeesList.vue'),
+        },
+        {
+          path: 'payroll',
+          name: 'owner-payroll',
+          component: () => import('../components/payroll/PayrollRunList.vue'),
+        },
+        {
+          path: 'attendance',
+          name: 'owner-attendance',
+          component: () => import('../components/attendance/AttendanceManage.vue'),
+        },
+        {
+          path: 'leave-requests',
+          name: 'owner-leave-requests',
+          component: () => import('../components/leave/LeaveRequestList.vue'),
+        },
+        {
+          path: 'loans',
+          name: 'owner-loans',
+          component: () => import('../components/loan/LoanList.vue'),
+        },
+        {
+          path: 'deductions',
+          name: 'owner-deductions',
+          component: () => import('../components/deduction/DeductionList.vue'),
+        },
+        {
+          path: 'contributions',
+          name: 'owner-contributions',
+          component: () => import('../components/contribution/AdminContributionManager.vue'),
+        },
+        {
+          path: 'salaries',
+          name: 'owner-salaries',
+          component: () => import('../components/salary/AdminSalaryManager.vue'),
+        },
+        {
+          path: 'attendance-review',
+          name: 'owner-attendance-review',
+          component: () => import('../components/attendance/AttendanceReviewQueue.vue'),
+        },
+        {
+          path: 'settings/attendance',
+          name: 'owner-settings-attendance',
+          component: () => import('../components/attendance/AttendanceSettings.vue'),
+        },
+      ],
+    },
+    {
       path: '/employee',
       component: DashboardLayout,
       meta: { requiresAuth: true, role: 'employee' },
@@ -190,7 +275,9 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.role && user && user.role !== to.meta.role) {
-    if (user.role === 'admin') {
+    if (user.role === 'owner') {
+      next('/owner')
+    } else if (user.role === 'admin') {
       next('/admin')
     } else if (user.role === 'employee') {
       next('/employee')
