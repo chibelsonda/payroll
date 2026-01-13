@@ -1,4 +1,4 @@
-import { computed, type Ref } from 'vue'
+import { type Ref } from 'vue'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { Salary } from '@/types/salary'

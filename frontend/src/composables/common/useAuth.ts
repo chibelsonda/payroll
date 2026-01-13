@@ -105,7 +105,6 @@ export const useCurrentUser = () => {
     queryKey: ['user'],
     queryFn: fetchCurrentUser,
     retry: false,
-    staleTime: 1000 * 60 * 10,
     gcTime: 1000 * 60 * 60 * 24,
     enabled: isEnabled,
     // Use cached data as initial data so it's available immediately when query is enabled

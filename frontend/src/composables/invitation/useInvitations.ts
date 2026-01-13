@@ -19,7 +19,6 @@ export function useInvitations() {
   return useQuery({
     queryKey: ['invitations'],
     queryFn: fetchInvitations,
-    staleTime: 2 * 60 * 1000, // 2 minutes
   })
 }
 
