@@ -7,7 +7,7 @@
     scrim="rgba(0,0,0,0.8)"
     close-on-esc
   >
-    <v-card class="wizard-shell" rounded="xl">
+    <v-card class="wizard-shell" rounded="lg">
       <!-- Header -->
       <div class="wizard-hero">
         <div>
@@ -587,7 +587,7 @@ watch(
 }
 
 /* Hide scrollbars on the stepper header (no horizontal scroll indicator) */
-:deep(.v-stepper-header) {
+/* :deep(.v-stepper-header) {
   overflow: visible;
 }
 :deep(.v-stepper-header::-webkit-scrollbar) {
@@ -595,5 +595,5 @@ watch(
 }
 :deep(.v-stepper-header) {
   scrollbar-width: none;
-}
+} */
 </style>
