@@ -36,7 +36,6 @@ return new class extends Migration
 
             $table->index('company_id');
             $table->index('subscription_id');
-            $table->index('provider_reference_id');
             $table->index('status');
             $table->index(['provider', 'method']);
         });
