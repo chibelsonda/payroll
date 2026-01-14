@@ -23,7 +23,18 @@
           <!-- Menu item with dropdown -->
           <v-list-group
             v-else-if="item.children"
-            :value="isGroupActive(item)"
+            :value="isGroupOpen(item) ? getGroupValue(item) : null"
+            @update:model-value="(value: string | null) => {
+              const groupId = getGroupValue(item)
+              if (value === groupId) {
+                openGroups.add(groupId)
+              } else {
+                // Only close if no child is active
+                if (!isGroupActive(item)) {
+                  openGroups.delete(groupId)
+                }
+              }
+            }"
             class="sidebar-item mb-1"
           >
             <template #activator="{ props }">
@@ -144,7 +155,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables'
@@ -163,7 +174,7 @@ interface Props {
   appBarTitle?: string
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   appBarTitle: 'Payroll System'
 })
 
@@ -173,6 +184,9 @@ const route = useRoute()
 const notification = useNotification()
 const drawer = ref(true)
 const searchQuery = ref('')
+
+// Track open groups by their unique title
+const openGroups = ref<Set<string>>(new Set())
 
 // Check if a route is currently active
 const isActiveRoute = (path: string): boolean => {
@@ -188,6 +202,39 @@ const isGroupActive = (item: MenuItem): boolean => {
   if (!item.children) return false
   return item.children.some(child => isActiveRoute(child.to || ''))
 }
+
+// Get unique value for each group (using title as identifier)
+const getGroupValue = (item: MenuItem): string => {
+  return item.title
+}
+
+// Check if group should be open (either manually opened or has active child)
+const isGroupOpen = (item: MenuItem): boolean => {
+  const groupId = getGroupValue(item)
+  // If any child is active, ensure group is open
+  if (isGroupActive(item)) {
+    openGroups.value.add(groupId)
+    return true
+  }
+  // Otherwise check if manually opened
+  return openGroups.value.has(groupId)
+}
+
+// Watch for route changes to keep groups with active children open
+watch(() => route.path, () => {
+  props.menuItems.forEach((item: MenuItem) => {
+    if (item.children && isGroupActive(item)) {
+      openGroups.value.add(getGroupValue(item))
+    }
+  })
+})
+
+// Initialize: open groups that have active child routes
+props.menuItems.forEach((item: MenuItem) => {
+  if (item.children && isGroupActive(item)) {
+    openGroups.value.add(getGroupValue(item))
+  }
+})
 
 // Get user initials for avatar
 const getUserInitials = (): string => {
