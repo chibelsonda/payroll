@@ -59,18 +59,6 @@
                 ></v-text-field>
               </div>
 
-              <!-- Warning Message -->
-              <v-alert
-                type="warning"
-                variant="tonal"
-                density="compact"
-                class="mb-6 text-body-2"
-              >
-                <strong>Warning:</strong> After 3 consecutive failed login attempts, your account
-                will be temporarily locked for three hours. If you must login now, you can also
-                click "Forgot login password?" below to reset the login password.
-              </v-alert>
-
               <!-- Login Button -->
               <v-btn
                 type="submit"
@@ -78,8 +66,7 @@
                 :loading="auth.isLoginLoading || isSubmitting"
                 :disabled="!isValid"
                 block
-                size="large"
-                class="text-uppercase font-weight-bold mb-4"
+                class="text-uppercase font-weight-bold mb-4 mt-5"
               >
                 LOG IN
               </v-btn>
