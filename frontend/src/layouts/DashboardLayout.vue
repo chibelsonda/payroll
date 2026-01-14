@@ -84,7 +84,13 @@
             style="cursor: pointer;"
           >
             <v-avatar size="32" color="white" class="me-2">
-              <span class="text-primary text-caption font-weight-bold">
+              <v-img
+                v-if="auth.user?.avatar_url"
+                :src="auth.user.avatar_url"
+                cover
+                alt="Profile Picture"
+              ></v-img>
+              <span v-else class="text-primary text-caption font-weight-bold">
                 {{ getUserInitials() }}
               </span>
             </v-avatar>

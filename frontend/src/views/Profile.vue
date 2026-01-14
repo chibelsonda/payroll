@@ -32,8 +32,8 @@
                 <v-list-item-title class="text-body-2 text-medium-emphasis mb-1">Email Address</v-list-item-title>
                 <v-list-item-subtitle class="text-body-1 font-weight-medium">{{ auth.user?.email }}</v-list-item-subtitle>
               </v-list-item>
-              <v-divider class="my-4"></v-divider>
-              <v-list-item class="px-0">
+              <v-divider v-if="auth.user?.employee" class="my-4"></v-divider>
+              <v-list-item v-if="auth.user?.employee" class="px-0">
                 <v-list-item-title class="text-body-2 text-medium-emphasis mb-1">Employee ID</v-list-item-title>
                 <v-list-item-subtitle class="text-body-1 font-weight-medium">
                   {{ auth.user?.employee?.employee_no || 'N/A' }}
@@ -50,7 +50,7 @@
               <v-list-item v-if="auth.user?.employee?.position" class="px-0">
                 <v-list-item-title class="text-body-2 text-medium-emphasis mb-1">Position</v-list-item-title>
                 <v-list-item-subtitle class="text-body-1 font-weight-medium">
-                  {{ auth.user?.employee?.position?.name || 'N/A' }}
+                  {{ auth.user?.employee?.position?.title || 'N/A' }}
                 </v-list-item-subtitle>
               </v-list-item>
             </v-list>
@@ -200,15 +200,16 @@
           <v-card-text class="pa-4">
             <v-list density="compact" class="pa-0">
               <v-list-item
-                to="/employee"
+                :to="dashboardRoute"
                 prepend-icon="mdi-view-dashboard"
                 title="Dashboard"
                 class="px-0"
               >
               </v-list-item>
-              <v-divider class="my-2"></v-divider>
+              <v-divider v-if="showAttendanceLink" class="my-2"></v-divider>
               <v-list-item
-                to="/employee/attendance"
+                v-if="showAttendanceLink"
+                :to="attendanceRoute"
                 prepend-icon="mdi-calendar-clock"
                 title="Attendance"
                 class="px-0"
@@ -247,6 +248,25 @@ const fullName = computed(() => {
     return `${user.first_name} ${user.last_name}`
   }
   return user.email
+})
+
+const dashboardRoute = computed(() => {
+  const role = auth.user?.role
+  if (role === 'owner') return '/owner'
+  if (role === 'admin') return '/admin'
+  return '/employee'
+})
+
+const attendanceRoute = computed(() => {
+  const role = auth.user?.role
+  if (role === 'owner') return '/owner/attendance'
+  if (role === 'admin') return '/admin/attendance'
+  return '/employee/attendance'
+})
+
+const showAttendanceLink = computed(() => {
+  const role = auth.user?.role
+  return role === 'employee' || role === 'hr' || role === 'payroll' || role === 'owner' || role === 'admin'
 })
 
 const handleFileSelect = (event: Event) => {

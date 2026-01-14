@@ -5,7 +5,7 @@ import Register from '../views/Register.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import EmployeeDashboard from '../views/EmployeeDashboard.vue'
-import EmployeeProfile from '../views/EmployeeProfile.vue'
+import Profile from '../views/Profile.vue'
 import OwnerDashboard from '../views/OwnerDashboard.vue'
 
 const router = createRouter({
@@ -44,6 +44,7 @@ const router = createRouter({
         appBarTitle: 'Payroll System - Admin',
                menuItems: [
                  { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard' },
+                 { title: 'My Profile', to: '/admin/profile', icon: 'mdi-account' },
                  { title: 'Manage Employees', to: '/admin/employees', icon: 'mdi-account-group' },
                  { title: 'Payroll', to: '/admin/payroll', icon: 'mdi-cash-multiple' },
                  { title: 'Attendance Management', to: '/admin/attendance', icon: 'mdi-calendar-clock' },
@@ -68,6 +69,11 @@ const router = createRouter({
           name: 'admin-dashboard',
           component: AdminDashboard,
         },
+               {
+                 path: 'profile',
+                 name: 'admin-profile',
+                 component: Profile,
+               },
                {
                  path: 'employees',
                  name: 'admin-employees',
@@ -130,6 +136,7 @@ const router = createRouter({
         appBarTitle: 'Payroll System - Owner',
         menuItems: [
           { title: 'Dashboard', to: '/owner', icon: 'mdi-view-dashboard' },
+          { title: 'My Profile', to: '/owner/profile', icon: 'mdi-account' },
           { title: 'Manage Employees', to: '/owner/employees', icon: 'mdi-account-group' },
           { title: 'Payroll', to: '/owner/payroll', icon: 'mdi-cash-multiple' },
           { title: 'Attendance Management', to: '/owner/attendance', icon: 'mdi-calendar-clock' },
@@ -154,6 +161,11 @@ const router = createRouter({
           path: '',
           name: 'owner-dashboard',
           component: OwnerDashboard,
+        },
+        {
+          path: 'profile',
+          name: 'owner-profile',
+          component: Profile,
         },
         {
           path: 'employees',
@@ -234,7 +246,7 @@ const router = createRouter({
         {
           path: 'profile',
           name: 'employee-profile',
-          component: EmployeeProfile,
+          component: Profile,
         },
         {
           path: 'attendance',

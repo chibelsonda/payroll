@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\ContributionController;
 use App\Http\Controllers\Api\V1\EmployeeDeductionController;
 use App\Http\Controllers\Api\V1\EmployeeContributionController;
 use App\Http\Controllers\Api\V1\InvitationController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -32,6 +33,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         // Auth routes (no company context needed, but try to set it if header is present)
         Route::middleware('active.company')->get('/user', [AuthController::class, 'user'])->name('auth.user');
+
+        // Profile routes
+        Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
 
         // Companies routes
         // GET: Requires company (for existing users)

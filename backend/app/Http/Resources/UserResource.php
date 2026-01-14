@@ -77,6 +77,7 @@ class UserResource extends JsonResource
             'last_name' => $user->last_name,
             'name' => $user->name, // Full name accessor
             'email' => $user->email,
+            'avatar_url' => $user->avatar_url, // Avatar URL accessor
             'has_company' => $hasCompany, // Check if user belongs to any company (using fresh model)
             'role' => $role,
             'email_verified_at' => $user->email_verified_at?->toIso8601String(),
