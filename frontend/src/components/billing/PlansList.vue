@@ -1,132 +1,209 @@
 <template>
-  <v-container fluid class="px-4 py-4">
-    <v-row>
-      <v-col cols="12">
-        <v-card elevation="2" rounded="lg">
-          <v-card-title class="px-4 py-3">
-            <h1 class="text-h6 font-weight-bold">Subscription Plans</h1>
-          </v-card-title>
+  <v-container fluid class="px-4 py-6 bg-grey-lighten-5">
+    <v-row justify="center">
+      <v-col cols="12" lg="10">
+        <div class="text-center mb-8">
+          <h1 class="text-h4 font-weight-bold text-primary mb-2">Choose Your Plan</h1>
+          <p class="text-body-1 text-medium-emphasis">Select the perfect plan for your business needs</p>
+        </div>
 
-          <v-divider></v-divider>
+        <!-- Loading State -->
+        <div v-if="isLoading" class="text-center py-12">
+          <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+          <p class="mt-4 text-h6 text-medium-emphasis">Loading plans...</p>
+        </div>
 
-          <v-card-text class="pa-4">
-            <!-- Loading State -->
-            <div v-if="isLoading" class="text-center py-8">
-              <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
-              <p class="mt-3 text-body-2 text-medium-emphasis">Loading plans...</p>
+        <!-- Error State -->
+        <v-alert
+          v-else-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-6"
+          rounded="lg"
+          prominent
+        >
+          <div class="d-flex align-center">
+            <v-icon class="me-3" size="24">mdi-alert-circle</v-icon>
+            <div class="flex-grow-1">
+              <div class="font-weight-medium text-h6">Failed to load plans</div>
+              <div class="text-body-2">{{ error.message }}</div>
             </div>
+            <v-btn variant="text" color="error" size="large" @click="refetch">Retry</v-btn>
+          </div>
+        </v-alert>
 
-            <!-- Error State -->
-            <v-alert
-              v-else-if="error"
-              type="error"
-              variant="tonal"
-              class="mb-4"
+        <!-- Plans Grid -->
+        <v-row v-else class="plans-grid">
+          <v-col
+            v-for="(plan, index) in plans"
+            :key="plan.uuid"
+            cols="12"
+            sm="12"
+            md="4"
+          >
+            <v-card
+              :elevation="selectedPlan?.uuid === plan.uuid ? 8 : 2"
               rounded="lg"
+              :class="[
+                'plan-card h-100 position-relative overflow-hidden',
+                {
+                  'selected-plan': selectedPlan?.uuid === plan.uuid,
+                  'popular-plan': index === 1 // Assuming middle plan is popular
+                }
+              ]"
+              @click="selectPlan(plan)"
             >
-              <div class="d-flex align-center">
-                <v-icon class="me-3">mdi-alert-circle</v-icon>
-                <div class="flex-grow-1">
-                  <div class="font-weight-medium">Failed to load plans</div>
-                  <div class="text-caption">{{ error.message }}</div>
-                </div>
-                <v-btn variant="text" color="error" @click="refetch">Retry</v-btn>
-              </div>
-            </v-alert>
-
-            <!-- Plans Grid -->
-            <v-row v-else>
-              <v-col
-                v-for="plan in plans"
-                :key="plan.uuid"
-                cols="12"
-                md="4"
+              <!-- Popular Badge -->
+              <v-chip
+                v-if="index === 1"
+                color="warning"
+                size="small"
+                class="popular-badge"
+                variant="elevated"
               >
-                <v-card
-                  elevation="2"
-                  rounded="lg"
-                  :class="{ 'border-primary': selectedPlan?.uuid === plan.uuid }"
-                  class="plan-card"
-                  @click="selectPlan(plan)"
-                >
-                  <v-card-title class="text-h6 font-weight-bold">
-                    {{ plan.name }}
-                  </v-card-title>
-                  <v-card-subtitle class="text-h4 font-weight-bold primary--text pt-2">
-                    ₱{{ plan.price.toLocaleString() }}
-                    <span class="text-body-2 text-medium-emphasis">/{{ plan.billing_cycle }}</span>
-                  </v-card-subtitle>
-                  <v-card-text>
-                    <div class="mb-2">
-                      <v-icon size="small" class="me-2">mdi-account-group</v-icon>
-                      Up to {{ plan.max_employees }} employees
-                    </div>
-                  </v-card-text>
-                  <v-card-actions>
-                    <v-btn
-                      block
-                      color="primary"
-                      :variant="selectedPlan?.uuid === plan.uuid ? 'flat' : 'outlined'"
-                      @click.stop="selectPlan(plan)"
-                    >
-                      {{ selectedPlan?.uuid === plan.uuid ? 'Selected' : 'Select Plan' }}
-                    </v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-            </v-row>
+                <v-icon start size="16">mdi-star</v-icon>
+                Most Popular
+              </v-chip>
 
-            <!-- Payment Method Selection -->
-            <v-row v-if="selectedPlan" class="mt-4">
-              <v-col cols="12">
-                <v-card variant="outlined" rounded="lg">
-                  <v-card-title class="text-subtitle-1 font-weight-bold">
-                    Select Payment Method
-                  </v-card-title>
-                  <v-card-text>
-                    <v-radio-group v-model="paymentMethod" inline>
-                      <v-radio
-                        label="GCash"
-                        value="gcash"
-                        color="primary"
-                      >
-                        <template v-slot:label>
-                          <div class="d-flex align-center">
-                            <v-icon class="me-2">mdi-cellphone</v-icon>
-                            <span>GCash</span>
-                          </div>
-                        </template>
-                      </v-radio>
-                      <v-radio
-                        label="Card"
-                        value="card"
-                        color="primary"
-                      >
-                        <template v-slot:label>
-                          <div class="d-flex align-center">
-                            <v-icon class="me-2">mdi-credit-card</v-icon>
-                            <span>Credit/Debit Card</span>
-                          </div>
-                        </template>
-                      </v-radio>
-                    </v-radio-group>
-                  </v-card-text>
-                  <v-card-actions>
-                    <v-spacer></v-spacer>
-                    <v-btn
+              <!-- Card Header with Gradient -->
+              <div class="plan-header">
+                <div class="plan-icon mb-3">
+                  <v-icon size="48" color="white">
+                    {{ getPlanIcon(plan.max_employees) }}
+                  </v-icon>
+                </div>
+                <h3 class="text-h5 font-weight-bold text-white mb-1">{{ plan.name }}</h3>
+                <div class="plan-price">
+                  <span class="currency">₱</span>
+                  <span class="amount">{{ plan.price.toLocaleString() }}</span>
+                  <span class="period">/{{ plan.billing_cycle }}</span>
+                </div>
+              </div>
+
+              <v-card-text class="flex-grow-1 pa-6">
+                <!-- Features -->
+                <div class="features-list">
+                  <div class="feature-item">
+                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                    <span>Up to {{ plan.max_employees }} employees</span>
+                  </div>
+                  <div class="feature-item">
+                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                    <span>Payroll processing</span>
+                  </div>
+                  <div class="feature-item">
+                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                    <span>Employee management</span>
+                  </div>
+                  <div class="feature-item">
+                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                    <span>Reports & analytics</span>
+                  </div>
+                  <div class="feature-item">
+                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                    <span>24/7 support</span>
+                  </div>
+                </div>
+              </v-card-text>
+
+              <v-card-actions class="pa-6 pt-0">
+                <v-btn
+                  block
+                  size="large"
+                  :color="selectedPlan?.uuid === plan.uuid ? 'white' : 'primary'"
+                  :variant="selectedPlan?.uuid === plan.uuid ? 'flat' : 'elevated'"
+                  :class="{ 'selected-btn': selectedPlan?.uuid === plan.uuid }"
+                  @click.stop="selectPlan(plan)"
+                  rounded="lg"
+                >
+                  <v-icon v-if="selectedPlan?.uuid === plan.uuid" start>mdi-check</v-icon>
+                  {{ selectedPlan?.uuid === plan.uuid ? 'Selected' : 'Select Plan' }}
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
+
+        <!-- Payment Method Selection -->
+        <v-row v-if="selectedPlan" class="mt-8" justify="center">
+          <v-col cols="12" md="8" lg="6">
+            <v-card variant="outlined" rounded="xl" elevation="4">
+              <v-card-title class="text-h6 font-weight-bold text-center py-6">
+                <v-icon color="primary" size="28" class="me-3">mdi-credit-card</v-icon>
+                Complete Your Subscription
+              </v-card-title>
+              <v-divider></v-divider>
+              <v-card-text class="pa-6">
+                <div class="selected-plan-summary mb-6">
+                  <div class="d-flex align-center justify-center mb-4">
+                    <v-icon color="primary" size="24" class="me-2">mdi-package-variant</v-icon>
+                    <span class="text-h6 font-weight-bold">{{ selectedPlan.name }}</span>
+                  </div>
+                  <div class="text-center text-h5 font-weight-bold primary--text">
+                    ₱{{ selectedPlan.price.toLocaleString() }}/{{ selectedPlan.billing_cycle }}
+                  </div>
+                </div>
+
+                <div class="payment-methods">
+                  <h4 class="text-subtitle-1 font-weight-bold mb-4 text-center">Choose Payment Method</h4>
+                  <v-radio-group v-model="paymentMethod" class="payment-radio-group">
+                    <v-radio
+                      label="GCash"
+                      value="gcash"
                       color="primary"
-                      :loading="subscribeMutation.isPending.value"
-                      :disabled="!paymentMethod"
-                      @click="handleSubscribe"
+                      class="payment-radio"
                     >
-                      Subscribe Now
-                    </v-btn>
-                  </v-card-actions>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+                      <template v-slot:label>
+                        <div class="d-flex align-center">
+                          <v-avatar size="40" color="green" class="me-3">
+                            <v-icon color="white">mdi-cellphone</v-icon>
+                          </v-avatar>
+                          <div>
+                            <div class="font-weight-medium">GCash</div>
+                            <div class="text-caption text-medium-emphasis">Pay with your GCash wallet</div>
+                          </div>
+                        </div>
+                      </template>
+                    </v-radio>
+                    <v-radio
+                      label="Card"
+                      value="card"
+                      color="primary"
+                      class="payment-radio"
+                    >
+                      <template v-slot:label>
+                        <div class="d-flex align-center">
+                          <v-avatar size="40" color="blue" class="me-3">
+                            <v-icon color="white">mdi-credit-card</v-icon>
+                          </v-avatar>
+                          <div>
+                            <div class="font-weight-medium">Credit/Debit Card</div>
+                            <div class="text-caption text-medium-emphasis">Visa, Mastercard, etc.</div>
+                          </div>
+                        </div>
+                      </template>
+                    </v-radio>
+                  </v-radio-group>
+                </div>
+              </v-card-text>
+              <v-card-actions class="pa-6 pt-0">
+                <v-spacer></v-spacer>
+                <v-btn
+                  color="primary"
+                  size="large"
+                  :loading="subscribeMutation.isPending.value"
+                  :disabled="!paymentMethod"
+                  @click="handleSubscribe"
+                  rounded="lg"
+                  elevation="2"
+                >
+                  <v-icon start>mdi-lock</v-icon>
+                  Subscribe Now - ₱{{ selectedPlan.price.toLocaleString() }}
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+        </v-row>
       </v-col>
     </v-row>
   </v-container>
@@ -146,6 +223,13 @@ const paymentMethod = ref<'gcash' | 'card' | null>(null)
 
 const selectPlan = (plan: Plan) => {
   selectedPlan.value = plan
+}
+
+const getPlanIcon = (maxEmployees: number): string => {
+  if (maxEmployees <= 10) return 'mdi-account'
+  if (maxEmployees <= 50) return 'mdi-account-group'
+  if (maxEmployees <= 100) return 'mdi-office-building'
+  return 'mdi-domain'
 }
 
 const handleSubscribe = async () => {
@@ -169,17 +253,164 @@ const handleSubscribe = async () => {
 </script>
 
 <style scoped>
+.plans-grid {
+  gap: 0;
+}
+
 .plan-card {
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
 }
 
 .plan-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-8px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
 }
 
-.border-primary {
-  border: 2px solid rgb(var(--v-theme-primary)) !important;
+.plan-card.selected-plan {
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 8px 24px rgba(var(--v-theme-primary), 0.3) !important;
+}
+
+.plan-card.popular-plan {
+  border: 3px solid #ff6b35;
+  box-shadow: 0 8px 24px rgba(255, 107, 53, 0.2) !important;
+}
+
+.plan-card.popular-plan:hover {
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.3) !important;
+}
+
+.popular-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  font-weight: 600;
+}
+
+.plan-header {
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.85) 0%, rgba(var(--v-theme-primary), 0.75) 100%);
+  padding: 2rem 1.5rem 1.5rem;
+  text-align: center;
+  position: relative;
+}
+
+.plan-card.popular-plan .plan-header {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.85) 0%, rgba(247, 147, 30, 0.85) 100%);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.plan-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  color: white;
+  margin-top: 0.5rem;
+}
+
+.plan-price .currency {
+  font-size: 1.5rem;
+  font-weight: 300;
+  margin-right: 0.25rem;
+}
+
+.plan-price .amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.plan-price .period {
+  font-size: 1rem;
+  font-weight: 400;
+  opacity: 0.9;
+  margin-left: 0.25rem;
+}
+
+.features-list {
+  padding: 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.feature-item:last-child {
+  margin-bottom: 0;
+}
+
+.selected-btn {
+  background: rgb(var(--v-theme-primary)) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.4) !important;
+}
+
+.payment-radio-group {
+  width: 100%;
+}
+
+.payment-radio {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid rgb(var(--v-theme-surface-variant));
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.payment-radio:hover {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.04);
+}
+
+.payment-radio.v-radio--is-selected {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgba(var(--v-theme-primary), 0.08);
+}
+
+.selected-plan-summary {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.1) 0%, rgba(var(--v-theme-primary), 0.05) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .plans-grid {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .plans-grid {
+    gap: 1rem;
+  }
+
+  .plan-header {
+    padding: 1.5rem 1rem 1rem;
+  }
+
+  .plan-price .amount {
+    font-size: 2rem;
+  }
 }
 </style>
