@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Role;
 use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -68,7 +69,7 @@ class EmployeeService
             ]);
 
             // Assign 'user' role (employees use 'user' role in Spatie)
-            $user->assignRole('user');
+            $user->assignRole(Role::Employee->value);
 
             // Prepare employee data
             $employeeData = [
