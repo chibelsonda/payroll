@@ -23,16 +23,4 @@
 import AttendanceLogger from './AttendanceLogger.vue'
 import AttendanceTimeline from './AttendanceTimeline.vue'
 import AttendanceSummary from './AttendanceSummary.vue'
-import { useAttendanceStore } from '@/stores/attendance'
-import { watch } from 'vue'
-
-const attendanceStore = useAttendanceStore()
-
-// Watch for log submissions and refresh all data
-watch(() => attendanceStore.loading, async (isLoading, wasLoading) => {
-  // When loading finishes, refresh all data
-  if (wasLoading && !isLoading) {
-    await attendanceStore.refreshAll()
-  }
-})
 </script>

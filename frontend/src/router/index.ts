@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '@/stores/auth'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import EmployeeDashboard from '../views/EmployeeDashboard.vue'
+import EmployeeProfile from '../views/EmployeeProfile.vue'
 import OwnerDashboard from '../views/OwnerDashboard.vue'
 
 const router = createRouter({
@@ -234,7 +234,7 @@ const router = createRouter({
         {
           path: 'profile',
           name: 'employee-profile',
-          component: EmployeeDashboard, // Using same component for now, can be replaced with dedicated profile component
+          component: EmployeeProfile,
         },
         {
           path: 'attendance',
