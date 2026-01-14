@@ -177,7 +177,7 @@
 import { ref, computed } from 'vue'
 import { useActivityLogs } from '@/composables/activity/useActivityLogs'
 import type { ActivityLog } from '@/types/activityLog'
-import { formatDateTimeForDisplay } from '@/utils/date'
+import { formatDateTimeForDisplay } from '@/lib/datetime'
 
 const page = ref(1)
 const detailsDialog = ref(false)

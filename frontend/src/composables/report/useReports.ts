@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/vue-query'
-import { apiAxios } from '@/lib/axios'
+import apiAxios from '@/lib/axios'
 import type { PayrollSummaryReport, TaxReport, ContributionReport, EmployeeLedgerEntry } from '@/types/report'
 
 export function usePayrollSummaryReport(startDate: Ref<string> | string, endDate: Ref<string> | string, enabled = true) {
