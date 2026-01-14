@@ -6,6 +6,9 @@ use App\Models\Attendance;
 use App\Models\AttendanceSettings;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\EmployeeAllowance;
+use App\Models\EmployeeContribution;
+use App\Models\EmployeeDeduction;
 use App\Models\Payroll;
 use App\Models\PayrollDeduction;
 use App\Models\PayrollEarning;
@@ -16,6 +19,11 @@ use Illuminate\Support\Facades\DB;
 
 class PayrollService
 {
+    public function __construct(
+        protected TaxCalculationService $taxCalculationService,
+        protected ContributionCalculationService $contributionCalculationService
+    ) {}
+
     /**
      * Get all payroll runs with pagination
      *
@@ -98,11 +106,15 @@ class PayrollService
             throw new \Exception('Payroll run is not in draft status');
         }
 
+        if ($payrollRun->is_locked) {
+            throw new \Exception('Payroll run is locked and cannot be regenerated');
+        }
+
         return DB::transaction(function () use ($payrollRun) {
             // Get all active employees for the company
             $employees = Employee::where('company_id', $payrollRun->company_id)
                 ->where('status', 'active')
-                ->with('user')
+                ->with(['user', 'employeeAllowances', 'employeeDeductions.deduction'])
                 ->get();
 
             $generatedPayrolls = [];
@@ -154,7 +166,18 @@ class PayrollService
                     ]);
                 }
 
-                // Calculate totals (includes overtime earnings)
+                // Add employee allowances
+                $this->applyEmployeeAllowances($payroll, $employee, $payrollRun->period_start, $payrollRun->period_end);
+
+                // Calculate gross pay first (basic_salary + earnings)
+                $this->calculatePayrollTotals($payroll);
+                $payroll->refresh();
+                $grossPay = $payroll->gross_pay;
+
+                // Apply deductions and contributions
+                $this->applyDeductionsAndContributions($payroll, $employee, $grossPay, $monthlySalary);
+
+                // Recalculate totals with all deductions applied
                 $this->calculatePayrollTotals($payroll);
 
                 // Load relationships for the resource
@@ -302,6 +325,112 @@ class PayrollService
     }
 
     /**
+     * Apply employee allowances to payroll
+     *
+     * @param Payroll $payroll
+     * @param Employee $employee
+     * @param \DateTime|string $periodStart
+     * @param \DateTime|string $periodEnd
+     * @return void
+     */
+    protected function applyEmployeeAllowances(Payroll $payroll, Employee $employee, $periodStart, $periodEnd): void
+    {
+        $startDate = Carbon::parse($periodStart);
+        $endDate = Carbon::parse($periodEnd);
+
+        // Get active allowances for the payroll period
+        $allowances = EmployeeAllowance::where('employee_id', $employee->id)
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereNull('effective_from')
+                    ->orWhere('effective_from', '<=', $endDate);
+            })
+            ->where(function ($query) use ($startDate, $endDate) {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $startDate);
+            })
+            ->get();
+
+        foreach ($allowances as $allowance) {
+            PayrollEarning::create([
+                'payroll_id' => $payroll->id,
+                'type' => 'allowance',
+                'description' => $allowance->description ?? ucfirst($allowance->type) . ' Allowance',
+                'amount' => $allowance->amount,
+            ]);
+        }
+    }
+
+    /**
+     * Apply deductions and contributions to payroll
+     *
+     * @param Payroll $payroll
+     * @param Employee $employee
+     * @param float $grossPay
+     * @param float $monthlySalary
+     * @return void
+     */
+    protected function applyDeductionsAndContributions(Payroll $payroll, Employee $employee, float $grossPay, float $monthlySalary): void
+    {
+        // 1. Apply employee deductions
+        $employeeDeductions = EmployeeDeduction::where('employee_id', $employee->id)
+            ->with('deduction')
+            ->get();
+
+        foreach ($employeeDeductions as $employeeDeduction) {
+            PayrollDeduction::create([
+                'payroll_id' => $payroll->id,
+                'type' => $employeeDeduction->deduction->type ?? 'other',
+                'description' => $employeeDeduction->deduction->name ?? 'Deduction',
+                'amount' => $employeeDeduction->amount,
+            ]);
+        }
+
+        // 2. Calculate and apply government contributions (SSS, PhilHealth, Pag-IBIG)
+        $contributions = $this->contributionCalculationService->calculateAllContributions($monthlySalary);
+
+        // SSS
+        if ($contributions['sss']['employee'] > 0) {
+            PayrollDeduction::create([
+                'payroll_id' => $payroll->id,
+                'type' => 'sss',
+                'description' => 'SSS Contribution',
+                'amount' => $contributions['sss']['employee'],
+            ]);
+        }
+
+        // PhilHealth
+        if ($contributions['philhealth']['employee'] > 0) {
+            PayrollDeduction::create([
+                'payroll_id' => $payroll->id,
+                'type' => 'philhealth',
+                'description' => 'PhilHealth Contribution',
+                'amount' => $contributions['philhealth']['employee'],
+            ]);
+        }
+
+        // Pag-IBIG
+        if ($contributions['pagibig']['employee'] > 0) {
+            PayrollDeduction::create([
+                'payroll_id' => $payroll->id,
+                'type' => 'pagibig',
+                'description' => 'Pag-IBIG Contribution',
+                'amount' => $contributions['pagibig']['employee'],
+            ]);
+        }
+
+        // 3. Calculate and apply tax (withholding tax)
+        $taxAmount = $this->taxCalculationService->calculateWithholdingTax($grossPay);
+        if ($taxAmount > 0) {
+            PayrollDeduction::create([
+                'payroll_id' => $payroll->id,
+                'type' => 'tax',
+                'description' => 'Withholding Tax',
+                'amount' => $taxAmount,
+            ]);
+        }
+    }
+
+    /**
      * Get attendance settings for a company
      *
      * @param int $companyId
@@ -339,7 +468,11 @@ class PayrollService
             throw new \Exception('Payroll run must be processed before finalization');
         }
 
-        $payrollRun->update(['status' => 'paid']);
+        // Lock the payroll run and mark as paid
+        $payrollRun->update([
+            'status' => 'paid',
+            'is_locked' => true,
+        ]);
 
         return $payrollRun->fresh();
     }

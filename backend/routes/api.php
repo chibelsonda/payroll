@@ -21,16 +21,21 @@ use App\Http\Controllers\Api\V1\SalaryController;
 use App\Http\Controllers\Api\V1\ContributionController;
 use App\Http\Controllers\Api\V1\EmployeeDeductionController;
 use App\Http\Controllers\Api\V1\EmployeeContributionController;
+use App\Http\Controllers\Api\V1\HolidayController;
 use App\Http\Controllers\Api\V1\InvitationController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ShiftController;
+use App\Http\Controllers\Api\V1\ActivityLogController;
+use App\Http\Controllers\Api\V1\EmployeeAllowanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
     // Public routes (no authentication required)
     Route::get('invitations/token', [InvitationController::class, 'showByToken'])->name('invitations.show-by-token');
-    
+
     // Protected routes (require authentication)
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Auth routes (no company context needed, but try to set it if header is present)
         Route::middleware('active.company')->get('/user', [AuthController::class, 'user'])->name('auth.user');
 
@@ -93,6 +98,23 @@ Route::prefix('v1')->name('v1.')->group(function () {
             Route::get('departments', [DepartmentController::class, 'index'])->name('departments.index');
             Route::get('positions', [PositionController::class, 'index'])->name('positions.index');
 
+            // Holidays routes
+            Route::apiResource('holidays', HolidayController::class);
+
+            // Shifts routes
+            Route::apiResource('shifts', ShiftController::class);
+
+            // Reports routes
+            Route::prefix('reports')->name('reports.')->group(function () {
+                Route::get('payroll-summary', [ReportController::class, 'payrollSummary'])->name('payroll-summary');
+                Route::get('tax-report', [ReportController::class, 'taxReport'])->name('tax-report');
+                Route::get('contribution-report', [ReportController::class, 'contributionReport'])->name('contribution-report');
+                Route::get('employees/{employeeUuid}/ledger', [ReportController::class, 'employeeLedger'])->name('employee-ledger');
+            });
+
+            // Activity Logs routes
+            Route::apiResource('activity-logs', ActivityLogController::class)->only(['index', 'show']);
+
             // Payroll routes
             Route::prefix('payroll-runs')->name('payroll-runs.')->group(function () {
                 Route::get('/', [PayrollController::class, 'index'])->name('index');
@@ -115,6 +137,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             // Deduction routes
             Route::apiResource('deductions', DeductionController::class);
+
+            // Employee Allowance routes
+            Route::apiResource('employee-allowances', EmployeeAllowanceController::class);
 
             // Leave Request routes
             Route::prefix('leave-requests')->name('leave-requests.')->group(function () {

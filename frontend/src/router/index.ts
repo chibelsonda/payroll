@@ -52,15 +52,20 @@ const router = createRouter({
                  { title: 'Loans', to: '/admin/loans', icon: 'mdi-cash-multiple' },
                  { title: 'Deductions', to: '/admin/deductions', icon: 'mdi-cash-minus' },
                  { title: 'Contributions', to: '/admin/contributions', icon: 'mdi-account-cash' },
-                 { title: 'Salaries', to: '/admin/salaries', icon: 'mdi-cash' },
-                 { title: 'Attendance Review', to: '/admin/attendance-review', icon: 'mdi-alert-circle-outline' },
-                 {
-                   title: 'Settings',
-                   icon: 'mdi-cog',
-                   children: [
-                     { title: 'Attendance', to: '/admin/settings/attendance' },
-                   ],
-                 },
+          { title: 'Salaries', to: '/admin/salaries', icon: 'mdi-cash' },
+          { title: 'Allowances', to: '/admin/allowances', icon: 'mdi-cash-plus' },
+          { title: 'Holidays', to: '/admin/holidays', icon: 'mdi-calendar-star' },
+          { title: 'Shifts', to: '/admin/shifts', icon: 'mdi-clock-time-four-outline' },
+          { title: 'Reports', to: '/admin/reports', icon: 'mdi-chart-bar' },
+          { title: 'Activity Logs', to: '/admin/activity-logs', icon: 'mdi-history' },
+          { title: 'Attendance Review', to: '/admin/attendance-review', icon: 'mdi-alert-circle-outline' },
+          {
+            title: 'Settings',
+            icon: 'mdi-cog',
+            children: [
+              { title: 'Attendance', to: '/admin/settings/attendance' },
+            ],
+          },
                ],
       },
       children: [
@@ -109,16 +114,41 @@ const router = createRouter({
                  name: 'admin-contributions',
                  component: () => import('../components/contribution/AdminContributionManager.vue'),
                },
-               {
-                 path: 'salaries',
-                 name: 'admin-salaries',
-                 component: () => import('../components/salary/AdminSalaryManager.vue'),
-               },
-               {
-                 path: 'attendance-review',
-                 name: 'admin-attendance-review',
-                 component: () => import('../components/attendance/AttendanceReviewQueue.vue'),
-               },
+              {
+                path: 'salaries',
+                name: 'admin-salaries',
+                component: () => import('../components/salary/AdminSalaryManager.vue'),
+              },
+              {
+                path: 'allowances',
+                name: 'admin-allowances',
+                component: () => import('../components/allowance/EmployeeAllowanceList.vue'),
+              },
+              {
+                path: 'holidays',
+                name: 'admin-holidays',
+                component: () => import('../components/holiday/HolidayList.vue'),
+              },
+              {
+                path: 'shifts',
+                name: 'admin-shifts',
+                component: () => import('../components/shift/ShiftList.vue'),
+              },
+              {
+                path: 'reports',
+                name: 'admin-reports',
+                component: () => import('../components/report/ReportDashboard.vue'),
+              },
+              {
+                path: 'activity-logs',
+                name: 'admin-activity-logs',
+                component: () => import('../components/activity/ActivityLogList.vue'),
+              },
+              {
+                path: 'attendance-review',
+                name: 'admin-attendance-review',
+                component: () => import('../components/attendance/AttendanceReviewQueue.vue'),
+              },
                {
                  path: 'settings/attendance',
                  name: 'admin-settings-attendance',
@@ -145,6 +175,11 @@ const router = createRouter({
           { title: 'Deductions', to: '/owner/deductions', icon: 'mdi-cash-minus' },
           { title: 'Contributions', to: '/owner/contributions', icon: 'mdi-account-cash' },
           { title: 'Salaries', to: '/owner/salaries', icon: 'mdi-cash' },
+          { title: 'Allowances', to: '/owner/allowances', icon: 'mdi-cash-plus' },
+          { title: 'Holidays', to: '/owner/holidays', icon: 'mdi-calendar-star' },
+          { title: 'Shifts', to: '/owner/shifts', icon: 'mdi-clock-time-four-outline' },
+          { title: 'Reports', to: '/owner/reports', icon: 'mdi-chart-bar' },
+          { title: 'Activity Logs', to: '/owner/activity-logs', icon: 'mdi-history' },
           { title: 'Attendance Review', to: '/owner/attendance-review', icon: 'mdi-alert-circle-outline' },
           { title: 'Invitations', to: '/owner/invitations', icon: 'mdi-email-plus' },
           {
@@ -206,6 +241,31 @@ const router = createRouter({
           path: 'salaries',
           name: 'owner-salaries',
           component: () => import('../components/salary/AdminSalaryManager.vue'),
+        },
+        {
+          path: 'allowances',
+          name: 'owner-allowances',
+          component: () => import('../components/allowance/EmployeeAllowanceList.vue'),
+        },
+        {
+          path: 'holidays',
+          name: 'owner-holidays',
+          component: () => import('../components/holiday/HolidayList.vue'),
+        },
+        {
+          path: 'shifts',
+          name: 'owner-shifts',
+          component: () => import('../components/shift/ShiftList.vue'),
+        },
+        {
+          path: 'reports',
+          name: 'owner-reports',
+          component: () => import('../components/report/ReportDashboard.vue'),
+        },
+        {
+          path: 'activity-logs',
+          name: 'owner-activity-logs',
+          component: () => import('../components/activity/ActivityLogList.vue'),
         },
         {
           path: 'attendance-review',

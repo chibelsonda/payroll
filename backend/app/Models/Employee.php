@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends CompanyScopedModel
@@ -76,6 +77,14 @@ class Employee extends CompanyScopedModel
     public function employeeDeductions(): HasMany
     {
         return $this->hasMany(EmployeeDeduction::class);
+    }
+
+    /**
+     * Get all employee allowances for this employee
+     */
+    public function employeeAllowances(): HasMany
+    {
+        return $this->hasMany(EmployeeAllowance::class);
     }
 
     /**

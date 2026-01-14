@@ -18,12 +18,14 @@ class PayrollRun extends CompanyScopedModel
         'period_end',
         'pay_date',
         'status',
+        'is_locked',
     ];
 
     protected $casts = [
         'period_start' => 'date',
         'period_end' => 'date',
         'pay_date' => 'date',
+        'is_locked' => 'boolean',
     ];
 
     /**
