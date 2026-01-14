@@ -1,0 +1,15 @@
+# VUE 3 RULES
+
+## ❌ Never:
+- Rewrite components
+- Change UI
+- Change layout
+- Change styling
+
+## ✅ Only:
+- Fix the specific bug
+- Modify minimal logic
+
+## 🧠 Keep:
+- Composition API
+- Existing patterns

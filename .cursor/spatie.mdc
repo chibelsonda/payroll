@@ -1,0 +1,17 @@
+# SPATIE PERMISSION RULES
+
+## 🚨 Teams (company_id) is ALWAYS enabled.
+
+## ❌ Never:
+- Call assignRole() without company context
+
+## ✅ Always:
+- Set team context:
+
+app(PermissionRegistrar::class)->setPermissionsTeamId($companyId);
+
+## Or:
+
+$user->assignRole('role-name', $companyId);
+
+## 🧠 All roles are company-scoped.

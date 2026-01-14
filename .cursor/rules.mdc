@@ -1,0 +1,119 @@
+# Cursor Project Rules (Laravel + Vue Payroll System)
+
+## 🎯 PRIMARY GOALS
+- Minimize token usage
+- Prefer SMALL, TARGETED edits
+- Never refactor unrelated files
+- Never rewrite whole files unless explicitly asked
+- Always respect existing architecture
+
+---
+
+## 🧠 THINKING RULES
+
+- Before coding:
+  - Analyze the existing codebase first
+  - Identify the MINIMAL change needed
+- DO NOT:
+  - Reformat files
+  - Rename variables
+  - Reorder imports
+  - Change code style
+  - Touch unrelated files
+
+---
+
+## 📁 FILE SCOPE RULES
+
+- Only modify files that are:
+  - Explicitly mentioned by the user, OR
+  - Absolutely required for the fix
+
+- If more than 3 files are needed:
+  - STOP and ask before continuing
+
+---
+
+## 🧱 LARAVEL RULES
+
+- Prefer:
+  - Migrations over raw SQL
+  - Eloquent over raw queries (unless performance critical)
+- Never:
+  - Edit old migrations that already ran
+  - Break backwards compatibility
+- When dealing with Spatie Permission:
+  - ALWAYS assume teams (company_id) is enabled
+  - ALWAYS require company context when assigning roles
+
+---
+
+## 🗃️ DATABASE RULES (PostgreSQL)
+
+- Avoid:
+  - Duplicate indexes
+  - Duplicate columns
+- Remember:
+  - morphs() creates columns + index
+  - unique() creates index
+  - foreignId()->constrained() creates index
+
+---
+
+## 🧪 DEBUGGING RULES
+
+- When an error occurs:
+  - Fix ONLY the root cause
+  - Do NOT refactor surrounding code
+  - Do NOT "improve" code unless asked
+
+---
+
+## 🧩 VUE RULES
+
+- Vue 3 + Composition API
+- Do NOT rewrite components
+- Do NOT change UI or layout unless explicitly requested
+- Keep changes minimal and local
+
+---
+
+## 🤖 AI USAGE OPTIMIZATION
+
+- Prefer:
+  - Small patches
+  - Surgical edits
+- Avoid:
+  - "Full file rewrite"
+  - "Project-wide refactor"
+  - "Cleanup passes"
+
+---
+
+## 🛑 HARD STOPS
+
+- If a change will:
+  - Touch many files
+  - Affect architecture
+  - Change business logic
+
+→ STOP and ASK FIRST.
+
+---
+
+## 🧾 OUTPUT FORMAT
+
+- When editing code:
+  - Show ONLY the changed lines
+  - Or show a very small diff-style patch
+
+- Never dump full files unless explicitly asked.
+
+---
+
+## 🏁 SUCCESS CRITERIA
+
+- Code compiles
+- Tests still pass
+- No unrelated changes
+- Minimal token usage

@@ -1,0 +1,20 @@
+# LARAVEL BACKEND RULES
+
+## ✅ Prefer:
+- Eloquent over raw SQL
+- Services over fat controllers
+- Request classes for validation
+
+## ❌ Never:
+- Edit old migrations that already ran
+- Break API responses
+- Change business logic unless asked
+
+## 🧠 When fixing bugs:
+- Fix ONLY the bug
+- Do NOT refactor surrounding code
+
+## 🏗️ Architecture:
+- Respect current structure
+- No folder reorganization
+- No namespace changes

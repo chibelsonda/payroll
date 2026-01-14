@@ -1,0 +1,11 @@
+# SECURITY RULES
+
+## ❌ Never:
+- Bypass auth
+- Disable permission checks
+- Hardcode secrets
+- Log sensitive data
+
+## ✅ Always:
+- Respect Sanctum auth
+- Respect role & company checks

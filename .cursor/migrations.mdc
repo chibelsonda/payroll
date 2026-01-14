@@ -1,0 +1,22 @@
+# MIGRATION RULES
+
+## ❌ Never:
+- Edit old migrations in a real project
+- Duplicate:
+  - Columns
+  - Indexes
+  - Foreign keys
+
+## 🧠 Remember:
+- morphs() creates:
+  - subject_type
+  - subject_id
+  - index
+- unique() creates index
+- foreignId()->constrained() creates index
+
+## ✅ If schema is wrong:
+- Create a NEW migration
+
+## 🛑 If unsure:
+- STOP and ask before changing
