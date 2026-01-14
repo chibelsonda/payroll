@@ -231,6 +231,15 @@ const router = createRouter({
             ],
           },
           {
+            title: 'Billing',
+            icon: 'mdi-credit-card',
+            children: [
+              { title: 'Overview', to: '/owner/billing', icon: 'mdi-view-dashboard' },
+              { title: 'Plans', to: '/owner/billing/plans', icon: 'mdi-package-variant' },
+              { title: 'Payments', to: '/owner/billing/payments', icon: 'mdi-cash-multiple' },
+            ],
+          },
+          {
             title: 'Settings',
             icon: 'mdi-cog',
             children: [
@@ -324,6 +333,21 @@ const router = createRouter({
           path: 'invitations',
           name: 'owner-invitations',
           component: () => import('../components/invitation/InvitationList.vue'),
+        },
+        {
+          path: 'billing',
+          name: 'owner-billing',
+          component: () => import('../components/billing/BillingOverview.vue'),
+        },
+        {
+          path: 'billing/plans',
+          name: 'owner-billing-plans',
+          component: () => import('../components/billing/PlansList.vue'),
+        },
+        {
+          path: 'billing/payments',
+          name: 'owner-billing-payments',
+          component: () => import('../components/billing/PaymentsList.vue'),
         },
         {
           path: 'settings/attendance',

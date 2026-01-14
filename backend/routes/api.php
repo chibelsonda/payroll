@@ -28,11 +28,16 @@ use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\ShiftController;
 use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\EmployeeAllowanceController;
+use App\Http\Controllers\Api\V1\BillingController;
+use App\Http\Controllers\Api\V1\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
     // Public routes (no authentication required)
     Route::get('invitations/token', [InvitationController::class, 'showByToken'])->name('invitations.show-by-token');
+
+    // Public webhook routes (no authentication required)
+    Route::post('webhook/paymongo', [WebhookController::class, 'paymongo'])->name('webhook.paymongo');
 
     // Protected routes (require authentication)
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
@@ -114,6 +119,14 @@ Route::prefix('v1')->name('v1.')->group(function () {
 
             // Activity Logs routes
             Route::apiResource('activity-logs', ActivityLogController::class)->only(['index', 'show']);
+
+            // Billing routes
+            Route::prefix('billing')->name('billing.')->group(function () {
+                Route::get('plans', [BillingController::class, 'plans'])->name('plans');
+                Route::post('subscribe', [BillingController::class, 'subscribe'])->name('subscribe');
+                Route::get('subscription', [BillingController::class, 'subscription'])->name('subscription');
+                Route::get('payments', [BillingController::class, 'payments'])->name('payments');
+            });
 
             // Payroll routes
             Route::prefix('payroll-runs')->name('payroll-runs.')->group(function () {

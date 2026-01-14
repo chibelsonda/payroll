@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Api\BaseApiController;
+use App\Http\Requests\SubscribeRequest;
+use App\Http\Resources\PaymentResource;
+use App\Http\Resources\PlanResource;
+use App\Http\Resources\SubscriptionResource;
+use App\Models\Company;
+use App\Services\BillingService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class BillingController extends BaseApiController
+{
+    public function __construct(
+        protected BillingService $billingService
+    ) {}
+
+    /**
+     * Get all active plans
+     */
+    public function plans(Request $request): JsonResponse
+    {
+        $plans = $this->billingService->getActivePlans();
+
+        return $this->successResponse(
+            PlanResource::collection($plans),
+            'Plans retrieved successfully'
+        );
+    }
+
+    /**
+     * Subscribe to a plan
+     */
+    public function subscribe(SubscribeRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $company = $request->attributes->get('active_company');
+
+        if (!$company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        $plan = $this->billingService->findPlanByUuid($request->input('plan_uuid'));
+
+        if (!$plan) {
+            return $this->notFoundResponse('Plan not found');
+        }
+
+        try {
+            $provider = $validated['provider'] ?? 'paymongo';
+            $method = $validated['payment_method'];
+
+            $result = $this->billingService->subscribe(
+                $company,
+                $plan,
+                $provider,
+                $method,
+                [
+                    'success_url' => $request->input('success_url'),
+                    'cancel_url' => $request->input('cancel_url'),
+                ]
+            );
+
+            return $this->createdResponse([
+                'subscription' => new SubscriptionResource($result['subscription']),
+                'payment' => new PaymentResource($result['payment']),
+                'checkout_url' => $result['checkout_url'],
+            ], 'Subscription created successfully. Please complete payment.');
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to create subscription: ' . $e->getMessage(),
+                [],
+                [],
+                500
+            );
+        }
+    }
+
+    /**
+     * Get current subscription
+     */
+    public function subscription(Request $request): JsonResponse
+    {
+        $company = $request->attributes->get('active_company');
+
+        if (!$company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        $subscription = $this->billingService->getCompanySubscription($company);
+
+        if (!$subscription) {
+            return $this->notFoundResponse('No subscription found');
+        }
+
+        return $this->successResponse(
+            new SubscriptionResource($subscription),
+            'Subscription retrieved successfully'
+        );
+    }
+
+    /**
+     * Get payment history
+     */
+    public function payments(Request $request): JsonResponse
+    {
+        $company = $request->attributes->get('active_company');
+
+        if (!$company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        $perPage = $request->input('per_page', 15);
+        $payments = $this->billingService->getCompanyPayments($company, $perPage);
+
+        return $this->successResponse(
+            PaymentResource::collection($payments),
+            'Payments retrieved successfully'
+        );
+    }
+}

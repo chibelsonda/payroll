@@ -60,6 +60,10 @@ trait ConvertsUuidsToIds
                 'model' => \App\Models\Contribution::class,
                 'id_field' => 'contribution_id',
             ],
+            'plan_uuid' => [
+                'model' => \App\Models\Plan::class,
+                'id_field' => 'plan_id',
+            ],
         ];
 
         foreach ($uuidMappings as $uuidField => $mapping) {
