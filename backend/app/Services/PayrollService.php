@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Attendance;
+use App\Models\AttendanceSettings;
 use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Payroll;
@@ -9,6 +11,7 @@ use App\Models\PayrollDeduction;
 use App\Models\PayrollEarning;
 use App\Models\PayrollRun;
 use App\Models\Salary;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class PayrollService
@@ -104,6 +107,10 @@ class PayrollService
 
             $generatedPayrolls = [];
 
+            // Get attendance settings for the company
+            $attendanceSettings = $this->getAttendanceSettings($payrollRun->company_id);
+            $regularHoursPerDay = $attendanceSettings['max_shift_hours'] ?? 8;
+
             foreach ($employees as $employee) {
                 // Get the current salary for the employee
                 // Find the most recent salary that is effective on or before the payroll period end date
@@ -112,20 +119,42 @@ class PayrollService
                     ->orderBy('effective_from', 'desc')
                     ->orderBy('created_at', 'desc')
                     ->first();
-                
-                $basicSalary = $currentSalary ? (float) $currentSalary->amount : 0;
 
-                // Create payroll
+                $monthlySalary = $currentSalary ? (float) $currentSalary->amount : 0;
+
+                // Calculate attendance-based payroll
+                $attendanceData = $this->calculateAttendanceBasedPayroll(
+                    $employee,
+                    $payrollRun->period_start,
+                    $payrollRun->period_end,
+                    $monthlySalary,
+                    $regularHoursPerDay
+                );
+
+                // Create payroll with attendance-based calculations
                 $payroll = Payroll::create([
                     'payroll_run_id' => $payrollRun->id,
                     'employee_id' => $employee->id,
-                    'basic_salary' => $basicSalary,
-                    'gross_pay' => $basicSalary,
+                    'basic_salary' => $attendanceData['basic_salary'],
+                    'gross_pay' => $attendanceData['basic_salary'],
                     'total_deductions' => 0,
-                    'net_pay' => $basicSalary,
+                    'net_pay' => $attendanceData['basic_salary'],
                 ]);
 
-                // Calculate totals
+                // Add overtime earnings if applicable
+                if ($attendanceData['overtime_hours'] > 0 && $attendanceData['overtime_pay'] > 0) {
+                    PayrollEarning::create([
+                        'payroll_id' => $payroll->id,
+                        'type' => 'overtime',
+                        'description' => sprintf(
+                            'Overtime (%s hours)',
+                            number_format($attendanceData['overtime_hours'], 2)
+                        ),
+                        'amount' => $attendanceData['overtime_pay'],
+                    ]);
+                }
+
+                // Calculate totals (includes overtime earnings)
                 $this->calculatePayrollTotals($payroll);
 
                 // Load relationships for the resource
@@ -169,6 +198,128 @@ class PayrollService
         ]);
 
         return $payroll->fresh();
+    }
+
+    /**
+     * Calculate attendance-based payroll for an employee
+     *
+     * @param Employee $employee
+     * @param \DateTime|string $periodStart
+     * @param \DateTime|string $periodEnd
+     * @param float $monthlySalary
+     * @param int $regularHoursPerDay
+     * @return array
+     */
+    protected function calculateAttendanceBasedPayroll(
+        Employee $employee,
+        $periodStart,
+        $periodEnd,
+        float $monthlySalary,
+        int $regularHoursPerDay
+    ): array {
+        // Convert dates to Carbon instances
+        $startDate = Carbon::parse($periodStart);
+        $endDate = Carbon::parse($periodEnd);
+
+        // Get attendance records for the payroll period
+        $attendances = Attendance::where('employee_id', $employee->id)
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('status', '!=', 'absent') // Exclude absent days
+            ->get();
+
+        // Calculate total hours worked from attendance records
+        $totalHoursWorked = (float) $attendances->sum('hours_worked');
+
+        // Calculate working days in the period (excluding weekends - adjust if needed)
+        $totalWorkingDays = $this->calculateWorkingDays($startDate, $endDate);
+        $expectedRegularHours = $totalWorkingDays * $regularHoursPerDay;
+
+        // Calculate actual working days (days with attendance)
+        $actualWorkingDays = $attendances->count();
+
+        // Calculate regular hours and overtime
+        $regularHours = min($totalHoursWorked, $expectedRegularHours);
+        $overtimeHours = max(0, $totalHoursWorked - $expectedRegularHours);
+
+        // Calculate hourly rate (assuming monthly salary is for full month)
+        // For payroll period, we need to prorate based on days worked
+        $hourlyRate = $expectedRegularHours > 0
+            ? ($monthlySalary / ($totalWorkingDays * $regularHoursPerDay))
+            : 0;
+
+        // Calculate basic salary (prorated based on attendance)
+        // Option 1: Based on days worked
+        $attendanceRatio = $totalWorkingDays > 0
+            ? ($actualWorkingDays / $totalWorkingDays)
+            : 0;
+
+        // Option 2: Based on hours worked (alternative approach)
+        // $attendanceRatio = $expectedRegularHours > 0
+        //     ? ($regularHours / $expectedRegularHours)
+        //     : 0;
+
+        $basicSalary = $monthlySalary * $attendanceRatio;
+
+        // Calculate overtime pay (1.5x hourly rate for overtime hours)
+        $overtimeRate = $hourlyRate * 1.5;
+        $overtimePay = $overtimeHours * $overtimeRate;
+
+        return [
+            'total_hours_worked' => $totalHoursWorked,
+            'regular_hours' => $regularHours,
+            'overtime_hours' => $overtimeHours,
+            'expected_regular_hours' => $expectedRegularHours,
+            'actual_working_days' => $actualWorkingDays,
+            'total_working_days' => $totalWorkingDays,
+            'basic_salary' => round($basicSalary, 2),
+            'overtime_pay' => round($overtimePay, 2),
+            'hourly_rate' => round($hourlyRate, 2),
+            'overtime_rate' => round($overtimeRate, 2),
+        ];
+    }
+
+    /**
+     * Calculate working days in a period (excluding weekends)
+     *
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return int
+     */
+    protected function calculateWorkingDays(Carbon $startDate, Carbon $endDate): int
+    {
+        $workingDays = 0;
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            // Count weekdays (Monday = 1, Friday = 5)
+            if ($currentDate->dayOfWeek >= Carbon::MONDAY && $currentDate->dayOfWeek <= Carbon::FRIDAY) {
+                $workingDays++;
+            }
+            $currentDate->addDay();
+        }
+
+        return $workingDays;
+    }
+
+    /**
+     * Get attendance settings for a company
+     *
+     * @param int $companyId
+     * @return array
+     */
+    protected function getAttendanceSettings(int $companyId): array
+    {
+        $settings = AttendanceSettings::where('company_id', $companyId)->first();
+
+        if ($settings) {
+            return [
+                'max_shift_hours' => $settings->max_shift_hours ?? 8,
+                'default_shift_start' => $settings->default_shift_start,
+                'default_shift_end' => $settings->default_shift_end,
+            ];
+        }
+
+        return AttendanceSettings::getDefaults();
     }
 
     /**
