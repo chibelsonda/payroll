@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/vue-query'
+import type { Ref } from 'vue'
 import apiAxios from '@/lib/axios'
-import type { PayrollSummaryReport, TaxReport, ContributionReport, EmployeeLedgerEntry } from '@/types/report'
+import type { PayrollSummaryReport, TaxReportEntry, ContributionReportEntry, EmployeeLedgerEntry } from '@/types/report'
 
 export function usePayrollSummaryReport(startDate: Ref<string> | string, endDate: Ref<string> | string, enabled = true) {
   const startDateValue = typeof startDate === 'string' ? startDate : startDate.value
@@ -21,7 +22,7 @@ export function useTaxReport(startDate: string, endDate: string, enabled = true)
   return useQuery({
     queryKey: ['reports', 'tax', startDate, endDate],
     queryFn: async () => {
-      const response = await apiAxios.get<{ data: TaxReport }>('/reports/tax', {
+      const response = await apiAxios.get<{ data: TaxReportEntry[] }>('/reports/tax', {
         params: { start_date: startDate, end_date: endDate },
       })
       return response.data.data
