@@ -1,15 +1,15 @@
-# POSTGRES RULES
+POSTGRES RULES
 
-## ❗ PostgreSQL is strict:
+PostgreSQL is strict:
 - No duplicate:
   - Index names
   - Column names
   - Constraint names
 
-## 🧠 Always check:
+Always check:
 - If column already indexed
 - If unique() already creates index
 
-## ❌ Never:
+Never:
 - Add index blindly
 - Assume MySQL behavior

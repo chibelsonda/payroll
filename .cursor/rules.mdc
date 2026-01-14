@@ -1,6 +1,13 @@
-# Cursor Project Rules (Laravel + Vue Payroll System)
+Cursor Project Rules (Laravel + Vue Payroll System)
 
-## 🎯 PRIMARY GOALS
+CRITICAL CONTRACT RULES:
+
+- API response format is IMMUTABLE unless user explicitly says otherwise.
+- Service layer architecture must be respected.
+- No business logic in controllers.
+
+PRIMARY GOALS
+
 - Minimize token usage
 - Prefer SMALL, TARGETED edits
 - Never refactor unrelated files
@@ -9,7 +16,7 @@
 
 ---
 
-## 🧠 THINKING RULES
+THINKING RULES
 
 - Before coding:
   - Analyze the existing codebase first
@@ -23,7 +30,7 @@
 
 ---
 
-## 📁 FILE SCOPE RULES
+FILE SCOPE RULES
 
 - Only modify files that are:
   - Explicitly mentioned by the user, OR
@@ -34,7 +41,7 @@
 
 ---
 
-## 🧱 LARAVEL RULES
+LARAVEL RULES
 
 - Prefer:
   - Migrations over raw SQL
@@ -48,7 +55,7 @@
 
 ---
 
-## 🗃️ DATABASE RULES (PostgreSQL)
+DATABASE RULES (PostgreSQL)
 
 - Avoid:
   - Duplicate indexes
@@ -60,7 +67,7 @@
 
 ---
 
-## 🧪 DEBUGGING RULES
+DEBUGGING RULES
 
 - When an error occurs:
   - Fix ONLY the root cause
@@ -69,7 +76,7 @@
 
 ---
 
-## 🧩 VUE RULES
+VUE RULES
 
 - Vue 3 + Composition API
 - Do NOT rewrite components
@@ -78,7 +85,7 @@
 
 ---
 
-## 🤖 AI USAGE OPTIMIZATION
+AI USAGE OPTIMIZATION
 
 - Prefer:
   - Small patches
@@ -90,7 +97,7 @@
 
 ---
 
-## 🛑 HARD STOPS
+HARD STOPS
 
 - If a change will:
   - Touch many files
@@ -101,7 +108,7 @@
 
 ---
 
-## 🧾 OUTPUT FORMAT
+OUTPUT FORMAT
 
 - When editing code:
   - Show ONLY the changed lines
@@ -111,7 +118,7 @@
 
 ---
 
-## 🏁 SUCCESS CRITERIA
+SUCCESS CRITERIA
 
 - Code compiles
 - Tests still pass

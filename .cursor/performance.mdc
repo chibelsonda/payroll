@@ -1,15 +1,15 @@
-# PERFORMANCE RULES
+PERFORMANCE RULES
 
-## ❌ Never:
+Never:
 - Optimize unless asked
 - Rewrite queries "just in case"
 
-## ✅ Only:
+Only:
 - Fix N+1
 - Fix obvious slowness
 - Add index ONLY if proven necessary
 
-## 🧠 Payroll systems favor:
+Payroll systems favor:
 - Correctness
 - Stability
 - Predictability

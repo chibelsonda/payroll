@@ -1,20 +1,54 @@
-# LARAVEL BACKEND RULES
+LARAVEL BACKEND RULES
 
-## ✅ Prefer:
+Prefer:
 - Eloquent over raw SQL
 - Services over fat controllers
 - Request classes for validation
 
-## ❌ Never:
+Never:
 - Edit old migrations that already ran
 - Break API responses
 - Change business logic unless asked
 
-## 🧠 When fixing bugs:
+When fixing bugs:
 - Fix ONLY the bug
 - Do NOT refactor surrounding code
 
-## 🏗️ Architecture:
+Architecture:
 - Respect current structure
 - No folder reorganization
 - No namespace changes
+
+
+API RESPONSE RULES:
+
+- ALWAYS follow the existing API response format.
+- NEVER change:
+  - JSON structure
+  - Envelope keys (e.g., success, data, message)
+  - Pagination format
+  - Error format
+- If an endpoint returns:
+  { success, data, message }
+  → ALL new or modified endpoints MUST follow the same format.
+
+- NEVER "improve" or "simplify" API responses unless explicitly asked.
+
+---
+
+SERVICE LAYER RULES:
+
+- Business logic MUST go into Service classes.
+- Controllers MUST:
+  - Validate request
+  - Call a Service
+  - Return the response
+
+- NEVER:
+  - Put business logic in controllers
+  - Put heavy logic in routes
+  - Mix query logic and HTTP logic
+
+- If logic already exists in a Service:
+  - Reuse it
+  - Do NOT duplicate it

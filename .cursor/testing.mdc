@@ -1,13 +1,13 @@
-# TESTING RULES
+TESTING RULES
 
-## ❌ Never:
+Never:
 - Delete tests
 - Rewrite test suites
 
-## ✅ When test fails:
+When test fails:
 - Fix production code
 - Or fix only the broken assertion
 
-## 🧠 Tests must remain:
+Tests must remain:
 - Stable
 - Deterministic
