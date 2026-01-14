@@ -1,228 +1,171 @@
 <template>
-  <v-container fluid class="px-4 py-6 bg-grey-lighten-5">
-    <v-row justify="center">
-      <v-col cols="12" lg="10">
-        <div class="text-center mb-8">
-          <h1 class="text-h4 font-weight-bold text-primary mb-2">Choose Your Plan</h1>
-          <p class="text-body-1 text-medium-emphasis">Select the perfect plan for your business needs</p>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="isLoading" class="text-center py-12">
-          <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-          <p class="mt-4 text-h6 text-medium-emphasis">Loading plans...</p>
-        </div>
-
-        <!-- Error State -->
-        <v-alert
-          v-else-if="error"
-          type="error"
-          variant="tonal"
-          class="mb-6"
-          rounded="lg"
-          prominent
-        >
-          <div class="d-flex align-center">
-            <v-icon class="me-3" size="24">mdi-alert-circle</v-icon>
-            <div class="flex-grow-1">
-              <div class="font-weight-medium text-h6">Failed to load plans</div>
-              <div class="text-body-2">{{ error.message }}</div>
-            </div>
-            <v-btn variant="text" color="error" size="large" @click="refetch">Retry</v-btn>
+  <div>
+    <v-container fluid class="px-4 py-6 bg-grey-lighten-5">
+      <v-row justify="center">
+        <v-col cols="12" lg="10">
+          <div class="text-center mb-8">
+            <h1 class="text-h4 font-weight-bold text-primary mb-2">Choose Your Plan</h1>
+            <p class="text-body-1 text-medium-emphasis">Select the perfect plan for your business needs</p>
           </div>
-        </v-alert>
 
-        <!-- Plans Grid -->
-        <v-row v-else class="plans-grid">
-          <v-col
-            v-for="(plan, index) in plans"
-            :key="plan.uuid"
-            cols="12"
-            sm="12"
-            md="4"
+          <!-- Loading State -->
+          <div v-if="isLoading" class="text-center py-12">
+            <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+            <p class="mt-4 text-h6 text-medium-emphasis">Loading plans...</p>
+          </div>
+
+          <!-- Error State -->
+          <v-alert
+            v-else-if="error"
+            type="error"
+            variant="tonal"
+            class="mb-6"
+            rounded="lg"
+            prominent
           >
-            <v-card
-              :elevation="selectedPlan?.uuid === plan.uuid ? 8 : 2"
-              rounded="lg"
-              :class="[
-                'plan-card h-100 position-relative overflow-hidden',
-                {
-                  'selected-plan': selectedPlan?.uuid === plan.uuid,
-                  'popular-plan': index === 1 // Assuming middle plan is popular
-                }
-              ]"
-              @click="selectPlan(plan)"
-            >
-              <!-- Popular Badge -->
-              <v-chip
-                v-if="index === 1"
-                color="warning"
-                size="small"
-                class="popular-badge"
-                variant="elevated"
-              >
-                <v-icon start size="16">mdi-star</v-icon>
-                Most Popular
-              </v-chip>
-
-              <!-- Card Header with Gradient -->
-              <div class="plan-header">
-                <div class="plan-icon mb-3">
-                  <v-icon size="48" color="white">
-                    {{ getPlanIcon(plan.max_employees) }}
-                  </v-icon>
-                </div>
-                <h3 class="text-h5 font-weight-bold text-white mb-1">{{ plan.name }}</h3>
-                <div class="plan-price">
-                  <span class="currency">₱</span>
-                  <span class="amount">{{ plan.price.toLocaleString() }}</span>
-                  <span class="period">/{{ plan.billing_cycle }}</span>
-                </div>
+            <div class="d-flex align-center">
+              <v-icon class="me-3" size="24">mdi-alert-circle</v-icon>
+              <div class="flex-grow-1">
+                <div class="font-weight-medium text-h6">Failed to load plans</div>
+                <div class="text-body-2">{{ error.message }}</div>
               </div>
+              <v-btn variant="text" color="error" size="large" @click="refetch">Retry</v-btn>
+            </div>
+          </v-alert>
 
-              <v-card-text class="flex-grow-1 pa-6">
-                <!-- Features -->
-                <div class="features-list">
-                  <div class="feature-item">
-                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
-                    <span>Up to {{ plan.max_employees }} employees</span>
-                  </div>
-                  <div class="feature-item">
-                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
-                    <span>Payroll processing</span>
-                  </div>
-                  <div class="feature-item">
-                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
-                    <span>Employee management</span>
-                  </div>
-                  <div class="feature-item">
-                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
-                    <span>Reports & analytics</span>
-                  </div>
-                  <div class="feature-item">
-                    <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
-                    <span>24/7 support</span>
-                  </div>
-                </div>
-              </v-card-text>
-
-              <v-card-actions class="pa-6 pt-0">
-                <v-btn
-                  block
-                  size="large"
-                  :color="selectedPlan?.uuid === plan.uuid ? 'white' : 'primary'"
-                  :variant="selectedPlan?.uuid === plan.uuid ? 'flat' : 'elevated'"
-                  :class="{ 'selected-btn': selectedPlan?.uuid === plan.uuid }"
-                  @click.stop="selectPlan(plan)"
-                  rounded="lg"
+          <!-- Plans Grid -->
+          <v-row v-else class="plans-grid">
+            <v-col
+              v-for="(plan, index) in plans"
+              :key="plan.uuid"
+              cols="12"
+              sm="12"
+              md="4"
+            >
+              <v-card
+                :elevation="selectedPlanUuid === plan.uuid ? 8 : 2"
+                rounded="lg"
+                :class="[
+                  'plan-card h-100 position-relative overflow-hidden',
+                  {
+                    'selected-plan': selectedPlanUuid === plan.uuid,
+                    'popular-plan': index === 1
+                  }
+                ]"
+              >
+                <!-- Popular Badge -->
+                <v-chip
+                  v-if="index === 1"
+                  color="warning"
+                  size="small"
+                  class="popular-badge"
+                  variant="elevated"
                 >
-                  <v-icon v-if="selectedPlan?.uuid === plan.uuid" start>mdi-check</v-icon>
-                  {{ selectedPlan?.uuid === plan.uuid ? 'Selected' : 'Select Plan' }}
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
+                  <v-icon start size="16">mdi-star</v-icon>
+                  Most Popular
+                </v-chip>
 
-        <!-- Payment Method Selection -->
-        <v-row v-if="selectedPlan" class="mt-8" justify="center">
-          <v-col cols="12" md="8" lg="6">
-            <v-card variant="outlined" rounded="xl" elevation="4">
-              <v-card-title class="text-h6 font-weight-bold text-center py-6">
-                <v-icon color="primary" size="28" class="me-3">mdi-credit-card</v-icon>
-                Complete Your Subscription
-              </v-card-title>
-              <v-divider></v-divider>
-              <v-card-text class="pa-6">
-                <div class="selected-plan-summary mb-6">
-                  <div class="d-flex align-center justify-center mb-4">
-                    <v-icon color="primary" size="24" class="me-2">mdi-package-variant</v-icon>
-                    <span class="text-h6 font-weight-bold">{{ selectedPlan.name }}</span>
+                <!-- Card Header with Gradient -->
+                <div class="plan-header">
+                  <div class="plan-icon mb-3">
+                    <v-icon size="48" color="white">
+                      {{ getPlanIcon(plan.max_employees) }}
+                    </v-icon>
                   </div>
-                  <div class="text-center text-h5 font-weight-bold primary--text">
-                    ₱{{ selectedPlan.price.toLocaleString() }}/{{ selectedPlan.billing_cycle }}
+                  <h3 class="text-h5 font-weight-bold text-white mb-1">{{ plan.name }}</h3>
+                  <div class="plan-price">
+                    <span class="currency">₱</span>
+                    <span class="amount">{{ plan.price.toLocaleString() }}</span>
+                    <span class="period">/{{ plan.billing_cycle }}</span>
                   </div>
                 </div>
 
-                <div class="payment-methods">
-                  <h4 class="text-subtitle-1 font-weight-bold mb-4 text-center">Choose Payment Method</h4>
-                  <v-radio-group v-model="paymentMethod" class="payment-radio-group">
-                    <v-radio
-                      label="GCash"
-                      value="gcash"
-                      color="primary"
-                      class="payment-radio"
-                    >
-                      <template v-slot:label>
-                        <div class="d-flex align-center">
-                          <v-avatar size="40" color="green" class="me-3">
-                            <v-icon color="white">mdi-cellphone</v-icon>
-                          </v-avatar>
-                          <div>
-                            <div class="font-weight-medium">GCash</div>
-                            <div class="text-caption text-medium-emphasis">Pay with your GCash wallet</div>
-                          </div>
-                        </div>
-                      </template>
-                    </v-radio>
-                    <v-radio
-                      label="Card"
-                      value="card"
-                      color="primary"
-                      class="payment-radio"
-                    >
-                      <template v-slot:label>
-                        <div class="d-flex align-center">
-                          <v-avatar size="40" color="blue" class="me-3">
-                            <v-icon color="white">mdi-credit-card</v-icon>
-                          </v-avatar>
-                          <div>
-                            <div class="font-weight-medium">Credit/Debit Card</div>
-                            <div class="text-caption text-medium-emphasis">Visa, Mastercard, etc.</div>
-                          </div>
-                        </div>
-                      </template>
-                    </v-radio>
-                  </v-radio-group>
-                </div>
-              </v-card-text>
-              <v-card-actions class="pa-6 pt-0">
-                <v-spacer></v-spacer>
-                <v-btn
-                  color="primary"
-                  size="large"
-                  :loading="subscribeMutation.isPending.value"
-                  :disabled="!paymentMethod"
-                  @click="handleSubscribe"
-                  rounded="lg"
-                  elevation="2"
-                >
-                  <v-icon start>mdi-lock</v-icon>
-                  Subscribe Now - ₱{{ selectedPlan.price.toLocaleString() }}
-                </v-btn>
-              </v-card-actions>
-            </v-card>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
-  </v-container>
+                <v-card-text class="flex-grow-1 pa-6">
+                  <!-- Features -->
+                  <div class="features-list">
+                    <div class="feature-item">
+                      <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                      <span>Up to {{ plan.max_employees }} employees</span>
+                    </div>
+                    <div class="feature-item">
+                      <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                      <span>Payroll processing</span>
+                    </div>
+                    <div class="feature-item">
+                      <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                      <span>Employee management</span>
+                    </div>
+                    <div class="feature-item">
+                      <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                      <span>Reports & analytics</span>
+                    </div>
+                    <div class="feature-item">
+                      <v-icon color="success" size="20" class="me-3">mdi-check-circle</v-icon>
+                      <span>24/7 support</span>
+                    </div>
+                  </div>
+                </v-card-text>
+
+                <v-card-actions class="pa-6 pt-0">
+                  <v-btn
+                    v-show="selectedPlanUuid !== plan.uuid"
+                    block
+                    size="large"
+                    color="primary"
+                    variant="elevated"
+                    @click.stop="openWizard(plan)"
+                    rounded="lg"
+                  >
+                    Select Plan
+                  </v-btn>
+                  <v-btn
+                    v-show="selectedPlanUuid === plan.uuid"
+                    block
+                    size="large"
+                    color="white"
+                    variant="flat"
+                    class="selected-btn"
+                    prepend-icon="mdi-check"
+                    @click.stop="openWizard(plan)"
+                    rounded="lg"
+                  >
+                    Selected
+                  </v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-container>
+
+    <!-- Subscribe Wizard -->
+    <SubscribeWizard
+      v-if="selectedPlan"
+      v-model="showWizard"
+      :initial-plan="selectedPlan"
+      @success="handleSubscriptionSuccess"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { usePlans, useSubscribe } from '@/composables/billing/useBilling'
+import { usePlans } from '@/composables/billing/useBilling'
+import SubscribeWizard from './SubscribeWizard.vue'
 import type { Plan } from '@/types/billing'
 
 const { data: plansData, isLoading, error, refetch } = usePlans()
-const subscribeMutation = useSubscribe()
 
 const plans = computed(() => plansData.value || [])
 const selectedPlan = ref<Plan | null>(null)
-const paymentMethod = ref<'gcash' | 'card' | null>(null)
+const selectedPlanUuid = ref<string | null>(null)
+const showWizard = ref(false)
 
-const selectPlan = (plan: Plan) => {
+const openWizard = (plan: Plan) => {
   selectedPlan.value = plan
+  selectedPlanUuid.value = plan.uuid
+  showWizard.value = true
 }
 
 const getPlanIcon = (maxEmployees: number): string => {
@@ -232,23 +175,11 @@ const getPlanIcon = (maxEmployees: number): string => {
   return 'mdi-domain'
 }
 
-const handleSubscribe = async () => {
-  if (!selectedPlan.value || !paymentMethod.value) return
-
-  try {
-    const result = await subscribeMutation.mutateAsync({
-      plan_uuid: selectedPlan.value.uuid,
-      payment_method: paymentMethod.value,
-      success_url: `${window.location.origin}/billing/success`,
-      cancel_url: `${window.location.origin}/billing`,
-    })
-
-    if (result.checkout_url) {
-      window.location.href = result.checkout_url
-    }
-  } catch (err: any) {
-    console.error('Subscription failed:', err)
-  }
+const handleSubscriptionSuccess = () => {
+  // Refresh subscription status, show toast, etc.
+  showWizard.value = false
+  selectedPlan.value = null
+  refetch()
 }
 </script>
 
