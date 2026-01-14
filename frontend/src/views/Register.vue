@@ -107,7 +107,6 @@
                 :loading="auth.isRegisterLoading || isSubmitting"
                 :disabled="!isValid"
                 block
-                size="large"
                 class="text-uppercase font-weight-bold mb-4"
               >
                 SIGN UP
