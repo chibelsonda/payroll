@@ -2,7 +2,6 @@
   <v-container fluid class="pa-6">
     <v-row>
       <v-col cols="12">
-        <div class="text-h4 font-weight-bold mb-2">Owner Dashboard</div>
         <div class="text-body-1 text-medium-emphasis mb-6">
           Welcome! Manage your company and oversee all operations.
         </div>
