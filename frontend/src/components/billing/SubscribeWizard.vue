@@ -216,7 +216,7 @@ const { showNotification } = useNotification()
 
 const currentStep = ref(1)
 const totalSteps = 3
-const stepLabels = ['Confirm plan', 'Payment method', 'Review']
+const stepLabels = ['Confirm plan', 'Payment method', 'Complete Payment']
 const paymentMethod = ref<'gcash' | 'card' | null>(null)
 const subscriptionSuccess = ref(false)
 
@@ -413,14 +413,4 @@ watch(
   max-width: 420px;
 }
 
-/* Hide scrollbars on the stepper header (no horizontal scroll indicator) */
-/* :deep(.v-stepper-header) {
-  overflow: visible;
-}
-:deep(.v-stepper-header::-webkit-scrollbar) {
-  display: none;
-}
-:deep(.v-stepper-header) {
-  scrollbar-width: none;
-} */
 </style>
