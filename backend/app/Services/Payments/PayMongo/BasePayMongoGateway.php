@@ -117,7 +117,7 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
             throw new InvalidArgumentException('Missing PayMongo signature header');
         }
 
-        // ⚠️ RAW payload ONLY
+        // RAW payload ONLY
         $payload = $request->getContent();
 
         // Parse signature header
@@ -166,7 +166,7 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
 
         $eventType = data_get($decoded, 'data.attributes.type');
 
-        // ✅ Normalize reference ID
+        // Normalize reference ID
         $referenceId =
             data_get($decoded, 'data.attributes.data.id') // cs_*
             ?? data_get($decoded, 'data.attributes.data.payment_intent.id'); // pi_*
@@ -179,9 +179,20 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
             str_contains($eventType, 'paid') ? 'paid' :
             (str_contains($eventType, 'failed') ? 'failed' : 'pending');
 
-        $paidAt = data_get($decoded, 'data.attributes.data.paid_at')
-            ? now()->setTimestamp(data_get($decoded, 'data.attributes.data.paid_at'))
-            : null;
+        // Extract paid_at from all known PayMongo locations
+        $paidAtRaw =
+            data_get($decoded, 'data.attributes.data.paid_at') ??
+            data_get($decoded, 'data.attributes.data.payments.0.paid_at') ??
+            data_get($decoded, 'data.attributes.data.payment_intent.attributes.paid_at') ??
+            data_get($decoded, 'data.attributes.data.payment_intent.attributes.payments.0.paid_at') ??
+            null;
+
+        $paidAt = $this->parsePaidAt($paidAtRaw);
+
+        // Fallback: use webhook timestamp if paid but no paid_at
+        if (! $paidAt && str_contains($eventType, 'paid') && $timestamp) {
+            $paidAt = Carbon::createFromTimestamp((int) $timestamp);
+        }
 
         Log::info('PayMongo webhook verified', [
             'event' => $eventType,
@@ -235,10 +246,18 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
             return null;
         }
 
-        if (is_numeric($value)) {
-            return Carbon::createFromTimestamp((int) $value);
-        }
+        try {
+            if (is_numeric($value)) {
+                return Carbon::createFromTimestamp((int) $value);
+            }
 
-        return new \DateTime($value);
+            return new \DateTime($value);
+        } catch (\Exception $e) {
+            Log::warning('Failed to parse PayMongo paid_at', [
+                'value' => $value,
+                'error' => $e->getMessage(),
+            ]);
+            return null;
+        }
     }
 }
