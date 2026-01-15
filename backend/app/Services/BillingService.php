@@ -3,12 +3,17 @@
 namespace App\Services;
 
 use App\Models\Company;
+use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Services\Payments\DTOs\PaymentGatewayCheckoutResponse;
+use App\Enums\PaymentProvider;
+use App\Enums\PaymentMethod;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 class BillingService
 {
@@ -48,107 +53,121 @@ class BillingService
 
     /**
      * Create a new subscription and initiate payment
-     * 
+     *
      * This method follows OCP - it uses PaymentGatewayManager to resolve gateways
      * without knowing about specific payment methods
      */
-    public function subscribe(Company $company, Plan $plan, string $provider, string $method, array $options = []): array
-    {
+    public function subscribe(
+        Company $company,
+        Plan $plan,
+        string $provider,
+        string $method,
+        array $options = []
+    ): array {
         return DB::transaction(function () use ($company, $plan, $provider, $method, $options) {
-            // Create subscription
+
+            $providerEnum = PaymentProvider::tryFrom($provider);
+            $methodEnum   = PaymentMethod::tryFrom($method);
+
+            if (! $providerEnum || ! $methodEnum) {
+                throw new InvalidArgumentException('Invalid payment provider or method');
+            }
+
             $subscription = Subscription::create([
                 'company_id' => $company->id,
-                'plan_id' => $plan->id,
-                'status' => 'pending',
+                'plan_id'    => $plan->id,
+                'status'     => 'pending',
+                'starts_at'  => now(),
+                'ends_at'    => $plan->billing_cycle === 'yearly'
+                    ? now()->addYear()
+                    : now()->addMonth(),
             ]);
 
-            // Calculate subscription dates
-            $startsAt = Carbon::now();
-            $endsAt = $plan->billing_cycle === 'yearly' 
-                ? $startsAt->copy()->addYear()
-                : $startsAt->copy()->addMonth();
-
-            $subscription->update([
-                'starts_at' => $startsAt,
-                'ends_at' => $endsAt,
-            ]);
-
-            // Create payment record
             $payment = $this->paymentService->createPayment([
-                'company_id' => $company->id,
-                'subscription_id' => $subscription->id,
-                'provider' => $provider,
-                'method' => $method,
-                'amount' => $plan->price,
-                'currency' => 'PHP',
-                'status' => 'pending',
+                'company_id'      => $company->id,
+                'subscription_id'=> $subscription->id,
+                'provider'        => $providerEnum->value,
+                'method'          => $methodEnum->value,
+                'amount'          => $plan->price,
+                'currency'        => 'PHP',
+                'status'          => 'pending',
             ]);
 
-            // Resolve gateway using PaymentGatewayManager (OCP-compliant)
-            $gateway = $this->gatewayManager->resolve($provider, $method);
+            $gateway = $this->gatewayManager->resolve($providerEnum, $methodEnum);
+            $checkout = $gateway->createCheckout($payment, $options);
 
-            // Create checkout session
-            $checkoutResponse = $gateway->createCheckout($payment, $options);
-
-            // Update payment with checkout details
             $payment->update([
-                'checkout_url' => $checkoutResponse->checkoutUrl,
-                'provider_reference_id' => $checkoutResponse->referenceId,
-                'metadata' => $checkoutResponse->metadata,
+                'provider_reference_id'       => $checkout->referenceId,
+                'paymongo_checkout_id'        => $checkout->referenceId,
+                'paymongo_payment_intent_id'  => $checkout->paymentIntentId,
+                'checkout_url'                => $checkout->checkoutUrl,
+                'metadata'                    => $checkout->metadata,
             ]);
 
             return [
-                'subscription' => $subscription->fresh(['plan']),
-                'payment' => $payment->fresh(),
-                'checkout_url' => $checkoutResponse->checkoutUrl,
+                'subscription' => $subscription,
+                'payment'      => $payment,
+                'checkout_url' => $checkout->checkoutUrl,
             ];
         });
     }
 
     /**
-     * Process webhook and update subscription/payment status
-     * 
-     * This method follows OCP - it uses PaymentGatewayManager to resolve gateways
+     * Process a webhook from a payment provider
      */
-    public function processWebhook(string $provider, string $method, $request): array
+    public function processWebhook(string $provider, $request): array
     {
-        return DB::transaction(function () use ($provider, $method, $request) {
-            // Resolve gateway using PaymentGatewayManager (OCP-compliant)
-            $gateway = $this->gatewayManager->resolve($provider, $method);
+        return DB::transaction(function () use ($provider, $request) {
 
-            // Verify webhook
-            $webhookResult = $gateway->verifyWebhook($request);
+            $providerEnum = PaymentProvider::tryFrom($provider);
 
-            // Find payment by provider reference ID
-            $payment = \App\Models\Payment::where('provider_reference_id', $webhookResult->referenceId)
-                ->where('provider', $provider)
-                ->first();
-
-            if (!$payment) {
-                throw new \RuntimeException("Payment not found for reference ID: {$webhookResult->referenceId}");
+            if (! $providerEnum) {
+                throw new InvalidArgumentException('Invalid payment provider');
             }
 
-            // Update payment status
+            $gateway = $this->gatewayManager->resolve(
+                $providerEnum,
+                PaymentMethod::WEBHOOK
+            );
+
+            $result = $gateway->verifyWebhook($request);
+
+            $payment = Payment::where('provider', $providerEnum->value)
+                ->where(function ($q) use ($result) {
+                    $q->where('provider_reference_id', $result->referenceId)
+                    ->orWhere('paymongo_checkout_id', $result->referenceId)
+                    ->orWhere('paymongo_payment_intent_id', $result->referenceId);
+                })
+                ->first();
+
+            if (! $payment) {
+                Log::warning('Payment not found for webhook', [
+                    'reference' => $result->referenceId,
+                ]);
+                return ['payment' => null, 'subscription' => null];
+            }
+
+            if ($payment->status === 'paid') {
+                return [
+                    'payment' => $payment,
+                    'subscription' => $payment->subscription,
+                ];
+            }
+
             $payment->update([
-                'status' => $webhookResult->status,
-                'paid_at' => $webhookResult->paidAt,
+                'status' => $result->status,
+                'paid_at' => $result->paidAt,
             ]);
 
-            // Update subscription if payment is paid
-            if ($webhookResult->isPaid() && $payment->subscription) {
-                $subscription = $payment->subscription;
-                $subscription->update([
+            if ($result->isPaid() && $payment->subscription) {
+                $payment->subscription->update([
                     'status' => 'active',
-                    'starts_at' => Carbon::now(),
-                    'ends_at' => $subscription->plan->billing_cycle === 'yearly'
-                        ? Carbon::now()->addYear()
-                        : Carbon::now()->addMonth(),
                 ]);
             }
 
             return [
-                'payment' => $payment->fresh(['subscription.plan']),
-                'subscription' => $payment->subscription?->fresh(['plan']),
+                'payment' => $payment,
+                'subscription' => $payment->subscription,
             ];
         });
     }
@@ -158,9 +177,39 @@ class BillingService
      */
     public function getCompanyPayments(Company $company, int $perPage = 15)
     {
-        return \App\Models\Payment::where('company_id', $company->id)
+        return Payment::where('company_id', $company->id)
             ->with(['subscription.plan'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    /**
+     * Find payment by any known PayMongo reference (checkout or intent)
+     */
+    public function findPaymentByReference(string $reference): ?\App\Models\Payment
+    {
+        return Payment::query()
+            ->where(function ($q) use ($reference) {
+                $q->where('provider_reference_id', $reference)
+                    ->orWhere('paymongo_checkout_id', $reference)
+                    ->orWhere('paymongo_payment_intent_id', $reference);
+            })
+            ->first();
+    }
+
+    /**
+     * Build a readonly payment status payload
+     */
+    public function buildPaymentStatusPayload(Payment $payment): array
+    {
+        $subscription = $payment->subscription;
+        $plan = $subscription?->plan;
+
+        return [
+            'status' => $payment->status,
+            'subscription_status' => $subscription?->status ?? 'inactive',
+            'amount' => $payment->amount,
+            'plan_name' => $plan?->name,
+        ];
     }
 }

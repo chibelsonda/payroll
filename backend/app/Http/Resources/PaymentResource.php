@@ -20,6 +20,8 @@ class PaymentResource extends JsonResource
             'method' => $this->method,
             'provider_reference_id' => $this->provider_reference_id,
             'checkout_url' => $this->checkout_url,
+            'paymongo_checkout_id' => $this->paymongo_checkout_id,
+            'paymongo_payment_intent_id' => $this->paymongo_payment_intent_id,
             'amount' => (float) $this->amount,
             'currency' => $this->currency,
             'status' => $this->status,

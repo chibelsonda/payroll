@@ -7,6 +7,7 @@ class PaymentGatewayCheckoutResponse
     public function __construct(
         public readonly string $checkoutUrl,
         public readonly string $referenceId,
+        public readonly ?string $paymentIntentId = null,
         public readonly array $metadata = []
     ) {}
 
@@ -15,6 +16,7 @@ class PaymentGatewayCheckoutResponse
         return [
             'checkout_url' => $this->checkoutUrl,
             'reference_id' => $this->referenceId,
+            'payment_intent_id' => $this->paymentIntentId,
             'metadata' => $this->metadata,
         ];
     }

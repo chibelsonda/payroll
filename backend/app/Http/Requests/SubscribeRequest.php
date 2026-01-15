@@ -29,12 +29,7 @@ class SubscribeRequest extends FormRequest
             'plan_uuid' => 'required|string|exists:plans,uuid',
             'plan_id' => 'required|exists:plans,id',
             'payment_method' => ['required', 'string', Rule::in(['gcash', 'card'])],
-            'provider' => 'sometimes|string|in:paymongo',
-            'card' => 'required_if:payment_method,card|array',
-            'card.name' => 'required_if:payment_method,card|string|min:3',
-            'card.number' => 'required_if:payment_method,card|string|regex:/^\d{13,19}$/',
-            'card.expiry' => 'required_if:payment_method,card|string|regex:/^\d{2}\/\d{2}$/',
-            'card.cvc' => 'required_if:payment_method,card|string|regex:/^\d{3,4}$/',
+            'provider' => 'sometimes|string|in:paymongo'
         ];
     }
 

@@ -6,6 +6,8 @@ use App\Contracts\PaymentGatewayInterface;
 use App\Models\Payment;
 use App\Services\Payments\DTOs\PaymentGatewayCheckoutResponse;
 use App\Services\Payments\DTOs\PaymentGatewayWebhookResult;
+use Illuminate\Http\Client\Response;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -45,6 +47,7 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
 
         $amountInCents = (int) ($payment->amount * 100);
 
+        /** @var Response $response */
         $response = Http::withBasicAuth($this->secretKey, '')
             ->post("{$this->apiUrl}/checkout_sessions", [
                 'data' => [
@@ -81,14 +84,24 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
         $data = $response->json('data');
         $checkoutUrl = $data['attributes']['checkout_url'] ?? null;
         $referenceId = $data['id'] ?? null;
+        $paymentIntentId = $data['attributes']['payment_intent']['id'] ?? null;
 
         if (!$checkoutUrl || !$referenceId) {
             throw new \RuntimeException('Invalid response from PayMongo checkout creation');
         }
 
+        Log::info('PayMongo checkout created', [
+            'payment_id' => $payment->id,
+            'reference_id' => $referenceId,
+            'checkout_url' => $checkoutUrl,
+            'response' => $data,
+            'payment_intent_id' => $paymentIntentId,
+        ]);
+
         return new PaymentGatewayCheckoutResponse(
             checkoutUrl: $checkoutUrl,
             referenceId: $referenceId,
+            paymentIntentId: $paymentIntentId,
             metadata: $data['attributes'] ?? []
         );
     }
@@ -98,71 +111,89 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
      */
     public function verifyWebhook(Request $request): PaymentGatewayWebhookResult
     {
-        $signature = $request->header('paymongo-signature');
-        
-        if (!$signature) {
+        $signatureHeader = $request->header('Paymongo-Signature');
+
+        if (! $signatureHeader) {
             throw new InvalidArgumentException('Missing PayMongo signature header');
         }
 
-        // Verify webhook signature
+        // ⚠️ RAW payload ONLY
         $payload = $request->getContent();
-        $expectedSignature = hash_hmac('sha256', $payload, $this->webhookSecret);
 
-        if (!hash_equals($expectedSignature, $signature)) {
-            throw new InvalidArgumentException('Invalid PayMongo webhook signature');
-        }
+        // Parse signature header
+        $timestamp = null;
+        $signature = null;
 
-        $data = $request->json('data');
-        
-        if (!$data) {
-            throw new InvalidArgumentException('Invalid webhook payload');
-        }
+        foreach (explode(',', $signatureHeader) as $part) {
+            $part = trim($part);
+            if (! str_contains($part, '=')) {
+                continue;
+            }
 
-        $attributes = $data['attributes'] ?? [];
-        $type = $data['type'] ?? '';
+            [$key, $value] = explode('=', $part, 2);
+            $key = trim($key);
+            $value = trim($value);
 
-        // Handle checkout.session.completed event
-        if ($type === 'checkout.session.completed') {
-            $paymentIntentId = $attributes['payment_intent_id'] ?? null;
-            
-            if ($paymentIntentId) {
-                // Fetch payment intent details
-                $paymentIntent = $this->fetchPaymentIntent($paymentIntentId);
-                $status = $this->mapPaymentStatus($paymentIntent['attributes']['status'] ?? 'pending');
-                $paidAt = isset($paymentIntent['attributes']['paid_at']) 
-                    ? new \DateTime($paymentIntent['attributes']['paid_at'])
-                    : null;
+            if ($key === 't' && $timestamp === null) {
+                $timestamp = $value;
+            }
 
-                return new PaymentGatewayWebhookResult(
-                    status: $status,
-                    referenceId: $paymentIntentId,
-                    paidAt: $paidAt,
-                    rawData: $data
-                );
+            // PayMongo: te = test, li = live
+            if (($key === 'te' || $key === 'li') && $signature === null && $value !== '') {
+                $signature = $value;
             }
         }
 
-        // Handle payment_intent.succeeded event
-        if ($type === 'payment_intent.succeeded') {
-            $status = $this->mapPaymentStatus($attributes['status'] ?? 'paid');
-            $paidAt = isset($attributes['paid_at']) 
-                ? new \DateTime($attributes['paid_at'])
-                : null;
-
-            return new PaymentGatewayWebhookResult(
-                status: $status,
-                referenceId: $data['id'] ?? '',
-                paidAt: $paidAt,
-                rawData: $data
+        if ($timestamp === null || $signature === null) {
+            throw new InvalidArgumentException(
+                'Malformed PayMongo signature header: ' . $signatureHeader
             );
         }
 
-        // Default: pending
+        // Verify HMAC
+        $signedPayload = $timestamp . '.' . $payload;
+        $expected = hash_hmac('sha256', $signedPayload, $this->webhookSecret);
+
+        if (! hash_equals($expected, $signature)) {
+            throw new InvalidArgumentException('Invalid PayMongo webhook signature');
+        }
+
+        // Decode AFTER verification
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded)) {
+            throw new InvalidArgumentException('Invalid webhook payload');
+        }
+
+        $eventType = data_get($decoded, 'data.attributes.type');
+
+        // ✅ Normalize reference ID
+        $referenceId =
+            data_get($decoded, 'data.attributes.data.id') // cs_*
+            ?? data_get($decoded, 'data.attributes.data.payment_intent.id'); // pi_*
+
+        if (! $referenceId) {
+            throw new InvalidArgumentException('Unable to resolve PayMongo reference ID');
+        }
+
+        $status =
+            str_contains($eventType, 'paid') ? 'paid' :
+            (str_contains($eventType, 'failed') ? 'failed' : 'pending');
+
+        $paidAt = data_get($decoded, 'data.attributes.data.paid_at')
+            ? now()->setTimestamp(data_get($decoded, 'data.attributes.data.paid_at'))
+            : null;
+
+        Log::info('PayMongo webhook verified', [
+            'event' => $eventType,
+            'reference' => $referenceId,
+            'status' => $status,
+        ]);
+
         return new PaymentGatewayWebhookResult(
-            status: 'pending',
-            referenceId: $data['id'] ?? '',
-            paidAt: null,
-            rawData: $data
+            status: $status,
+            referenceId: $referenceId,
+            paidAt: $paidAt,
+            rawData: $decoded['data']
         );
     }
 
@@ -171,6 +202,7 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
      */
     protected function fetchPaymentIntent(string $paymentIntentId): array
     {
+        /** @var Response $response */
         $response = Http::withBasicAuth($this->secretKey, '')
             ->get("{$this->apiUrl}/payment_intents/{$paymentIntentId}");
 
@@ -192,5 +224,21 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
             'failed', 'canceled' => 'failed',
             default => 'pending',
         };
+    }
+
+    /**
+     * Parse PayMongo paid_at which can be epoch seconds or ISO string
+     */
+    protected function parsePaidAt($value): ?\DateTimeInterface
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        if (is_numeric($value)) {
+            return Carbon::createFromTimestamp((int) $value);
+        }
+
+        return new \DateTime($value);
     }
 }

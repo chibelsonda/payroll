@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Services\BillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BillingController extends BaseApiController
 {
@@ -119,6 +120,35 @@ class BillingController extends BaseApiController
         return $this->successResponse(
             PaymentResource::collection($payments),
             'Payments retrieved successfully'
+        );
+    }
+
+    /**
+     * Public payment status lookup by reference_id (checkout id or intent id)
+     */
+    public function status(Request $request): JsonResponse
+    {
+        $reference = $request->query('reference_id');
+
+        if (!$reference) {
+            return $this->validationErrorResponse(['reference_id' => ['reference_id is required']]);
+        }
+
+        $payment = $this->billingService->findPaymentByReference($reference);
+
+        if (!$payment) {
+            return $this->notFoundResponse('Payment not found');
+        }
+
+        Log::info('Billing status polled', [
+            'reference' => $reference,
+            'payment_id' => $payment->id,
+            'status' => $payment->status,
+        ]);
+
+        return $this->successResponse(
+            $this->billingService->buildPaymentStatusPayload($payment),
+            'Payment status retrieved'
         );
     }
 }

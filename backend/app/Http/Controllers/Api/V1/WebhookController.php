@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Services\BillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class WebhookController extends BaseApiController
 {
@@ -19,42 +20,21 @@ class WebhookController extends BaseApiController
     public function paymongo(Request $request): JsonResponse
     {
         try {
-            // Determine payment method from webhook data
-            $data = $request->json('data', []);
-            $attributes = $data['attributes'] ?? [];
-            
-            // Try to determine method from payment method types or payment intent
-            $method = $this->determinePaymentMethod($data, $attributes);
-            
-        if (!$method) {
-            // Default to card if we can't determine
-            $method = 'card';
-        }
-
-            $provider = 'paymongo';
-
-            $result = $this->billingService->processWebhook($provider, $method, $request);
-
-            return $this->successResponse([
-                'payment' => new \App\Http\Resources\PaymentResource($result['payment']),
-                'subscription' => $result['subscription'] 
-                    ? new \App\Http\Resources\SubscriptionResource($result['subscription'])
-                    : null,
-            ], 'Webhook processed successfully');
+            $this->billingService->processWebhook('paymongo', $request);
+            return $this->successResponse([], 'OK');
         } catch (\InvalidArgumentException $e) {
-            return $this->errorResponse($e->getMessage(), [], [], 400);
-        } catch (\Exception $e) {
-            \Log::error('Webhook processing failed', [
+            Log::warning('PayMongo webhook bad request', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+            ]);
+            return $this->errorResponse($e->getMessage(), [], [], 400);
+
+        } catch (\Throwable $e) {
+            Log::error('PayMongo webhook failed', [
+                'error' => $e->getMessage(),
             ]);
 
-            return $this->errorResponse(
-                'Failed to process webhook: ' . $e->getMessage(),
-                [],
-                [],
-                500
-            );
+            // Still return 200 to stop retries
+            return $this->successResponse([], 'OK');
         }
     }
 

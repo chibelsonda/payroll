@@ -119,84 +119,8 @@
           </v-radio-group>
         </div>
 
-        <!-- Step 3 -->
+        <!-- Step 3 (Review) -->
         <div v-else-if="currentStep === 3" class="step fade">
-          <h3 class="text-h6 font-weight-bold mb-4">Payment details</h3>
-          <div v-if="paymentMethod === 'gcash'" class="text-center py-8">
-            <v-icon size="70" color="success" class="mb-4">mdi-check-decagram</v-icon>
-            <h4 class="text-h6 font-weight-bold mb-2">GCash selected</h4>
-            <p class="text-body-2 text-medium-emphasis max-w-420 mx-auto">
-              You will be securely redirected to GCash to complete the payment after confirming.
-            </p>
-          </div>
-          <div v-else class="card-form">
-            <v-text-field
-              v-model="cardForm.name"
-              label="Cardholder name"
-              placeholder="Juan Dela Cruz"
-              variant="outlined"
-              class="mb-3"
-              @blur="validateCardName"
-              hide-details
-              prepend-inner-icon="mdi-account"
-            />
-            <v-text-field
-              v-model="cardForm.number"
-              label="Card number"
-              placeholder="4111 1111 1111 1111"
-              variant="outlined"
-              maxlength="19"
-              @input="formatCardNumber"
-              @blur="validateCardNumber"
-              class="mb-3"
-              hide-details
-              prepend-inner-icon="mdi-credit-card-outline"
-            />
-            <v-row>
-              <v-col cols="6">
-                <v-text-field
-                  v-model="cardForm.expiry"
-                  label="Expiry (MM/YY)"
-                  placeholder="12/25"
-                  variant="outlined"
-                  maxlength="5"
-                  @input="formatExpiry"
-                  @blur="validateExpiry"
-                  hide-details
-                  prepend-inner-icon="mdi-calendar"
-                />
-              </v-col>
-              <v-col cols="6">
-                <v-text-field
-                  v-model="cardForm.cvc"
-                  label="CVC"
-                  placeholder="123"
-                  variant="outlined"
-                  type="password"
-                  maxlength="4"
-                  @blur="validateCVC"
-                  hide-details
-                  prepend-inner-icon="mdi-shield-lock-outline"
-                />
-              </v-col>
-            </v-row>
-
-            <v-alert v-if="cardErrors.any" type="error" variant="tonal" class="mt-3">
-              <div v-if="cardErrors.name" class="text-caption mb-1">{{ cardErrors.name }}</div>
-              <div v-if="cardErrors.number" class="text-caption mb-1">{{ cardErrors.number }}</div>
-              <div v-if="cardErrors.expiry" class="text-caption mb-1">{{ cardErrors.expiry }}</div>
-              <div v-if="cardErrors.cvc" class="text-caption">{{ cardErrors.cvc }}</div>
-            </v-alert>
-
-            <div class="security-note mt-3 d-flex align-center gap-2">
-              <v-icon size="18" color="primary">mdi-lock-outline</v-icon>
-              <span class="text-caption text-medium-emphasis">Payments are encrypted and never stored.</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4 -->
-        <div v-else-if="currentStep === 4" class="step fade">
           <h3 class="text-h6 font-weight-bold mb-4">Review & confirm</h3>
           <v-card variant="outlined" rounded="lg" class="mb-5">
             <v-card-text class="pa-5">
@@ -226,7 +150,7 @@
           </p>
         </div>
 
-        <!-- Step 5 -->
+        <!-- Step 4 -->
         <div v-else class="step fade text-center py-8">
           <div v-if="!subscriptionSuccess">
             <v-progress-circular indeterminate color="primary" size="64" class="mb-4" />
@@ -249,13 +173,13 @@
         <v-btn v-if="currentStep > 1 && currentStep < 5" variant="text" @click="previousStep">Back</v-btn>
         <v-spacer />
         <v-btn
-          v-if="currentStep < 5"
+          v-if="currentStep < 4"
           color="primary"
           rounded="lg"
           :disabled="!canProceed"
           @click="nextStep"
         >
-          {{ currentStep === 4 ? 'Subscribe Now' : 'Continue' }}
+          {{ currentStep === 3 ? 'Subscribe Now' : 'Continue' }}
         </v-btn>
         <v-btn
           v-else-if="subscriptionSuccess"
@@ -291,112 +215,20 @@ const emit = defineEmits<Emits>()
 const { showNotification } = useNotification()
 
 const currentStep = ref(1)
-const totalSteps = 4
-const stepLabels = ['Confirm plan', 'Payment method', 'Payment details', 'Review']
+const totalSteps = 3
+const stepLabels = ['Confirm plan', 'Payment method', 'Review']
 const paymentMethod = ref<'gcash' | 'card' | null>(null)
 const subscriptionSuccess = ref(false)
-
-const cardForm = ref({
-  name: '',
-  number: '',
-  expiry: '',
-  cvc: '',
-})
-
-const cardErrors = ref({
-  name: '',
-  number: '',
-  expiry: '',
-  cvc: '',
-  get any() {
-    return this.name || this.number || this.expiry || this.cvc
-  },
-})
 
 const canProceed = computed(() => {
   if (currentStep.value === 1) return true
   if (currentStep.value === 2) return !!paymentMethod.value
-  if (currentStep.value === 3) {
-    if (paymentMethod.value === 'gcash') return true
-    return (
-      !cardErrors.value.any &&
-      cardForm.value.name &&
-      cardForm.value.number &&
-      cardForm.value.expiry &&
-      cardForm.value.cvc
-    )
-  }
-  if (currentStep.value === 4) return true
+  if (currentStep.value === 3) return true
   return false
 })
 
-const formatCardNumber = () => {
-  let value = cardForm.value.number.replace(/\s+/g, '')
-  value = value.replace(/(\d{4})/g, '$1 ').trim()
-  cardForm.value.number = value
-}
-
-const formatExpiry = () => {
-  let value = cardForm.value.expiry.replace(/\D/g, '')
-  if (value.length >= 2) {
-    value = value.slice(0, 2) + '/' + value.slice(2, 4)
-  }
-  cardForm.value.expiry = value
-}
-
-const validateCardName = () => {
-  if (!cardForm.value.name) {
-    cardErrors.value.name = 'Cardholder name is required'
-  } else if (cardForm.value.name.length < 3) {
-    cardErrors.value.name = 'Name must be at least 3 characters'
-  } else {
-    cardErrors.value.name = ''
-  }
-}
-
-const validateCardNumber = () => {
-  const number = cardForm.value.number.replace(/\s+/g, '')
-  if (!number) {
-    cardErrors.value.number = 'Card number is required'
-  } else if (number.length < 13 || number.length > 19) {
-    cardErrors.value.number = 'Card number must be 13-19 digits'
-  } else if (!/^\d+$/.test(number)) {
-    cardErrors.value.number = 'Card number must contain only digits'
-  } else {
-    cardErrors.value.number = ''
-  }
-}
-
-const validateExpiry = () => {
-  if (!cardForm.value.expiry) {
-    cardErrors.value.expiry = 'Expiry date is required'
-  } else if (!/^\d{2}\/\d{2}$/.test(cardForm.value.expiry)) {
-    cardErrors.value.expiry = 'Expiry must be MM/YY format'
-  } else {
-    cardErrors.value.expiry = ''
-  }
-}
-
-const validateCVC = () => {
-  if (!cardForm.value.cvc) {
-    cardErrors.value.cvc = 'CVC is required'
-  } else if (!/^\d{3,4}$/.test(cardForm.value.cvc)) {
-    cardErrors.value.cvc = 'CVC must be 3-4 digits'
-  } else {
-    cardErrors.value.cvc = ''
-  }
-}
-
 const nextStep = async () => {
-  if (currentStep.value === 3 && paymentMethod.value === 'card') {
-    validateCardName()
-    validateCardNumber()
-    validateExpiry()
-    validateCVC()
-    if (cardErrors.value.any) return
-  }
-
-  if (currentStep.value === 4) {
+  if (currentStep.value === totalSteps) {
     await subscribe()
     return
   }
@@ -418,19 +250,29 @@ const subscribe = async () => {
       payment_method: paymentMethod.value,
     }
 
-    if (paymentMethod.value === 'card') {
-      payload.card = {
-        name: cardForm.value.name,
-        number: cardForm.value.number.replace(/\s+/g, ''),
-        expiry: cardForm.value.expiry,
-        cvc: cardForm.value.cvc,
-      }
+    const response = await axios.post('/billing/subscribe', payload)
+    const checkoutUrl =
+      response.data?.data?.checkout_url ||
+      response.data?.data?.checkoutUrl ||
+      response.data?.checkout_url ||
+      response.data?.checkoutUrl
+
+    const referenceId =
+      response.data?.data?.payment?.paymongo_checkout_id ||
+      response.data?.data?.payment?.provider_reference_id ||
+      response.data?.data?.payment?.paymongo_payment_intent_id ||
+      response.data?.data?.payment?.uuid
+
+    if (referenceId) {
+      localStorage.setItem('last_checkout_reference', referenceId)
     }
 
-    await axios.post('/billing/subscribe', payload)
-    subscriptionSuccess.value = true
-    emit('success')
-    showNotification('Subscription activated successfully!', 'success')
+    if (!checkoutUrl) {
+      throw new Error('Checkout URL not returned by server')
+    }
+
+    // Redirect user to PayMongo Checkout; do not mark as paid here
+    window.location.href = checkoutUrl
   } catch (error: unknown) {
     subscriptionSuccess.value = false
     const message = extractErrorMessage(error)
@@ -477,21 +319,6 @@ const resetWizard = () => {
   currentStep.value = 1
   paymentMethod.value = null
   subscriptionSuccess.value = false
-  cardForm.value = {
-    name: '',
-    number: '',
-    expiry: '',
-    cvc: '',
-  }
-  cardErrors.value = {
-    name: '',
-    number: '',
-    expiry: '',
-    cvc: '',
-    get any() {
-      return this.name || this.number || this.expiry || this.cvc
-    },
-  }
 }
 
 watch(

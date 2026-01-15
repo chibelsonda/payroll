@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Employee;
 use App\Policies\EmployeePolicy;
+use App\Services\Payments\PayMongo\PayMongoWebhookGateway;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,7 +24,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PayMongoWebhookGateway::class, function () {
+            return new PayMongoWebhookGateway(
+                config('services.paymongo.webhook_secret')
+            );
+        });
     }
 
     /**

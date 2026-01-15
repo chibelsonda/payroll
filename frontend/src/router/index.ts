@@ -18,6 +18,12 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/billing/success',
+      name: 'billing-success',
+      component: () => import('../views/BillingSuccess.vue'),
+      meta: { guest: true },
+    },
+    {
       path: '/register',
       name: 'register',
       component: Register,

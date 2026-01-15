@@ -37,7 +37,9 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::get('invitations/token', [InvitationController::class, 'showByToken'])->name('invitations.show-by-token');
 
     // Public webhook routes (no authentication required)
-    Route::post('webhook/paymongo', [WebhookController::class, 'paymongo'])->name('webhook.paymongo');
+    Route::post('webhooks/paymongo', [WebhookController::class, 'paymongo'])->name('webhooks.paymongo');
+    // Public payment status polling (by reference id)
+    Route::get('billing/status', [BillingController::class, 'status'])->name('billing.status');
 
     // Protected routes (require authentication)
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {

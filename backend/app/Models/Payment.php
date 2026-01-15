@@ -19,6 +19,8 @@ class Payment extends Model
         'method',
         'provider_reference_id',
         'checkout_url',
+        'paymongo_checkout_id',
+        'paymongo_payment_intent_id',
         'amount',
         'currency',
         'status',
