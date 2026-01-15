@@ -104,6 +104,29 @@ class BillingController extends BaseApiController
     }
 
     /**
+     * Get current billing-month subscription (read-only)
+     */
+    public function currentSubscription(Request $request): JsonResponse
+    {
+        $company = $request->attributes->get('active_company');
+
+        if (! $company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        $subscription = $this->billingService->currentSubscription($company);
+
+        if (! $subscription) {
+            return $this->notFoundResponse('No active subscription for this billing month');
+        }
+
+        return $this->successResponse(
+            new SubscriptionResource($subscription),
+            'Current subscription retrieved successfully'
+        );
+    }
+
+    /**
      * Get payment history
      */
     public function payments(Request $request): JsonResponse

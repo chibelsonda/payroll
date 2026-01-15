@@ -17,6 +17,7 @@ class SubscriptionResource extends JsonResource
         return [
             'uuid' => $this->uuid,
             'status' => $this->status,
+            'billing_month' => $this->billing_month?->format('Y-m-d'),
             'starts_at' => $this->starts_at?->format('Y-m-d H:i:s'),
             'ends_at' => $this->ends_at?->format('Y-m-d H:i:s'),
             'trial_ends_at' => $this->trial_ends_at?->format('Y-m-d H:i:s'),

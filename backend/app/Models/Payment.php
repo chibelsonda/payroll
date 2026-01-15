@@ -23,6 +23,7 @@ class Payment extends Model
         'paymongo_payment_intent_id',
         'amount',
         'currency',
+        'billing_month',
         'status',
         'paid_at',
         'cancelled_at',
@@ -34,6 +35,7 @@ class Payment extends Model
         'paid_at' => 'datetime',
         'metadata' => 'array',
         'cancelled_at' => 'datetime',
+        'billing_month' => 'date',
     ];
 
     /**

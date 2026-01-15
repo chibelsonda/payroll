@@ -21,13 +21,35 @@
         sm="6"
         lg="3"
       >
-        <PlanCard
-          :plan="plan"
-          :is-popular="plan.slug === 'pro'"
-          :is-selected="selectedPlan?.uuid === plan.uuid"
-          :loading="subscribeMutation.isPending.value && selectedPlan?.uuid === plan.uuid"
-          @select="handlePlanSelect"
-        />
+        <v-card
+          :elevation="selectedPlan?.uuid === plan.uuid ? 8 : 2"
+          class="h-100"
+          rounded="lg"
+        >
+          <v-card-text>
+            <div class="d-flex align-center justify-space-between mb-2">
+              <h3 class="text-h5 font-weight-bold mb-0">{{ plan.name }}</h3>
+              <v-chip color="primary" variant="tonal" size="small">
+                {{ plan.billing_cycle }}
+              </v-chip>
+            </div>
+            <div class="text-h5 font-weight-bold text-primary">
+              ₱{{ plan.price.toLocaleString() }}
+            </div>
+            <div class="text-body-2 text-medium-emphasis mb-4">
+              Up to {{ plan.max_employees }} employees
+            </div>
+            <v-btn
+              color="primary"
+              block
+              :variant="selectedPlan?.uuid === plan.uuid ? 'tonal' : 'elevated'"
+              :loading="subscribeMutation.isPending.value && selectedPlan?.uuid === plan.uuid"
+              @click="handlePlanSelect(plan)"
+            >
+              {{ selectedPlan?.uuid === plan.uuid ? 'Selected' : 'Choose Plan' }}
+            </v-btn>
+          </v-card-text>
+        </v-card>
       </v-col>
     </v-row>
 
@@ -45,18 +67,18 @@
             <div class="d-flex align-center justify-space-between">
               <span class="text-h6 font-weight-bold">{{ selectedPlan.name }}</span>
               <span class="text-h6 font-weight-bold text-primary">
-                {{ selectedPlan.formatted_price }}
+                ₱{{ selectedPlan.price.toLocaleString() }}
               </span>
             </div>
           </div>
 
           <v-divider class="mb-4"></v-divider>
 
-          <PaymentMethodSelector
-            v-model="selectedPaymentMethod"
-            :payment-methods="paymentMethodsQuery.data.value ?? []"
-            :loading="paymentMethodsQuery.isLoading.value"
-          />
+          <div class="text-subtitle-2 text-grey mb-2">Payment Method</div>
+          <v-radio-group v-model="selectedPaymentMethod" :disabled="subscribeMutation.isPending.value">
+            <v-radio label="GCash" value="gcash" />
+            <v-radio label="Card" value="card" />
+          </v-radio-group>
 
           <v-alert
             v-if="error"
@@ -91,7 +113,7 @@
 
     <!-- Current Subscription Notice -->
     <v-alert
-      v-if="subscriptionQuery.data.value?.has_subscription"
+      v-if="subscriptionQuery.data.value"
       type="info"
       variant="tonal"
       class="mx-auto mt-4"
@@ -105,28 +127,20 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import PlanCard from '@/components/billing/PlanCard.vue'
-import PaymentMethodSelector from '@/components/billing/PaymentMethodSelector.vue'
-import {
-  usePlans,
-  usePaymentMethods,
-  useSubscription,
-  useSubscribe,
-} from '@/composables/billing/useBilling'
+import { usePlans, useSubscription, useSubscribe } from '@/composables/billing/useBilling'
 import type { Plan } from '@/types/billing'
 
 const plansQuery = usePlans()
-const paymentMethodsQuery = usePaymentMethods()
 const subscriptionQuery = useSubscription()
 const subscribeMutation = useSubscribe()
 
 const selectedPlan = ref<Plan | null>(null)
-const selectedPaymentMethod = ref('')
+const selectedPaymentMethod = ref<'gcash' | 'card' | null>(null)
 const error = ref('')
 
 const handlePlanSelect = (plan: Plan) => {
   selectedPlan.value = plan
-  selectedPaymentMethod.value = ''
+  selectedPaymentMethod.value = null
   error.value = ''
 }
 
@@ -140,13 +154,16 @@ const handleSubscribe = async () => {
     error.value = ''
 
     const result = await subscribeMutation.mutateAsync({
-      plan_id: selectedPlan.value.uuid,
+      plan_uuid: selectedPlan.value.uuid,
       payment_method: selectedPaymentMethod.value,
     })
 
     // Redirect to PayMongo checkout
-    if (result.data.checkout_url) {
-      window.location.href = result.data.checkout_url
+    const checkoutUrl =
+      (result as { checkout_url?: string })?.checkout_url ||
+      (result as { data?: { checkout_url?: string } })?.data?.checkout_url
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl
     }
   } catch (err: unknown) {
     const axiosError = err as { response?: { data?: { message?: string } } }

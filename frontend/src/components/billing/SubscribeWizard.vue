@@ -277,6 +277,17 @@ const subscribe = async () => {
     subscriptionSuccess.value = false
     const message = extractErrorMessage(error)
     showNotification(message, 'error')
+
+    // If already subscribed this month or requires upgrade/downgrade, close the wizard
+    if (
+      message.toLowerCase().includes('already subscribed') ||
+      message.toLowerCase().includes('upgrade your plan')
+    ) {
+      currentStep.value = 1
+      emit('update:modelValue', false)
+      return
+    }
+
     currentStep.value = 4
   }
 }

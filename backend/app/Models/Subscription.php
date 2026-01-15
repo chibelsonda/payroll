@@ -17,6 +17,7 @@ class Subscription extends Model
         'company_id',
         'plan_id',
         'status',
+        'billing_month',
         'starts_at',
         'ends_at',
         'trial_ends_at',
@@ -26,6 +27,7 @@ class Subscription extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'trial_ends_at' => 'datetime',
+        'billing_month' => 'date',
     ];
 
     /**
@@ -57,8 +59,8 @@ class Subscription extends Model
      */
     public function isActive(): bool
     {
-        return $this->status === 'active' && 
-               $this->ends_at && 
+        return $this->status === 'active' &&
+               $this->ends_at &&
                $this->ends_at->isFuture();
     }
 
@@ -67,8 +69,8 @@ class Subscription extends Model
      */
     public function isTrialing(): bool
     {
-        return $this->status === 'trialing' && 
-               $this->trial_ends_at && 
+        return $this->status === 'trialing' &&
+               $this->trial_ends_at &&
                $this->trial_ends_at->isFuture();
     }
 }

@@ -42,17 +42,18 @@
               sm="12"
               md="4"
             >
-              <v-card
-                :elevation="selectedPlanUuid === plan.uuid ? 8 : 2"
-                rounded="lg"
-                :class="[
-                  'plan-card h-100 position-relative overflow-hidden',
-                  {
-                    'selected-plan': selectedPlanUuid === plan.uuid,
-                    'popular-plan': index === 1
-                  }
-                ]"
-              >
+                <v-card
+                  :elevation="selectedPlanUuid === plan.uuid ? 8 : 2"
+                  rounded="lg"
+                  :class="[
+                    'plan-card h-100 position-relative overflow-hidden',
+                    {
+                      'selected-plan': selectedPlanUuid === plan.uuid,
+                      'popular-plan': index === 1,
+                      'current-plan': isCurrentPlan(plan)
+                    }
+                  ]"
+                >
                 <!-- Popular Badge -->
                 <v-chip
                   v-if="index === 1"
@@ -107,30 +108,37 @@
                 </v-card-text>
 
                 <v-card-actions class="pa-6 pt-0">
-                  <v-btn
-                    v-show="selectedPlanUuid !== plan.uuid"
-                    block
-                    size="large"
-                    color="primary"
-                    variant="elevated"
-                    @click.stop="openWizard(plan)"
-                    rounded="lg"
-                  >
-                    Select Plan
-                  </v-btn>
-                  <v-btn
-                    v-show="selectedPlanUuid === plan.uuid"
-                    block
-                    size="large"
-                    color="white"
-                    variant="flat"
-                    class="selected-btn"
-                    prepend-icon="mdi-check"
-                    @click.stop="openWizard(plan)"
-                    rounded="lg"
-                  >
-                    Selected
-                  </v-btn>
+                  <div class="d-flex flex-column align-center w-100">
+                    <v-chip
+                      v-if="isCurrentPlan(plan)"
+                      color="success"
+                      size="small"
+                      class="mb-2"
+                      variant="elevated"
+                      prepend-icon="mdi-check-circle"
+                    >
+                      Current Plan
+                    </v-chip>
+                    <v-btn
+                      block
+                      size="large"
+                      :color="isCurrentPlan(plan) ? 'grey' : hasActiveThisMonth ? 'primary' : 'primary'"
+                      :variant="isCurrentPlan(plan) ? 'tonal' : 'elevated'"
+                      :disabled="isCurrentPlan(plan) || hasActiveThisMonth"
+                      @click.stop="openWizard(plan)"
+                      rounded="lg"
+                    >
+                      <span v-if="isCurrentPlan(plan)">Current Plan</span>
+                      <span v-else-if="hasActiveThisMonth">Upgrade Plan</span>
+                      <span v-else>Select Plan</span>
+                    </v-btn>
+                    <div
+                      v-if="hasActiveThisMonth && !isCurrentPlan(plan)"
+                      class="text-caption text-medium-emphasis mt-2"
+                    >
+                      You can upgrade your plan instead.
+                    </div>
+                  </div>
                 </v-card-actions>
               </v-card>
             </v-col>
@@ -152,17 +160,29 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { usePlans } from '@/composables/billing/useBilling'
+import { useCurrentSubscription } from '@/composables/billing/useCurrentSubscription'
 import SubscribeWizard from './SubscribeWizard.vue'
 import type { Plan } from '@/types/billing'
 
 const { data: plansData, isLoading, error, refetch } = usePlans()
+const { data: currentSub, refetch: refetchCurrent } = useCurrentSubscription()
 
 const plans = computed(() => plansData.value || [])
 const selectedPlan = ref<Plan | null>(null)
 const selectedPlanUuid = ref<string | null>(null)
 const showWizard = ref(false)
 
+const isCurrentPlan = (plan: Plan) => {
+  const sub = currentSub.value
+  return sub?.plan_uuid === plan.uuid
+}
+
+const hasActiveThisMonth = computed(() => Boolean(currentSub.value))
+
 const openWizard = (plan: Plan) => {
+  if (hasActiveThisMonth.value) {
+    return
+  }
   selectedPlan.value = plan
   selectedPlanUuid.value = plan.uuid
   showWizard.value = true
@@ -176,10 +196,10 @@ const getPlanIcon = (maxEmployees: number): string => {
 }
 
 const handleSubscriptionSuccess = () => {
-  // Refresh subscription status, show toast, etc.
   showWizard.value = false
   selectedPlan.value = null
   refetch()
+  refetchCurrent()
 }
 </script>
 

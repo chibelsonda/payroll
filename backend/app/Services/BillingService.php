@@ -6,6 +6,8 @@ use App\Models\Company;
 use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Services\Billing\PaymentInitiationService;
+use App\Services\Billing\SubscriptionService;
 use App\Services\Payments\PaymentGatewayManager;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentMethod;
@@ -20,7 +22,9 @@ class BillingService
 {
     public function __construct(
         protected PaymentGatewayManager $gatewayManager,
-        protected PaymentService $paymentService
+        protected PaymentService $paymentService,
+        protected PaymentInitiationService $paymentInitiationService,
+        protected SubscriptionService $subscriptionService,
     ) {}
 
     /**
@@ -65,52 +69,13 @@ class BillingService
         string $method,
         array $options = []
     ): array {
-        return DB::transaction(function () use ($company, $plan, $provider, $method, $options) {
-
-            $providerEnum = PaymentProvider::tryFrom($provider);
-            $methodEnum   = PaymentMethod::tryFrom($method);
-
-            if (! $providerEnum || ! $methodEnum) {
-                throw new InvalidArgumentException('Invalid payment provider or method');
-            }
-
-            $subscription = Subscription::create([
-                'company_id' => $company->id,
-                'plan_id'    => $plan->id,
-                'status'     => 'pending',
-                'starts_at'  => now(),
-                'ends_at'    => $plan->billing_cycle === 'yearly'
-                    ? now()->addYear()
-                    : now()->addMonth(),
-            ]);
-
-            $payment = $this->paymentService->createPayment([
-                'company_id'      => $company->id,
-                'subscription_id'=> $subscription->id,
-                'provider'        => $providerEnum->value,
-                'method'          => $methodEnum->value,
-                'amount'          => $plan->price,
-                'currency'        => 'PHP',
-                'status'          => 'pending',
-            ]);
-
-            $gateway = $this->gatewayManager->resolve($providerEnum, $methodEnum);
-            $checkout = $gateway->createCheckout($payment, $options);
-
-            $payment->update([
-                'provider_reference_id'       => $checkout->referenceId,
-                'paymongo_checkout_id'        => $checkout->referenceId,
-                'paymongo_payment_intent_id'  => $checkout->paymentIntentId,
-                'checkout_url'                => $checkout->checkoutUrl,
-                'metadata'                    => $checkout->metadata,
-            ]);
-
-            return [
-                'subscription' => $subscription,
-                'payment'      => $payment,
-                'checkout_url' => $checkout->checkoutUrl,
-            ];
-        });
+        return $this->paymentInitiationService->initiate(
+            $company,
+            $plan,
+            $provider,
+            $method,
+            $options
+        );
     }
 
     /**
@@ -182,6 +147,14 @@ class BillingService
             ->with(['subscription.plan'])
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    /**
+     * Get current subscription for the billing month
+     */
+    public function currentSubscription(Company $company): ?Subscription
+    {
+        return $this->subscriptionService->getCurrentSubscription($company->id);
     }
 
     /**

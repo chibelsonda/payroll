@@ -127,6 +127,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 Route::get('plans', [BillingController::class, 'plans'])->name('plans');
                 Route::post('subscribe', [BillingController::class, 'subscribe'])->name('subscribe');
                 Route::get('subscription', [BillingController::class, 'subscription'])->name('subscription');
+                Route::get('current-subscription', [BillingController::class, 'currentSubscription'])->name('current-subscription');
                 Route::get('payments', [BillingController::class, 'payments'])->name('payments');
                 Route::get('cancel', [BillingController::class, 'cancel'])->name('cancel');
             });

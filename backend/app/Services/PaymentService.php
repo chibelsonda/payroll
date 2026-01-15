@@ -11,6 +11,10 @@ class PaymentService
      */
     public function createPayment(array $data): Payment
     {
+        if (empty($data['billing_month'])) {
+            $data['billing_month'] = now()->startOfMonth()->toDateString();
+        }
+
         return Payment::create($data);
     }
 
