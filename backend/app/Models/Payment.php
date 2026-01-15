@@ -25,6 +25,7 @@ class Payment extends Model
         'currency',
         'status',
         'paid_at',
+        'cancelled_at',
         'metadata',
     ];
 
@@ -32,6 +33,7 @@ class Payment extends Model
         'amount' => 'decimal:2',
         'paid_at' => 'datetime',
         'metadata' => 'array',
+        'cancelled_at' => 'datetime',
     ];
 
     /**
@@ -64,5 +66,10 @@ class Payment extends Model
     public function isPending(): bool
     {
         return $this->status === 'pending';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
     }
 }

@@ -94,7 +94,7 @@ abstract class BasePayMongoGateway implements PaymentGatewayInterface
             'payment_id' => $payment->id,
             'reference_id' => $referenceId,
             'checkout_url' => $checkoutUrl,
-            'response' => $data,
+            // 'response' => $data,
             'payment_intent_id' => $paymentIntentId,
         ]);
 

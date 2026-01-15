@@ -7,11 +7,11 @@ use App\Http\Requests\SubscribeRequest;
 use App\Http\Resources\PaymentResource;
 use App\Http\Resources\PlanResource;
 use App\Http\Resources\SubscriptionResource;
-use App\Models\Company;
 use App\Services\BillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use DomainException;
 
 class BillingController extends BaseApiController
 {
@@ -121,6 +121,42 @@ class BillingController extends BaseApiController
             PaymentResource::collection($payments),
             'Payments retrieved successfully'
         );
+    }
+
+    /**
+     * Cancel a payment (auth required)
+     */
+    public function cancel(Request $request): JsonResponse
+    {
+        $request->validate([
+            'payment_intent_id' => ['required_without:reference_id', 'string'],
+            'reference_id' => ['required_without:payment_intent_id', 'string'],
+        ]);
+
+        $company = $request->attributes->get('active_company');
+
+        if (! $company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        $reference = $request->input('payment_intent_id') ?? $request->input('reference_id');
+
+        try {
+            $payment = $this->billingService->cancelPayment(
+                $company,
+                $reference,
+                $request->user()
+            );
+
+            return $this->successResponse(new PaymentResource($payment), 'Payment cancelled successfully');
+        } catch (\InvalidArgumentException|DomainException $e) {
+            return $this->errorResponse($e->getMessage(), [], [], 400);
+        } catch (\Throwable $e) {
+            Log::error('Payment cancellation failed', [
+                'error' => $e->getMessage(),
+            ]);
+            return $this->errorResponse('Failed to cancel payment', [], [], 500);
+        }
     }
 
     /**

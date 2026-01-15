@@ -24,6 +24,12 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/billing/cancel',
+      name: 'billing-cancel',
+      component: () => import('../views/BillingCancel.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/register',
       name: 'register',
       component: Register,

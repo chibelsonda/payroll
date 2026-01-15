@@ -7,10 +7,11 @@ use App\Models\Payment;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Services\Payments\PaymentGatewayManager;
-use App\Services\Payments\DTOs\PaymentGatewayCheckoutResponse;
 use App\Enums\PaymentProvider;
 use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use Carbon\Carbon;
+use DomainException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
@@ -211,5 +212,43 @@ class BillingService
             'amount' => $payment->amount,
             'plan_name' => $plan?->name,
         ];
+    }
+
+       /**
+     * Cancel a payment (PayMongo or other providers)
+     */
+    public function cancelPayment(Company $company, string $paymentIntentId, $user = null): Payment
+    {
+        $payment = Payment::where('paymongo_payment_intent_id', $paymentIntentId)
+            ->orWhere('provider_reference_id', $paymentIntentId)
+            ->first();
+
+        if (! $payment) {
+            throw new InvalidArgumentException('Payment not found for the provided reference.');
+        }
+
+        if ($payment->company_id !== $company->id) {
+            throw new InvalidArgumentException('You are not authorized to cancel this payment.');
+        }
+
+        if ($payment->status === PaymentStatus::PAID->value) {
+            throw new DomainException('Paid payments cannot be cancelled.');
+        }
+
+        if ($payment->status === PaymentStatus::CANCELLED->value) {
+            return $payment;
+        }
+
+        $payment->status = PaymentStatus::CANCELLED->value;
+        $payment->cancelled_at = now();
+        $payment->save();
+
+        Log::info('Payment cancelled', [
+            'payment_id' => $payment->id,
+            'company_id' => $payment->company_id,
+            'user_id' => $user?->id,
+        ]);
+
+        return $payment;
     }
 }
