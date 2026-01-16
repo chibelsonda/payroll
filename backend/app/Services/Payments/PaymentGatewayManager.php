@@ -49,7 +49,7 @@ class PaymentGatewayManager
 
         if (!isset($gateways[$key])) {
             throw new InvalidArgumentException(
-                "Payment gateway not found for provider '{$provider}' and method '{$method}'"
+                "Payment gateway not found for provider '{$providerEnum->value}' and method '{$methodEnum->value}'"
             );
         }
 
