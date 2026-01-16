@@ -94,7 +94,7 @@ class BillingController extends BaseApiController
         $subscription = $this->billingService->getCompanySubscription($company);
 
         if (!$subscription) {
-            return $this->notFoundResponse('No subscription found');
+            return $this->successResponse(null, 'No subscription found');
         }
 
         return $this->successResponse(
@@ -117,7 +117,7 @@ class BillingController extends BaseApiController
         $subscription = $this->billingService->currentSubscription($company);
 
         if (! $subscription) {
-            return $this->notFoundResponse('No active subscription for this billing month');
+            return $this->successResponse(null, 'No active subscription for this billing month');
         }
 
         return $this->successResponse(

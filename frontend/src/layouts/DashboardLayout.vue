@@ -10,7 +10,8 @@
 
         <v-divider class="mb-2"></v-divider>
 
-        <template v-for="item in menuItems" :key="item.to || item.title">
+        <template v-if="safeMenuItems.length">
+          <template v-for="item in safeMenuItems" :key="item.to || item.title">
           <!-- Regular menu item -->
           <v-list-item
             v-if="!item.children && item.to"
@@ -26,7 +27,7 @@
 
           <!-- Menu item with dropdown -->
           <v-list-group
-            v-else-if="item.children"
+            v-else-if="item.children && item.children.length"
             :value="getGroupValue(item)"
             v-model:opened="openGroups"
             class="sidebar-item mb-1"
@@ -55,6 +56,14 @@
               </v-list-item-title>
             </v-list-item>
           </v-list-group>
+          </template>
+        </template>
+        <template v-else>
+          <v-list-item>
+            <v-list-item-title class="text-body-2 text-medium-emphasis">
+              No menu items
+            </v-list-item-title>
+          </v-list-item>
         </template>
       </v-list>
     </v-navigation-drawer>
@@ -151,7 +160,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
 import { useNotification } from '@/composables'
@@ -197,6 +206,11 @@ const isGroupActive = (item: MenuItem): boolean => {
 }
 
 const getGroupValue = (item: MenuItem): string => item.title
+
+const safeMenuItems = computed<MenuItem[]>(() => {
+  if (!props.menuItems || !Array.isArray(props.menuItems)) return []
+  return props.menuItems.filter(Boolean)
+})
 
 /**
  * Auto-open group if one of its children is active
