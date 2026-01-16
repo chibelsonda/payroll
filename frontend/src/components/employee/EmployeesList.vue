@@ -7,14 +7,26 @@
           <v-card-title class="px-4 py-3">
             <div class="d-flex align-center justify-space-between flex-wrap w-100">
               <h1 class="text-h6 font-weight-bold mb-0">Employees Management</h1>
-              <v-btn
-                color="primary"
-                size="small"
-                prepend-icon="mdi-plus"
-                @click="openEmployeeDrawer"
-              >
-              Add Employee
-            </v-btn>
+              <div class="d-flex align-center gap-3 flex-wrap">
+                <v-btn
+                  color="secondary"
+                  size="small"
+                  variant="tonal"
+                  class="mr-2"
+                  prepend-icon="mdi-file-upload"
+                  @click="openImportDialog"
+                >
+                  Import CSV
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  size="small"
+                  prepend-icon="mdi-plus"
+                  @click="openEmployeeDrawer"
+                >
+                  Add Employee
+                </v-btn>
+              </div>
             </div>
           </v-card-title>
 
@@ -564,6 +576,78 @@
       </v-card>
     </v-navigation-drawer>
 
+    <!-- Import CSV Dialog -->
+    <v-dialog v-model="showImportDialog" max-width="560px">
+      <v-card>
+        <v-card-title class="d-flex align-center gap-3">
+          <v-avatar color="primary" variant="tonal" size="40">
+            <v-icon color="primary">mdi-file-upload</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">Import Employees</div>
+            <div class="text-caption text-medium-emphasis">Upload CSV with required headers</div>
+          </div>
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pt-4">
+          <div class="text-body-2 text-medium-emphasis mb-3">
+            CSV headers: <strong>first_name, last_name, email, password</strong>. Optional: <strong>employee_no</strong>.
+            Password required per row; email must be unique; we’ll generate employee_no if missing.
+          </div>
+          <v-file-input
+            v-model="importFile"
+            label="Select CSV file"
+            accept=".csv,text/csv"
+            prepend-icon="mdi-paperclip"
+            variant="outlined"
+            density="comfortable"
+            show-size
+            :disabled="isImporting"
+          />
+          <v-alert
+            v-if="importErrorMessage"
+            type="error"
+            variant="tonal"
+            density="comfortable"
+            class="mt-2"
+          >
+            {{ importErrorMessage }}
+          </v-alert>
+          <v-alert
+            v-if="importResult"
+            class="mt-3"
+            type="success"
+            variant="tonal"
+            density="comfortable"
+          >
+            Imported {{ importResult.created }} successfully. Failed: {{ importResult.failed }}.
+          </v-alert>
+          <v-alert
+            v-if="importErrors.length"
+            class="mt-3"
+            type="error"
+            variant="tonal"
+            density="comfortable"
+          >
+            <div class="font-weight-medium mb-1">Errors:</div>
+            <ul class="mb-0 ps-4">
+              <li v-for="(err, idx) in importErrors" :key="idx">
+                Row {{ err.row }} - {{ err.message }}
+              </li>
+            </ul>
+          </v-alert>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions class="py-3 px-4">
+          <v-spacer />
+          <v-btn variant="text" @click="closeImportDialog" :disabled="isImporting">Cancel</v-btn>
+          <v-btn color="primary" :loading="isImporting" :disabled="isImporting" @click="submitImport">
+            Upload
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="showDeleteDialog" max-width="400px">
       <v-card>
@@ -595,11 +679,13 @@ import {
   useCreateEmployee,
   useUpdateEmployee,
   useDeleteEmployee,
+  useImportEmployees,
   useCompanies,
   useDepartments,
   usePositions
 } from '@/composables'
 import { useZodForm } from '@/composables'
+import { extractErrorMessage } from '@/composables/common/useErrorMessage'
 import { useNotification } from '@/composables'
 import {
   createEmployeeSchema,
@@ -614,6 +700,11 @@ const editingEmployee = ref<Employee | null>(null)
 const selectedEmployee = ref<Employee | null>(null)
 const showPassword = ref(false)
 const errorMessage = ref<string | null>(null)
+const showImportDialog = ref(false)
+const importFile = ref<File | null>(null)
+const importResult = ref<{ created: number; failed: number; errors?: Array<{ row: number; message: string }> } | null>(null)
+const importErrors = ref<Array<{ row: number; message: string }>>([])
+const importErrorMessage = ref<string | null>(null)
 const formRef = ref<{ validate: () => Promise<{ valid: boolean }> } | null>(null)
 // Column filters
 const filters = ref({
@@ -808,12 +899,14 @@ const { data: employeesData, isLoading, error, refetch } = useEmployees()
 const createMutation = useCreateEmployee()
 const updateMutation = useUpdateEmployee()
 const deleteMutation = useDeleteEmployee()
+const importMutation = useImportEmployees()
 const { data: companies } = useCompanies()
 
 // Computed properties
 const employees = computed(() => employeesData.value?.data || [])
 const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 const isDeleting = computed(() => deleteMutation.isPending.value)
+const isImporting = computed(() => importMutation.isPending.value)
 
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
@@ -944,6 +1037,46 @@ const openEmployeeDrawer = () => {
 const closeDialog = () => {
   showCreateDialog.value = false
   resetForm()
+}
+
+const openImportDialog = () => {
+  importFile.value = null
+  importResult.value = null
+  importErrors.value = []
+  importErrorMessage.value = null
+  showImportDialog.value = true
+}
+
+const closeImportDialog = () => {
+  showImportDialog.value = false
+  importFile.value = null
+  importResult.value = null
+  importErrors.value = []
+  importErrorMessage.value = null
+}
+
+const submitImport = async () => {
+  if (!importFile.value) {
+    notification.showError('Please select a CSV file to import.')
+    return
+  }
+
+  try {
+    const result = await importMutation.mutateAsync(importFile.value)
+    importResult.value = result
+    importErrors.value = result.errors || []
+    importErrorMessage.value = null
+
+    if (result.failed > 0) {
+      notification.showError(`Imported with ${result.failed} error(s).`)
+    } else {
+      notification.showSuccess('Employees imported successfully!')
+    }
+  } catch (error: unknown) {
+    const message = extractErrorMessage(error)
+    importErrorMessage.value = message
+    notification.showError(message)
+  }
 }
 
 const editEmployee = async (employee: Employee) => {

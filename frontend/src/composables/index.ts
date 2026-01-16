@@ -34,6 +34,7 @@ export * from './common/useNotification'
 export * from './common/useZodForm'
 export * from './common/useDepartments'
 export * from './common/usePositions'
+export * from './common/useErrorMessage'
 
 // Company composables
 export * from './company/useCompanies'

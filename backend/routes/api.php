@@ -98,7 +98,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 // Routes accessible by owner/admin role OR manage users permission
             });
 
-            // Existing resource routes
+            // Employees
+            Route::post('employees/import', [EmployeeController::class, 'import'])->name('employees.import');
             Route::apiResource('employees', EmployeeController::class);
 
             // Dropdown data endpoints (company-scoped)

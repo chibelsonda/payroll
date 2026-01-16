@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\ImportEmployeesRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Http\Resources\EmployeeResource;
 use App\Models\Employee;
@@ -64,6 +65,29 @@ class EmployeeController extends BaseApiController
             new EmployeeResource($employee),
             'Employee created successfully'
         );
+    }
+
+    /**
+     * Import employees from CSV.
+     */
+    public function import(ImportEmployeesRequest $request): JsonResponse
+    {
+        $companyId = $request->user()->current_company_id
+            ?? $request->user()->companies()->select('companies.id')->value('companies.id');
+
+        try {
+            $result = $this->employeeService->importFromCsv(
+                $request->file('file'),
+                $companyId
+            );
+
+            return $this->successResponse(
+                $result,
+                'Employees imported successfully'
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), [], [], 422);
+        }
     }
 
     /**

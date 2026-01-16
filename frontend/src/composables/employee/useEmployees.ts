@@ -72,6 +72,15 @@ const deleteEmployee = async (uuid: string): Promise<void> => {
   await axios.delete(`/employees/${uuid}`)
 }
 
+const importEmployees = async (file: File): Promise<{ created: number; failed: number; errors: Array<{ row: number; message: string }> }> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await axios.post('/employees/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data.data
+}
+
 // Composables
 export const useEmployees = (page = 1, keepPreviousData = true, enabled: boolean | Ref<boolean> | (() => boolean) = true) => {
   // Convert function to computed ref for reactivity
@@ -125,6 +134,17 @@ export const useDeleteEmployee = () => {
 
   return useMutation({
     mutationFn: deleteEmployee,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] })
+    },
+  })
+}
+
+export const useImportEmployees = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: importEmployees,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] })
     },
