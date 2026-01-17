@@ -1,4 +1,4 @@
-
+import './assets/main.css'
 import './assets/drawer.css'
 import './assets/vuetify.css'
 
