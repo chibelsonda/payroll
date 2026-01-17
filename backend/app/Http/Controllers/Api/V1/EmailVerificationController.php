@@ -4,23 +4,39 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Auth\Events\Verified;
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
+use App\Models\User;
 
 class EmailVerificationController extends BaseApiController
 {
     /**
      * Verify signed email link.
      */
-    public function verify(EmailVerificationRequest $request): JsonResponse
+    public function verify(Request $request, $id, $hash): JsonResponse
     {
-        if ($request->user()->hasVerifiedEmail()) {
+        // Validate signed URL. Host/scheme must match APP_URL (used when signing).
+        if (!URL::hasValidSignature($request)) {
+            return $this->errorResponse('Invalid or expired verification link.', [], [], 403);
+        }
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return $this->errorResponse('User not found.', [], [], 404);
+        }
+
+        if (!hash_equals(sha1($user->getEmailForVerification()), (string) $hash)) {
+            return $this->errorResponse('Invalid verification link.', [], [], 403);
+        }
+
+        if ($user->hasVerifiedEmail()) {
             return $this->successResponse(null, 'Email already verified');
         }
 
-        if ($request->user()->markEmailAsVerified()) {
-            event(new Verified($request->user()));
+        if ($user->markEmailAsVerified()) {
+            event(new Verified($user));
         }
 
         return $this->successResponse(null, 'Email verified successfully');

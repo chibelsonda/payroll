@@ -6,7 +6,21 @@
         <v-card class="elevation-2" rounded="lg">
           <v-card-text class="pa-8">
             <!-- Login Title -->
-            <div class="text-h4 font-weight-medium mb-6 text-center">Login</div>
+            <div class="text-h4 font-weight-medium mb-2 text-center">Login</div>
+            <div class="text-body-2 text-medium-emphasis mb-6 text-center">
+              Access your CyfrinTech account to continue.
+            </div>
+
+            <v-alert
+              v-if="errorMessage"
+              type="error"
+              variant="tonal"
+              class="mb-4"
+              density="comfortable"
+              rounded="lg"
+            >
+              {{ errorMessage }}
+            </v-alert>
 
             <v-form @submit="onSubmit">
               <!-- Account Section -->
@@ -71,6 +85,21 @@
                 LOG IN
               </v-btn>
             </v-form>
+
+            <v-alert type="info" variant="tonal" class="mb-4" density="comfortable" rounded="lg">
+              <div class="d-flex align-start">
+                <v-icon class="me-2 mt-1" color="primary">mdi-email-check-outline</v-icon>
+                <div>
+                  <div class="font-weight-medium mb-1">Haven't verified yet?</div>
+                  <div class="text-body-2 text-medium-emphasis">
+                    Check your inbox for the verification link or go to the verification page.
+                  </div>
+                  <router-link to="/verify-email-notice" class="text-primary text-decoration-none text-body-2">
+                    Go to verification
+                  </router-link>
+                </div>
+              </div>
+            </v-alert>
 
             <!-- Sign Up Link -->
             <div class="text-center">

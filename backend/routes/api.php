@@ -42,19 +42,20 @@ Route::prefix('v1')->name('v1.')->group(function () {
     // Public payment status polling (by reference id)
     Route::get('billing/status', [BillingController::class, 'status'])->name('billing.status');
 
+    // Email verification route (public, signed, temporary)
+    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+
     // Protected routes (require authentication)
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         // Auth routes (no company context needed, but try to set it if header is present)
         Route::middleware('active.company')->get('/user', [AuthController::class, 'user'])->name('auth.user');
 
-        // Email verification routes
+        // Email verification resend (auth required)
         Route::post('email/verification-notification', [EmailVerificationController::class, 'resend'])
             ->middleware('throttle:1,1')
             ->name('verification.send');
-
-        Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
-            ->middleware(['signed', 'throttle:6,1'])
-            ->name('verification.verify');
 
         // Profile routes
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');

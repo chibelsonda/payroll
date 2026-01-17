@@ -158,7 +158,7 @@ const {
 } = useZodForm<RegisterFormData>(registerSchema, {
   first_name: 'try',
   last_name: 'inv',
-  email: '',
+  email: 'tt@test.com',
   password: 'Pass!234',
   password_confirmation: 'Pass!234',
   role: 'employee',
@@ -245,13 +245,8 @@ const onSubmit = handleSubmit(async (values: unknown) => {
       // If CSRF cookie fetch fails, continue anyway
     }
 
-    // Ensure session is established and user data is loaded before redirecting.
-    // If it fails, fall back to login with redirect.
-    const hasUser = await auth.fetchUser()
-    if (!hasUser) {
-      await router.push({ name: 'login', query: { redirect: '/verify-email-notice' } })
-      return
-    }
+    // Try to load the session user (best effort, don't block)
+    await auth.fetchUser().catch(() => undefined)
 
     // Check if there's a redirect query parameter (e.g., from invitation link)
     const redirect = route.query.redirect as string | undefined

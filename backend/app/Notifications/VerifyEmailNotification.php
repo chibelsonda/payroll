@@ -19,6 +19,16 @@ class VerifyEmailNotification extends BaseVerifyEmail implements ShouldQueue
     {
         $expiresAt = now()->addHours(24);
 
+        $appUrl = rtrim((string) config('app.url'), '/');
+
+        if ($appUrl) {
+            URL::forceRootUrl($appUrl);
+            $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+            if ($scheme) {
+                URL::forceScheme($scheme);
+            }
+        }
+
         $signedUrl = URL::temporarySignedRoute(
             'v1.verification.verify',
             $expiresAt,

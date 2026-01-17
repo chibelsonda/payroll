@@ -39,13 +39,13 @@ const router = createRouter({
       path: '/verify-email',
       name: 'verify-email',
       component: () => import('../views/VerifyEmail.vue'),
-      meta: { requiresAuth: true, skipCompanyCheck: true },
+      meta: { requiresAuth: false, guest: true, skipCompanyCheck: true },
     },
     {
       path: '/verify-email-notice',
       name: 'verify-email-notice',
       component: () => import('../views/VerifyEmailNotice.vue'),
-      meta: { requiresAuth: true, skipCompanyCheck: true },
+      meta: { requiresAuth: false, skipCompanyCheck: true, guest: true },
     },
     {
       path: '/accept-invitation',

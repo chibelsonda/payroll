@@ -13,6 +13,10 @@ Please confirm your email address to continue.
   </a>
 </div>
 
+<p style="font-size: 12px; color: #6b7280; word-break: break-all;">
+  Or copy this link: {{ $url }}
+</p>
+
 If you did not create an account, no further action is required.
 
 Thanks,<br>
