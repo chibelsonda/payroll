@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\StoreCompanyRequest;
+use App\Http\Resources\CompanyResource;
 use App\Services\CompanyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,7 +26,7 @@ class CompanyController extends BaseApiController
 
         if (!$user) {
             return $this->successResponse(
-                \App\Http\Resources\CompanyResource::collection(collect()),
+                CompanyResource::collection(collect()),
                 'No user found'
             );
         }
@@ -34,7 +35,7 @@ class CompanyController extends BaseApiController
         $companies = $user->companies;
 
         return $this->successResponse(
-            \App\Http\Resources\CompanyResource::collection($companies),
+            CompanyResource::collection($companies),
             'Companies retrieved successfully'
         );
     }
@@ -62,7 +63,7 @@ class CompanyController extends BaseApiController
             $this->companyService->assignOwnerRoleToUser($user, $company);
 
             return $this->createdResponse(
-                new \App\Http\Resources\CompanyResource($company),
+                new CompanyResource($company),
                 'Company created successfully'
             );
         });
