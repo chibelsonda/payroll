@@ -25,6 +25,15 @@
                 >
                   Admin View
                 </v-chip>
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  prepend-icon="mdi-file-upload"
+                  @click="openImportDialog"
+                >
+                  Import CSV
+                </v-btn>
               </div>
             </div>
           </v-card-title>
@@ -303,6 +312,72 @@
       </v-card>
     </v-dialog>
 
+    <v-dialog v-model="showImportDialog" max-width="540px">
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon class="me-2" color="primary">mdi-file-upload</v-icon>
+          Import Attendance Logs (CSV)
+          <v-spacer></v-spacer>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeImportDialog"></v-btn>
+        </v-card-title>
+        <v-divider />
+        <v-card-text>
+          <v-alert type="info" variant="tonal" class="mb-3" border="start" density="comfortable">
+            Required columns: <strong>employee_no, log_time, type</strong>. type must be IN or OUT. log_time accepts date/time. Rows with missing employees or duplicate log_time/type are reported and skipped.
+          </v-alert>
+          <v-file-input
+            v-model="importFile"
+            label="Select CSV file"
+            accept=".csv,text/csv"
+            prepend-icon="mdi-paperclip"
+            variant="outlined"
+            density="comfortable"
+            show-size
+            :disabled="isImporting"
+          />
+          <v-alert
+            v-if="importErrorMessage"
+            type="error"
+            variant="tonal"
+            class="mt-2"
+            density="comfortable"
+          >
+            {{ importErrorMessage }}
+          </v-alert>
+          <v-alert
+            v-if="importResult"
+            type="success"
+            variant="tonal"
+            class="mt-3"
+            density="comfortable"
+          >
+            Created: {{ importResult.created }} • Skipped: {{ importResult.skipped }} • Failed: {{ importResult.failed }}
+          </v-alert>
+          <v-alert
+            v-if="importErrors.length"
+            type="warning"
+            variant="tonal"
+            class="mt-3"
+            density="comfortable"
+          >
+            <div class="font-weight-medium mb-1">Issues detected:</div>
+            <ul class="mb-0 ps-4">
+              <li v-for="(err, idx) in importErrors" :key="idx">
+                Row {{ err.row }} - {{ err.message }}
+              </li>
+            </ul>
+          </v-alert>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeImportDialog" :disabled="isImporting">Cancel</v-btn>
+          <v-btn color="primary" :loading="isImporting" :disabled="isImporting" @click="submitImport">
+            Upload
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Edit Logs Dialog (Admin Only) -->
     <v-dialog v-model="showEditLogsDialog" max-width="800">
       <v-card>
@@ -433,11 +508,19 @@ import {
   useMarkIncomplete,
   useLockAttendance,
 } from '@/composables'
-import { useCreateAttendanceLog } from '@/composables'
+import { useCreateAttendanceLog, useImportAttendanceLogs } from '@/composables'
 import { useNotification } from '@/composables'
 import { useAuthStore } from '@/stores/auth'
 import { formatDateTimeForBackend } from '@/lib/datetime'
+import { extractErrorMessage } from '@/composables'
 import AttendanceTimeline from './AttendanceTimeline.vue'
+
+type ImportResult = {
+  created: number
+  skipped: number
+  failed: number
+  errors: { row: number; message: string }[]
+}
 
 const authStore = useAuthStore()
 const attendanceStore = useAttendanceStore()
@@ -457,6 +540,7 @@ const approveMutation = useApproveAttendance()
 const markIncompleteMutation = useMarkIncomplete()
 const lockMutation = useLockAttendance()
 const createLogMutation = useCreateAttendanceLog()
+const importMutation = useImportAttendanceLogs()
 
 const attendanceRecords = computed(() => data.value?.data || [])
 
@@ -464,11 +548,16 @@ const showLogsDialog = ref(false)
 const showEditLogsDialog = ref(false)
 const showCorrectionDialog = ref(false)
 const showAddLogDialog = ref(false)
+const showImportDialog = ref(false)
 const selectedAttendance = ref<Attendance | null>(null)
 const correctionReason = ref('')
 const newLogType = ref<'IN' | 'OUT' | null>(null)
 const newLogTime = ref('')
 const loadingStates = ref<Record<string, boolean>>({})
+const importFile = ref<File | null>(null)
+const importResult = ref<ImportResult | null>(null)
+const importErrors = ref<ImportResult['errors']>([])
+const importErrorMessage = ref('')
 
 const headers = [
   { title: 'Employee', key: 'employee', sortable: true },
@@ -569,6 +658,46 @@ const isLocking = (item: Attendance): boolean => {
 }
 
 const isSubmittingCorrection = computed(() => requestCorrectionMutation.isPending.value)
+const isImporting = computed(() => importMutation.isPending.value)
+
+const resetImportState = () => {
+  importResult.value = null
+  importErrors.value = []
+  importErrorMessage.value = ''
+}
+
+const openImportDialog = () => {
+  resetImportState()
+  importFile.value = null
+  showImportDialog.value = true
+}
+
+const closeImportDialog = () => {
+  resetImportState()
+  importFile.value = null
+  showImportDialog.value = false
+}
+
+const submitImport = async () => {
+  if (!importFile.value) {
+    showNotification('Please select a CSV file to upload.', 'warning')
+    return
+  }
+
+  resetImportState()
+
+  try {
+    const result = await importMutation.mutateAsync(importFile.value)
+    importResult.value = result
+    importErrors.value = result.errors || []
+
+    const level = result.failed > 0 ? 'warning' : 'success'
+    showNotification('Attendance import completed', level)
+    await refetch()
+  } catch (error: unknown) {
+    importErrorMessage.value = extractErrorMessage(error, 'Failed to import attendance logs')
+  }
+}
 
 // Actions
 const handleTimeInOut = async (item: Attendance) => {

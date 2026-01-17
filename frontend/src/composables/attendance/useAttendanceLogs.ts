@@ -3,6 +3,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import axios from '@/lib/axios'
 import type { AttendanceLog } from '@/types/attendanceLog'
 
+type ImportResult = {
+  created: number
+  skipped: number
+  failed: number
+  errors: { row: number; message: string }[]
+}
+
 // API functions
 const fetchAttendanceLogs = async (employeeUuid?: string, date?: string): Promise<AttendanceLog[]> => {
   const params = new URLSearchParams()
@@ -24,6 +31,17 @@ const createAttendanceLog = async (data: {
 
 const deleteAttendanceLog = async (uuid: string): Promise<void> => {
   await axios.delete(`/attendance/logs/${uuid}`)
+}
+
+const importAttendanceLogs = async (file: File): Promise<ImportResult> => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await axios.post('/attendance/logs/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+
+  return response.data.data
 }
 
 // Composables
@@ -56,6 +74,18 @@ export const useDeleteAttendanceLog = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: deleteAttendanceLog,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['attendance-logs'] })
+      queryClient.invalidateQueries({ queryKey: ['attendances'] })
+      queryClient.invalidateQueries({ queryKey: ['attendance-summary'] })
+    },
+  })
+}
+
+export const useImportAttendanceLogs = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: importAttendanceLogs,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['attendance-logs'] })
       queryClient.invalidateQueries({ queryKey: ['attendances'] })

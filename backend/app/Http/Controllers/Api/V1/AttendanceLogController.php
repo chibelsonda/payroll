@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Requests\StoreAttendanceLogRequest;
+use App\Http\Requests\ImportAttendanceLogsRequest;
 use App\Http\Resources\AttendanceLogResource;
 use App\Models\AttendanceLog;
 use App\Services\AttendanceLogService;
@@ -66,6 +67,34 @@ class AttendanceLogController extends BaseApiController
                 [],
                 500
             );
+        }
+    }
+
+    /**
+     * Import attendance logs from CSV (company scoped).
+     */
+    public function import(ImportAttendanceLogsRequest $request): JsonResponse
+    {
+        $company = $request->attributes->get('active_company');
+
+        if (!$company) {
+            return $this->errorResponse('Company context is required', [], [], 403);
+        }
+
+        try {
+            $result = $this->attendanceLogService->importFromCsv(
+                $request->file('file'),
+                $company->id
+            );
+
+            return $this->successResponse(
+                $result,
+                'Attendance logs import completed'
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), [], [], 422);
+        } catch (\Throwable $e) {
+            return $this->errorResponse('Failed to import attendance logs', [], [], 500);
         }
     }
 }

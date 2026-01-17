@@ -148,6 +148,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
             // Attendance routes
             Route::prefix('attendance')->name('attendance.')->group(function () {
                 Route::get('/summary', [AttendanceController::class, 'summary'])->name('summary');
+                Route::post('/logs/import', [AttendanceLogController::class, 'import'])->name('logs.import');
                 Route::apiResource('logs', AttendanceLogController::class)->only(['index', 'store', 'destroy']);
                 Route::post('/correction-request', [AttendanceCorrectionRequestController::class, 'store'])->name('correction-request');
             });
