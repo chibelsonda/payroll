@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center">
+  <v-container class="fill-height d-flex align-center justify-center" fluid>
     <v-card max-width="520" class="pa-6" elevation="4" rounded="lg">
       <v-card-title class="d-flex align-center justify-space-between mb-2">
         <div class="d-flex align-center gap-3">

@@ -1,5 +1,5 @@
 <template>
-  <v-container class="fill-height d-flex align-center justify-center">
+  <v-container class="fill-height d-flex align-center justify-center" fluid>
     <v-card max-width="520" class="pa-6" elevation="3">
       <v-card-title class="text-h6 font-weight-bold mb-2">
         Verify your email
