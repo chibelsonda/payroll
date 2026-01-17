@@ -159,6 +159,12 @@ const onSubmit = handleSubmit(async (values: unknown) => {
       return
     }
 
+    // If email not verified, send to verification notice
+    if (!user.email_verified_at) {
+      await router.push('/verify-email-notice')
+      return
+    }
+
     // Check if user has a company
     if (!user.has_company) {
       // User doesn't have a company - redirect to onboarding

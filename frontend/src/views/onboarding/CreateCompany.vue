@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useZodForm } from '@/composables'
 import { useCreateCompany } from '@/composables'
@@ -167,9 +167,26 @@ const handleSubmit = baseHandleSubmit(async (values: unknown) => {
       setServerErrors(err.response.data.errors)
     }
 
+    const status = err?.response?.status
+    if (status === 403) {
+      await router.push('/verify-email-notice')
+      return
+    }
+
     const message = err?.response?.data?.message || 'Failed to create company. Please try again.'
     errorMessage.value = message
     notification.showError(message)
+  }
+})
+
+onMounted(async () => {
+  // Ensure user is loaded; if not verified, redirect to verification notice
+  if (!auth.user) {
+    await auth.fetchUser()
+  }
+
+  if (!auth.user?.email_verified_at) {
+    await router.push('/verify-email-notice')
   }
 })
 </script>

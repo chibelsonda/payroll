@@ -30,6 +30,7 @@ use App\Http\Controllers\Api\V1\ActivityLogController;
 use App\Http\Controllers\Api\V1\EmployeeAllowanceController;
 use App\Http\Controllers\Api\V1\BillingController;
 use App\Http\Controllers\Api\V1\WebhookController;
+use App\Http\Controllers\Api\V1\EmailVerificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->name('v1.')->group(function () {
@@ -46,6 +47,15 @@ Route::prefix('v1')->name('v1.')->group(function () {
         // Auth routes (no company context needed, but try to set it if header is present)
         Route::middleware('active.company')->get('/user', [AuthController::class, 'user'])->name('auth.user');
 
+        // Email verification routes
+        Route::post('email/verification-notification', [EmailVerificationController::class, 'resend'])
+            ->middleware('throttle:1,1')
+            ->name('verification.send');
+
+        Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+            ->middleware(['signed', 'throttle:6,1'])
+            ->name('verification.verify');
+
         // Profile routes
         Route::get('profile', [ProfileController::class, 'show'])->name('profile.show');
         Route::post('profile/avatar', [ProfileController::class, 'uploadAvatar'])->name('profile.avatar');
@@ -53,14 +63,18 @@ Route::prefix('v1')->name('v1.')->group(function () {
         // Companies routes
         // GET: Requires company (for existing users)
         // POST: No company required (for onboarding)
-        Route::get('companies', [CompanyController::class, 'index'])->name('companies.index');
-        Route::post('companies', [CompanyController::class, 'store'])->name('companies.store');
+        Route::get('companies', [CompanyController::class, 'index'])
+            ->middleware('verified')
+            ->name('companies.index');
+        Route::post('companies', [CompanyController::class, 'store'])
+            ->middleware('verified')
+            ->name('companies.store');
 
         // Accept invitation (no company context needed - user might not have company yet)
         Route::post('invitations/accept', [InvitationController::class, 'accept'])->name('invitations.accept');
 
         // Company-scoped routes (require active company context)
-        Route::middleware(['ensure.user.has.company', 'active.company'])->group(function () {
+        Route::middleware(['ensure.user.has.company', 'active.company', 'verified'])->group(function () {
             // Invitations routes
             Route::get('invitations', [InvitationController::class, 'index'])->name('invitations.index');
             Route::post('invitations', [InvitationController::class, 'store'])->name('invitations.store');

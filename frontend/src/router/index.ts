@@ -36,6 +36,18 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/verify-email',
+      name: 'verify-email',
+      component: () => import('../views/VerifyEmail.vue'),
+      meta: { requiresAuth: true, skipCompanyCheck: true },
+    },
+    {
+      path: '/verify-email-notice',
+      name: 'verify-email-notice',
+      component: () => import('../views/VerifyEmailNotice.vue'),
+      meta: { requiresAuth: true, skipCompanyCheck: true },
+    },
+    {
       path: '/accept-invitation',
       name: 'accept-invitation',
       component: () => import('../views/AcceptInvitation.vue'),
@@ -439,7 +451,7 @@ router.beforeEach(async (to, from, next) => {
 
   // For authenticated routes, ensure company is selected
   // BUT only for routes that require company context (not /user or /companies)
-  if (to.meta.requiresAuth && auth.user && to.path !== '/user' && !to.path.startsWith('/companies')) {
+  if (to.meta.requiresAuth && auth.user && !to.meta.skipCompanyCheck && to.path !== '/user' && !to.path.startsWith('/companies')) {
     const { useCompanyStore } = await import('@/stores/company')
     const companyStore = useCompanyStore()
 

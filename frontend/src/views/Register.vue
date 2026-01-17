@@ -234,7 +234,7 @@ const onSubmit = handleSubmit(async (values: unknown) => {
 
   try {
     await auth.register(formData)
-    notification.showSuccess('Registration successful!')
+    notification.showSuccess('Registration successful. Please verify your email.')
 
     // CRITICAL: Ensure session is properly established
     // Fetch CSRF cookie to ensure session cookie is set
@@ -245,11 +245,13 @@ const onSubmit = handleSubmit(async (values: unknown) => {
       // If CSRF cookie fetch fails, continue anyway
     }
 
-    // Ensure session is established and user data is loaded before redirecting
-    await auth.fetchUser()
-
-    // Longer delay to ensure session cookie is properly set and persisted
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Ensure session is established and user data is loaded before redirecting.
+    // If it fails, fall back to login with redirect.
+    const hasUser = await auth.fetchUser()
+    if (!hasUser) {
+      await router.push({ name: 'login', query: { redirect: '/verify-email-notice' } })
+      return
+    }
 
     // Check if there's a redirect query parameter (e.g., from invitation link)
     const redirect = route.query.redirect as string | undefined
@@ -261,9 +263,8 @@ const onSubmit = handleSubmit(async (values: unknown) => {
       return
     }
 
-    // After registration, user has no company yet
-    // Redirect to onboarding to create company
-    await router.push('/onboarding/create-company')
+    // After registration, prompt user to verify email before company setup
+    await router.push('/verify-email-notice')
   } catch (error: unknown) {
     // Handle server-side validation errors
     const err = error as { response?: { data?: { errors?: Record<string, string | string[]>; message?: string } } }

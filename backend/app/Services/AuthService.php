@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\PermissionRegistrar;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
 
 class AuthService
 {
@@ -55,6 +57,9 @@ class AuthService
 
         // Always log in the user after registration (for public self-registration)
         Auth::login($user);
+
+        // Trigger email verification notification
+        event(new Registered($user));
 
         return [
             'user' => $user,
@@ -128,7 +133,7 @@ class AuthService
      * @param \Illuminate\Http\Request $request The current HTTP request
      * @return void
      */
-    public function logout(\Illuminate\Http\Request $request): void
+    public function logout(Request $request): void
     {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
@@ -141,7 +146,7 @@ class AuthService
      * @param \Illuminate\Http\Request $request The current HTTP request
      * @return User The authenticated user with appropriate relationships loaded
      */
-    public function getCurrentUser(\Illuminate\Http\Request $request): User
+    public function getCurrentUser(Request $request): User
     {
         /** @var User $user */
         $user = $request->user();

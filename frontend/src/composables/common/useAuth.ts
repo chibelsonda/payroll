@@ -33,15 +33,23 @@ const loginUser = async (credentials: LoginCredentials): Promise<User> => {
 }
 
 // Register: get CSRF cookie, then register, and use the returned user data
-const registerUser = async (data: RegisterData): Promise<User> => {
+const registerUser = async (data: RegisterData): Promise<User | null> => {
   await webAxios.get('/sanctum/csrf-cookie')
   const response = await webAxios.post('/register', data)
-  // The register endpoint returns the user data directly, use it instead of fetching
+
+  // Backend may return no user payload for verification-first flow.
   const user = response.data.data?.user
-  if (!user) {
-    throw new Error('Failed to get user from registration response')
+  if (user) {
+    return user
   }
-  return user
+
+  // Attempt to fetch current user if session was established.
+  try {
+    const me = await axios.get('/user')
+    return me.data.data ?? null
+  } catch {
+    return null
+  }
 }
 
 // Logout
@@ -68,8 +76,12 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: registerUser,
     onSuccess: (user) => {
-      // Set user data in cache so auth.user is available immediately
-      queryClient.setQueryData(['user'], user)
+      if (user) {
+        queryClient.setQueryData(['user'], user)
+      } else {
+        // Clear cached user to avoid stale state before verification/login
+        queryClient.setQueryData(['user'], null)
+      }
     },
   })
 }

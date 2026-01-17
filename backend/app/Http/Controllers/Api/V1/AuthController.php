@@ -32,9 +32,10 @@ class AuthController extends BaseApiController
         // Explicitly save the session to ensure the cookie is set before response
         $request->session()->save();
 
-        return $this->createdResponse([
-            'user' => new UserResource($result['user']),
-        ], 'User registered successfully');
+        return $this->createdResponse(
+            null,
+            'Registration successful. Please verify your email.'
+        );
     }
 
     /**
