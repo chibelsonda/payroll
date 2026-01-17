@@ -1,27 +1,69 @@
 <template>
   <v-container class="fill-height d-flex align-center justify-center">
-    <v-card max-width="480" class="pa-6" elevation="3">
-      <v-card-title class="text-h6 font-weight-bold mb-2">
-        Email Verification
+    <v-card max-width="520" class="pa-6" elevation="4" rounded="lg">
+      <v-card-title class="d-flex align-center justify-space-between mb-2">
+        <div class="d-flex align-center gap-3">
+          <v-avatar color="primary" variant="tonal" size="44">
+            <v-icon color="primary">mdi-email-check</v-icon>
+          </v-avatar>
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">Email Verification</div>
+            <div class="text-caption text-medium-emphasis">We’re confirming your CyfrinTech account</div>
+          </div>
+        </div>
       </v-card-title>
-      <v-card-text>
+      <v-card-text class="pt-2">
         <div v-if="state === 'verifying'" class="d-flex align-center">
           <v-progress-circular indeterminate color="primary" class="me-3" />
-          <div>Verifying your email...</div>
+          <div class="text-body-2 text-medium-emphasis">Verifying your email...</div>
         </div>
 
-        <div v-else-if="state === 'success'" class="d-flex align-center">
-          <v-icon color="success" class="me-2">mdi-check-circle</v-icon>
-          <div>Your email has been verified.</div>
-        </div>
+        <v-alert
+          v-else-if="state === 'success'"
+          type="success"
+          variant="tonal"
+          border="start"
+          density="comfortable"
+          class="mb-3"
+        >
+          <div class="d-flex align-center">
+            <v-icon class="me-2" color="success">mdi-check-circle</v-icon>
+            <div>
+              <div class="font-weight-medium">Email verified</div>
+              <div class="text-body-2 text-medium-emphasis">You’re all set. Continue to finish setup.</div>
+            </div>
+          </div>
+        </v-alert>
 
-        <div v-else class="d-flex align-center">
-          <v-icon color="error" class="me-2">mdi-alert-circle</v-icon>
-          <div>{{ errorMessage }}</div>
+        <v-alert
+          v-else
+          type="error"
+          variant="tonal"
+          border="start"
+          density="comfortable"
+          class="mb-3"
+        >
+          <div class="d-flex align-center">
+            <v-icon class="me-2" color="error">mdi-alert-circle</v-icon>
+            <div>
+              <div class="font-weight-medium">Verification failed</div>
+              <div class="text-body-2 text-medium-emphasis">{{ errorMessage }}</div>
+            </div>
+          </div>
+        </v-alert>
+
+        <div class="text-caption text-medium-emphasis">
+          If the button doesn't work, confirm you opened the latest link from your email. Verification links expire after 24 hours.
         </div>
       </v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn color="primary" variant="flat" @click="goNext" :loading="state === 'verifying'">
+      <v-card-actions class="justify-end pt-2">
+        <v-btn
+          color="primary"
+          variant="flat"
+          class="px-5"
+          @click="goNext"
+          :loading="state === 'verifying'"
+        >
           Continue
         </v-btn>
       </v-card-actions>
@@ -48,19 +90,19 @@ const state = ref<State>('verifying')
 const errorMessage = ref('The verification link is invalid or has expired.')
 
 const verifyEmail = async () => {
-  const id = route.query.id as string
+  const uuid = route.query.uuid as string
   const hash = route.query.hash as string
   const signature = route.query.signature as string
   const expires = route.query.expires as string
 
-  if (!id || !hash || !signature || !expires) {
+  if (!uuid || !hash || !signature || !expires) {
     state.value = 'error'
     errorMessage.value = 'Missing verification parameters.'
     return
   }
 
   try {
-    await axios.get(`/email/verify/${id}/${hash}`, {
+    await axios.get(`/email/verify/${uuid}/${hash}`, {
       params: { signature, expires },
     })
 

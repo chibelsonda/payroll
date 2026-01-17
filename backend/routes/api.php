@@ -43,7 +43,7 @@ Route::prefix('v1')->name('v1.')->group(function () {
     Route::get('billing/status', [BillingController::class, 'status'])->name('billing.status');
 
     // Email verification route (public, signed, temporary)
-    Route::get('email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    Route::get('email/verify/{uuid}/{hash}', [EmailVerificationController::class, 'verify'])
         ->middleware(['signed', 'throttle:6,1'])
         ->name('verification.verify');
 

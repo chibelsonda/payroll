@@ -33,7 +33,7 @@ class VerifyEmailNotification extends BaseVerifyEmail implements ShouldQueue
             'v1.verification.verify',
             $expiresAt,
             [
-                'id' => $notifiable->getKey(),
+                'uuid' => $notifiable->uuid,
                 'hash' => sha1($notifiable->getEmailForVerification()),
             ]
         );
@@ -44,7 +44,7 @@ class VerifyEmailNotification extends BaseVerifyEmail implements ShouldQueue
         $frontendUrl = rtrim(config('app.frontend_url', config('app.url')), '/');
 
         $params = array_merge($queryParams, [
-            'id' => $notifiable->getKey(),
+            'uuid' => $notifiable->uuid,
             'hash' => sha1($notifiable->getEmailForVerification()),
         ]);
 

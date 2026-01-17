@@ -14,14 +14,14 @@ class EmailVerificationController extends BaseApiController
     /**
      * Verify signed email link.
      */
-    public function verify(Request $request, $id, $hash): JsonResponse
+    public function verify(Request $request, string $uuid, string $hash): JsonResponse
     {
         // Validate signed URL. Host/scheme must match APP_URL (used when signing).
         if (!URL::hasValidSignature($request)) {
             return $this->errorResponse('Invalid or expired verification link.', [], [], 403);
         }
 
-        $user = User::find($id);
+        $user = User::where('uuid', $uuid)->first();
 
         if (!$user) {
             return $this->errorResponse('User not found.', [], [], 404);
@@ -32,7 +32,7 @@ class EmailVerificationController extends BaseApiController
         }
 
         if ($user->hasVerifiedEmail()) {
-            return $this->successResponse(null, 'Email already verified');
+            return $this->errorResponse('Email already verified', [], [], 400);
         }
 
         if ($user->markEmailAsVerified()) {
@@ -50,7 +50,7 @@ class EmailVerificationController extends BaseApiController
         $user = $request->user();
 
         if ($user->hasVerifiedEmail()) {
-            return $this->successResponse(null, 'Email already verified');
+            return $this->errorResponse('Email already verified', [], [], 400);
         }
 
         $user->sendEmailVerificationNotification();
