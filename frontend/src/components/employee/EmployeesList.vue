@@ -590,21 +590,27 @@
         </v-card-title>
         <v-divider />
         <v-card-text class="pt-4">
-          <div class="text-body-2 text-medium-emphasis mb-3">
+          <v-alert
+            type="info"
+            variant="tonal"
+            border="start"
+            density="comfortable"
+            class="mb-4 text-body-2"
+          >
             CSV headers: <strong>first_name, last_name, email, password</strong>. Optional: <strong>employee_no</strong>.
-            Password required per row; email must be unique; we’ll generate employee_no if missing.
-          </div>
+            Password is required on every row; email must be unique; we'll auto-generate employee_no if missing.
+          </v-alert>
           <v-file-input
             v-model="importFile"
             label="Select CSV file"
             accept=".csv,text/csv"
             prepend-icon="mdi-paperclip"
             variant="outlined"
-            density="comfortable"
+            density="compact"
             show-size
             :disabled="isImporting"
           />
-          <v-alert
+          <!-- <v-alert
             v-if="importErrorMessage"
             type="error"
             variant="tonal"
@@ -612,7 +618,7 @@
             class="mt-2"
           >
             {{ importErrorMessage }}
-          </v-alert>
+          </v-alert> -->
           <v-alert
             v-if="importResult"
             class="mt-3"
@@ -639,10 +645,22 @@
         </v-card-text>
         <v-divider />
         <v-card-actions class="py-3 px-4">
-          <v-spacer />
-          <v-btn variant="text" @click="closeImportDialog" :disabled="isImporting">Cancel</v-btn>
-          <v-btn color="primary" :loading="isImporting" :disabled="isImporting" @click="submitImport">
-            Upload
+          <v-btn
+            color="grey"
+            prepend-icon="mdi-close"
+            @click="closeImportDialog"
+            :disabled="isImporting"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-upload"
+            :loading="isImporting"
+            :disabled="isImporting"
+            @click="submitImport"
+          >
+            Upload CSV
           </v-btn>
         </v-card-actions>
       </v-card>
