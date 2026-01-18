@@ -185,6 +185,7 @@ import type { PayrollRun } from '@/types/payroll'
 import PayrollRunForm from './PayrollRunForm.vue'
 import EmployeePayrollTable from './EmployeePayrollTable.vue'
 import { useNotification } from '@/composables'
+import { extractErrorMessage } from '@/composables'
 
 const notification = useNotification()
 
@@ -254,8 +255,8 @@ const generatePayroll = async (payrollRun: PayrollRun) => {
     notification.showSuccess('Payroll generated successfully')
     refetch()
   } catch (error: unknown) {
-    const err = error as { message?: string }
-    notification.showError(err?.message || 'Failed to generate payroll')
+    const message = extractErrorMessage(error)
+    notification.showError(message || 'Failed to generate payroll')
   }
 }
 
@@ -273,10 +274,9 @@ const exportPayroll = async (payrollRun: PayrollRun) => {
       periodEnd: payrollRun.period_end,
     })
     notification.showSuccess('Payroll exported successfully!')
-  } catch (err: unknown) {
-    const error = err as { message?: string; response?: { data?: { message?: string } } }
-    const message = error?.message || error?.response?.data?.message || 'Failed to export payroll.'
-    notification.showError(message)
+  } catch (error: unknown) {
+    const message = extractErrorMessage(error)
+    notification.showError(message || 'Failed to export payroll')
   } finally {
     exportingPayrollRunUuid.value = null
   }
@@ -291,8 +291,8 @@ const finalizePayroll = async (payrollRun: PayrollRun) => {
     notification.showSuccess('Payroll finalized successfully')
     refetch()
   } catch (error: unknown) {
-    const err = error as { message?: string; response?: { data?: { message?: string } } }
-    notification.showError(err?.message || err?.response?.data?.message || 'Failed to finalize payroll')
+    const message = extractErrorMessage(error)
+    notification.showError(message || 'Failed to finalize payroll')
   }
 }
 </script>
