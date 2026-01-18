@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { apiAxios } from '@/lib/axios'
+import apiAxios from '@/lib/axios'
 import type { Holiday, StoreHolidayData, UpdateHolidayData } from '@/types/holiday'
 import { useNotification } from '@/composables/common/useNotification'
 

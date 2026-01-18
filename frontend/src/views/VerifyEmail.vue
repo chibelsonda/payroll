@@ -8,7 +8,7 @@
           </v-avatar>
           <div>
             <div class="text-subtitle-1 font-weight-bold">Email Verification</div>
-            <div class="text-caption text-medium-emphasis">We’re confirming your CyfrinTech account</div>
+            <div class="text-caption text-medium-emphasis">We’re confirming your HRIS account</div>
           </div>
         </div>
       </v-card-title>
