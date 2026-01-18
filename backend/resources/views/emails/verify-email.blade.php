@@ -1,9 +1,9 @@
 @component('mail::message')
 <div style="text-align:center; margin-bottom: 16px;">
-  <img src="{{ config('app.logo_url', 'https://via.placeholder.com/160x40?text=CyfrinTech') }}" alt="CyfrinTech" style="max-width: 180px; height: auto;">
+  <img src="{{ config('app.logo_url', 'https://via.placeholder.com/160x40?text=HRIS') }}" alt="HRIS" style="max-width: 180px; height: auto;">
 </div>
 
-# Welcome to CyfrinTech
+# Welcome to HRIS
 
 Please confirm your email address to continue.
 
@@ -20,5 +20,5 @@ Please confirm your email address to continue.
 If you did not create an account, no further action is required.
 
 Thanks,<br>
-CyfrinTech Team
+HRIS Team
 @endcomponent

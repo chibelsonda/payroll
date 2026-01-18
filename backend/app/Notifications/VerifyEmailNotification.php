@@ -59,7 +59,7 @@ class VerifyEmailNotification extends BaseVerifyEmail implements ShouldQueue
         $verificationUrl = $this->verificationUrl($notifiable);
 
         return (new MailMessage)
-            ->subject('Verify your email for CyfrinTech')
+            ->subject('Verify your email for HRIS')
             ->markdown('emails.verify-email', [
                 'url' => $verificationUrl,
             ]);
