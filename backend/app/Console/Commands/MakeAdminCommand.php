@@ -3,10 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\Company;
 use App\Services\UserService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\PermissionRegistrar;
 
 class MakeAdminCommand extends Command
 {
@@ -15,11 +17,12 @@ class MakeAdminCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'make:admin 
+    protected $signature = 'make:admin
                             {--first-name= : First name of the admin user}
                             {--last-name= : Last name of the admin user}
                             {--email= : Email address of the admin user}
-                            {--password= : Password for the admin user}';
+                            {--password= : Password for the admin user}
+                            {--company-id= : Company ID to attach and scope the admin role}';
 
     /**
      * The console command description.
@@ -31,7 +34,7 @@ class MakeAdminCommand extends Command
     /**
      * Execute the console command.
      */
-    public function handle(UserService $userService): int
+    public function handle(UserService $userService, PermissionRegistrar $permissionRegistrar): int
     {
         $this->info('Creating a new admin user...');
         $this->newLine();
@@ -41,6 +44,23 @@ class MakeAdminCommand extends Command
         $lastName = $this->option('last-name') ?: $this->ask('Last name');
         $email = $this->option('email') ?: $this->ask('Email address');
         $password = $this->option('password') ?: $this->secret('Password');
+        $companyIdOption = $this->option('company-id');
+
+        $company = null;
+        if ($companyIdOption) {
+            $company = Company::find($companyIdOption);
+            if (! $company) {
+                $this->error('Company not found for ID: ' . $companyIdOption);
+                return Command::FAILURE;
+            }
+        } else {
+            $company = Company::first();
+        }
+
+        if (! $company) {
+            $this->error('No company found. Please create a company first or pass --company-id.');
+            return Command::FAILURE;
+        }
 
         // Validate input
         $validator = Validator::make([
@@ -72,8 +92,10 @@ class MakeAdminCommand extends Command
                 'password' => $password,
             ]);
 
-            // Assign admin role using Spatie Permission
-            $user->assignRole('admin');
+            // Attach user to company and scope role to that company (teams enabled)
+            $user->companies()->syncWithoutDetaching([$company->id]);
+            $permissionRegistrar->setPermissionsTeamId($company->id);
+            $user->assignRole('admin', $company->id);
 
             $this->info('Admin user created successfully!');
             $this->newLine();

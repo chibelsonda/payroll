@@ -4,11 +4,14 @@
       <v-list class="pa-2">
         <v-list-item class="px-3 mb-2">
           <v-list-item-title class="text-h6 font-weight-bold text-primary">
-            {{ title }}
+            HR & Payroll
           </v-list-item-title>
         </v-list-item>
+
         <v-divider class="mb-2"></v-divider>
-        <template v-for="item in menuItems" :key="item.to || item.title">
+
+        <template v-if="safeMenuItems.length">
+          <template v-for="item in safeMenuItems" :key="item.to || item.title">
           <!-- Regular menu item -->
           <v-list-item
             v-if="!item.children && item.to"
@@ -17,13 +20,16 @@
             :active="isActiveRoute(item.to)"
             class="sidebar-item mb-1"
           >
-            <v-list-item-title class="text-body-2">{{ item.title }}</v-list-item-title>
+            <v-list-item-title class="text-body-2">
+              {{ item.title }}
+            </v-list-item-title>
           </v-list-item>
 
           <!-- Menu item with dropdown -->
           <v-list-group
-            v-else-if="item.children"
-            :value="isGroupActive(item)"
+            v-else-if="item.children && item.children.length"
+            :value="getGroupValue(item)"
+            v-model:opened="openGroups"
             class="sidebar-item mb-1"
           >
             <template #activator="{ props }">
@@ -32,9 +38,12 @@
                 :prepend-icon="item.icon"
                 class="sidebar-item"
               >
-                <v-list-item-title class="text-body-2">{{ item.title }}</v-list-item-title>
+                <v-list-item-title class="text-body-2">
+                  {{ item.title }}
+                </v-list-item-title>
               </v-list-item>
             </template>
+
             <v-list-item
               v-for="child in item.children"
               :key="child.to || child.title"
@@ -42,17 +51,27 @@
               :active="child.to ? isActiveRoute(child.to) : false"
               class="sidebar-subitem ms-4"
             >
-              <v-list-item-title class="text-body-2">{{ child.title }}</v-list-item-title>
+              <v-list-item-title class="text-body-2">
+                {{ child.title }}
+              </v-list-item-title>
             </v-list-item>
           </v-list-group>
+          </template>
+        </template>
+        <template v-else>
+          <v-list-item>
+            <v-list-item-title class="text-body-2 text-medium-emphasis">
+              No menu items
+            </v-list-item-title>
+          </v-list-item>
         </template>
       </v-list>
     </v-navigation-drawer>
 
+    <!-- APP BAR -->
     <v-app-bar app elevation="2" class="app-bar">
-      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon @click="drawer = !drawer" />
 
-      <!-- Search Box -->
       <div class="app-bar-search-wrapper mx-4">
         <v-icon class="search-icon">mdi-magnify</v-icon>
         <input
@@ -70,32 +89,40 @@
         </v-icon>
       </div>
 
-      <v-spacer></v-spacer>
+      <v-spacer />
 
-      <!-- User Info Section with Context Menu -->
+      <CompanySwitcher class="me-4" />
+
+      <!-- USER MENU -->
       <v-menu>
         <template #activator="{ props }">
-          <div
-            v-bind="props"
-            class="d-flex align-center me-4 cursor-pointer"
-            style="cursor: pointer;"
-          >
+          <div v-bind="props" class="d-flex align-center me-4 cursor-pointer">
             <v-avatar size="32" color="white" class="me-2">
-              <span class="text-primary text-caption font-weight-bold">
+              <v-img
+                v-if="auth.user?.avatar_url"
+                :src="auth.user.avatar_url"
+                cover
+              />
+              <span v-else class="text-primary text-caption font-weight-bold">
                 {{ getUserInitials() }}
               </span>
             </v-avatar>
+
             <div class="d-none d-sm-flex flex-column">
-              <span class="text-caption font-weight-medium" style="color: rgba(0, 0, 0, 0.87);">
+              <span class="text-caption font-weight-medium">
                 {{ getUserFullName() }}
               </span>
-              <span class="text-caption" style="color: rgba(0, 0, 0, 0.6);">
+              <span class="text-caption text-medium-emphasis">
                 {{ auth.user?.role === 'admin' ? 'Administrator' : 'Employee' }}
               </span>
             </div>
-            <v-icon size="16" class="ms-2 d-none d-sm-inline">mdi-chevron-down</v-icon>
+
+            <v-icon size="16" class="ms-2 d-none d-sm-inline">
+              mdi-chevron-down
+            </v-icon>
           </div>
         </template>
+
         <v-list density="compact">
           <v-list-item>
             <v-list-item-title class="text-body-2 font-weight-medium">
@@ -105,7 +132,9 @@
               {{ auth.user?.email }}
             </v-list-item-subtitle>
           </v-list-item>
-          <v-divider class="my-2"></v-divider>
+
+          <v-divider class="my-2" />
+
           <v-list-item
             prepend-icon="mdi-logout"
             title="Logout"
@@ -113,11 +142,7 @@
             :disabled="auth.isLogoutLoading"
           >
             <template #append v-if="auth.isLogoutLoading">
-              <v-progress-circular
-                indeterminate
-                size="16"
-                width="2"
-              ></v-progress-circular>
+              <v-progress-circular indeterminate size="16" width="2" />
             </template>
           </v-list-item>
         </v-list>
@@ -135,10 +160,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter, useRoute } from 'vue-router'
-import { useNotification } from '@/composables/useNotification'
+import { useNotification } from '@/composables'
+import CompanySwitcher from '@/components/common/CompanySwitcher.vue'
 
 interface MenuItem {
   title: string
@@ -150,69 +176,85 @@ interface MenuItem {
 interface Props {
   title: string
   menuItems: MenuItem[]
-  appBarTitle?: string
 }
 
-withDefaults(defineProps<Props>(), {
-  appBarTitle: 'Payroll System'
-})
+const props = defineProps<Props>()
 
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 const notification = useNotification()
+
 const drawer = ref(true)
 const searchQuery = ref('')
 
-// Check if a route is currently active
-const isActiveRoute = (path: string): boolean => {
-  const currentPath = route.path
+/**
+ * IMPORTANT:
+ * Vuetify expects an ARRAY for v-model:opened
+ */
+const openGroups = ref<string[]>([])
 
-  // Only exact matches should be highlighted
-  // This prevents parent routes (e.g., /admin) from being highlighted when on child routes (e.g., /admin/employees)
-  return currentPath === path
+const isActiveRoute = (path: string): boolean => {
+  return route.path === path
 }
 
-// Check if any child route is active (for expanding the group)
 const isGroupActive = (item: MenuItem): boolean => {
   if (!item.children) return false
-  return item.children.some(child => isActiveRoute(child.to || ''))
+  return item.children.some(
+    child => child.to && isActiveRoute(child.to)
+  )
 }
 
-// Get user initials for avatar
+const getGroupValue = (item: MenuItem): string => item.title
+
+const safeMenuItems = computed<MenuItem[]>(() => {
+  if (!props.menuItems || !Array.isArray(props.menuItems)) return []
+  return props.menuItems.filter(Boolean)
+})
+
+/**
+ * Auto-open group if one of its children is active
+ */
+watch(
+  () => route.path,
+  () => {
+    props.menuItems.forEach(item => {
+      if (item.children && isGroupActive(item)) {
+        const id = getGroupValue(item)
+        if (!openGroups.value.includes(id)) {
+          openGroups.value.push(id)
+        }
+      }
+    })
+  },
+  { immediate: true }
+)
+
 const getUserInitials = (): string => {
   const user = auth.user
   if (!user) return '??'
-  const first = user.first_name?.charAt(0).toUpperCase() || ''
-  const last = user.last_name?.charAt(0).toUpperCase() || ''
-  return `${first}${last}` || '??'
+  return `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase()
 }
 
-// Get user full name
 const getUserFullName = (): string => {
   const user = auth.user
   if (!user) return 'Guest'
-  if (user.first_name && user.last_name) {
-    return `${user.first_name} ${user.last_name}`
-  }
-  return user.email || 'User'
+  return user.first_name && user.last_name
+    ? `${user.first_name} ${user.last_name}`
+    : user.email
 }
 
 const handleLogout = async () => {
   try {
     await auth.logout()
-    // Use replace instead of push to prevent back navigation to protected routes
     router.replace('/login')
     notification.showSuccess('Logged out successfully')
-  } catch (error) {
-    notification.showError('Failed to logout. Please try again.')
-    console.error('Logout failed:', error)
-    // Force redirect even on error to ensure user leaves protected area
+  } catch {
+    notification.showError('Failed to logout.')
     router.replace('/login')
   }
 }
 </script>
-
 <style scoped>
 .sidebar :deep(.v-list-item) {
   min-height: 40px;

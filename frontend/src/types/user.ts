@@ -5,7 +5,9 @@ export interface User {
   first_name: string
   last_name: string
   email: string
-  role: 'admin' | 'employee'
+  avatar_url?: string
+  has_company?: boolean
+  role: 'owner' | 'admin' | 'hr' | 'payroll' | 'employee' | 'super-admin' | 'support'
   email_verified_at?: string
   created_at: string
   updated_at: string

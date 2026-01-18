@@ -2,9 +2,16 @@
 
 namespace App\Services;
 
+use App\Enums\Role;
+use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Position;
 use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class EmployeeService
 {
@@ -68,7 +75,7 @@ class EmployeeService
             ]);
 
             // Assign 'user' role (employees use 'user' role in Spatie)
-            $user->assignRole('user');
+            $user->assignRole(Role::Employee->value);
 
             // Prepare employee data
             $employeeData = [
@@ -161,5 +168,136 @@ class EmployeeService
     public function getEmployeeWithDetails(Employee $employee): Employee
     {
         return $employee->load(['user', 'company', 'department', 'position']);
+    }
+
+    /**
+     * Import employees from a CSV file.
+     * Expected headers (case-insensitive, exact set): first_name,last_name,email,password
+     * Optional header: employee_no (auto-generated if missing).
+     *
+     * @return array{created:int,failed:int,errors:array<int,array{row:int,message:string}>}
+     */
+    public function importFromCsv(UploadedFile $file, ?int $companyId = null): array
+    {
+        $created = 0;
+        $errors = [];
+        $handle = fopen($file->getRealPath(), 'r');
+
+        if ($handle === false) {
+            throw new \RuntimeException('Unable to read the uploaded CSV file.');
+        }
+
+        $headers = null;
+        $rowNumber = 0;
+        $requiredHeaders = ['first_name', 'last_name', 'email', 'password'];
+        $optionalHeaders = ['employee_no'];
+        $allowedHeaders = array_merge($requiredHeaders, $optionalHeaders);
+
+        while (($row = fgetcsv($handle, 0, ',')) !== false) {
+            $rowNumber++;
+
+            // Capture headers
+            if ($headers === null) {
+                $headers = array_map(fn ($h) => strtolower(trim($h)), $row);
+
+                // Validate header set matches expectation
+                $headerSet = array_unique($headers);
+                sort($headerSet);
+                $expectedSet = $allowedHeaders;
+                sort($expectedSet);
+
+                // Required must be present, and no unexpected headers
+                $missing = array_diff($requiredHeaders, $headerSet);
+                $unexpected = array_diff($headerSet, $allowedHeaders);
+
+                if (!empty($missing) || !empty($unexpected)) {
+                    fclose($handle);
+                    $missingMsg = empty($missing) ? '' : ('Missing: ' . implode(', ', $missing) . '. ');
+                    $unexpectedMsg = empty($unexpected) ? '' : ('Unexpected: ' . implode(', ', $unexpected) . '.');
+                    throw new \InvalidArgumentException(
+                        'Invalid CSV headers. Expected: first_name,last_name,email,password'
+                        . ' (optional: employee_no). '
+                        . $missingMsg . $unexpectedMsg
+                    );
+                }
+                continue;
+            }
+
+            // Skip empty lines
+            if (count(array_filter($row, fn ($v) => trim((string) $v) !== '')) === 0) {
+                continue;
+            }
+
+            $rowData = [];
+            foreach ($headers as $index => $column) {
+                $rowData[$column] = isset($row[$index]) ? trim((string) $row[$index]) : null;
+            }
+
+            try {
+                $payload = [
+                    'first_name' => $rowData['first_name'] ?? null,
+                    'last_name' => $rowData['last_name'] ?? null,
+                    'email' => $rowData['email'] ?? null,
+                    'password' => $rowData['password'] ?? null,
+                    'employee_no' => $rowData['employee_no'] ?? null,
+                    'company_id' => $companyId,
+                ];
+
+                // Normalize blanks to null
+                foreach ($payload as $key => $value) {
+                    if (is_string($value) && trim($value) === '') {
+                        $payload[$key] = null;
+                    }
+                }
+
+                // Basic required checks before delegating to createEmployee()
+                $required = ['first_name', 'last_name', 'email', 'password'];
+                foreach ($required as $field) {
+                    if (empty($payload[$field])) {
+                        throw new \InvalidArgumentException("Missing required field: {$field}");
+                    }
+                }
+
+                // Auto-generate employee_no if not provided to satisfy uniqueness
+                if (empty($payload['employee_no'])) {
+                    $payload['employee_no'] = 'EMP-' . strtoupper(Str::random(8));
+                }
+
+                $this->createEmployee($payload);
+                $created++;
+            } catch (\Throwable $e) {
+                Log::warning('Employee import row failed', [
+                    'row' => $rowNumber,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $friendly = 'Row failed to import. Please check the data.';
+                if ($e instanceof QueryException) {
+                    $msg = $e->getMessage();
+                    if (str_contains($msg, 'users_email_unique')) {
+                        $friendly = 'Email already exists for another user.';
+                    } elseif (str_contains($msg, 'employees_employee_no_unique')) {
+                        $friendly = 'Employee number already exists.';
+                    } else {
+                        $friendly = 'Database constraint error on this row.';
+                    }
+                } elseif ($e instanceof \InvalidArgumentException) {
+                    $friendly = $e->getMessage();
+                }
+
+                $errors[] = [
+                    'row' => $rowNumber,
+                    'message' => $friendly,
+                ];
+            }
+        }
+
+        fclose($handle);
+
+        return [
+            'created' => $created,
+            'failed' => count($errors),
+            'errors' => $errors,
+        ];
     }
 }

@@ -197,42 +197,43 @@ describe('User Login', function () {
         expect(auth()->user()->hasRole('admin'))->toBeTrue();
     });
 
-    it('can login as student user', function () {
+    it('can login as employee user', function () {
         $user = User::factory()->create([
-            'email' => 'student@example.com',
+            'email' => 'employee@example.com',
             'password' => Hash::make('password123'),
         ]);
         $user->assignRole('user');
 
         $credentials = [
-            'email' => 'student@example.com',
+            'email' => 'employee@example.com',
             'password' => 'password123',
         ];
 
         $response = $this->postJson('/login', $credentials);
 
         $response->assertStatus(200)
-            ->assertJsonPath('data.user.role', 'student');
+            ->assertJsonPath('data.user.role', 'employee');
 
         expect(auth()->check())->toBeTrue();
         expect(auth()->user()->hasRole('user'))->toBeTrue();
     });
 
-    // Additional test: Student relationship loading
-    it('returns user with student relationship when user is a student', function () {
+    // Additional test: Employee relationship loading
+    it('returns user with employee relationship when user is an employee', function () {
         $user = User::factory()->create([
-            'email' => 'student@example.com',
+            'email' => 'employee@example.com',
             'password' => Hash::make('password123'),
         ]);
         $user->assignRole('user');
 
-        // Create student record
-        $user->student()->create([
-            'student_id' => 'STU001',
+        // Create employee record
+        $user->employee()->create([
+            'employee_no' => 'EMP001',
+            'status' => 'active',
         ]);
 
         $credentials = [
-            'email' => 'student@example.com',
+            'email' => 'employee@example.com',
             'password' => 'password123',
         ];
 
@@ -242,9 +243,9 @@ describe('User Login', function () {
             ->assertJsonStructure([
                 'data' => [
                     'user' => [
-                        'student' => [
+                        'employee' => [
                             'uuid',
-                            'student_id',
+                            'employee_no',
                         ],
                     ],
                 ],

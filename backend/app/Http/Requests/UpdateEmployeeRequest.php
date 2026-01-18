@@ -41,11 +41,10 @@ class UpdateEmployeeRequest extends FormRequest
 
             // Employee fields
             'employee_no' => 'sometimes|string|unique:employees,employee_no,' . ($employee ? $employee->id : 'NULL'),
-            'company_uuid' => 'sometimes|nullable|exists:companies,uuid',
+            // company_id is automatically set by SetActiveCompany middleware (cannot be changed)
             'department_uuid' => 'sometimes|nullable|exists:departments,uuid',
             'position_uuid' => 'sometimes|nullable|exists:positions,uuid',
             // ID fields (set by prepareForValidation, included here so they appear in validated())
-            'company_id' => 'sometimes|nullable|exists:companies,id',
             'department_id' => 'sometimes|nullable|exists:departments,id',
             'position_id' => 'sometimes|nullable|exists:positions,id',
             'employment_type' => 'sometimes|nullable|string|in:regular,contractual,probationary',
@@ -82,8 +81,9 @@ class UpdateEmployeeRequest extends FormRequest
         $validated = parent::validated($key, $default);
 
         // Remove UUID fields from validated data (IDs are already there)
+        // company_id is set automatically by middleware, so don't remove it if present
         if (is_array($validated)) {
-            unset($validated['company_uuid'], $validated['department_uuid'], $validated['position_uuid']);
+            unset($validated['department_uuid'], $validated['position_uuid']);
         }
 
         return $validated;

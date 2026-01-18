@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -11,9 +12,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('students', function (Blueprint $table) {
+        $driver = DB::getDriverName();
+        
+        Schema::create('students', function (Blueprint $table) use ($driver) {
             $table->id();
-            $table->uuid('uuid')->nullable()->unique();
+            if ($driver === 'pgsql') {
+                $table->uuid('uuid')->default(DB::raw('gen_random_uuid()'))->unique();
+            } else {
+                $table->uuid('uuid')->nullable()->unique();
+            }
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('student_id')->unique();
             $table->timestamps();

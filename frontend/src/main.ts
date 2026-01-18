@@ -1,12 +1,13 @@
-
+import './assets/main.css'
 import './assets/drawer.css'
 import './assets/vuetify.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { VueQueryPlugin, QueryClient } from '@tanstack/vue-query'
-import { persistQueryClient } from '@tanstack/query-persist-client-core'
-import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
+// Persistence disabled to ensure fresh data on each page visit
+// import { persistQueryClient } from '@tanstack/query-persist-client-core'
+// import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
 
 import App from './App.vue'
 import router from './router'
@@ -23,12 +24,14 @@ import '@/lib/axios'
 app.use(router)
 app.use(vuetify)
 
-// Create Query Client with persistence-friendly settings
+// Create Query Client with fresh data on each page visit
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5,
-      gcTime: 1000 * 60 * 60 * 24,
+      staleTime: 0, // Data is immediately stale, will refetch on mount
+      gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes (reduced from 24 hours)
+      refetchOnMount: true, // Always refetch when component mounts
+      refetchOnWindowFocus: false, // Don't refetch on window focus (only on mount)
       retry: (failureCount, error: unknown) => {
         const axiosError = error as { response?: { status?: number }; isSilent?: boolean }
         // Don't retry on 4xx errors or silent errors
@@ -45,26 +48,25 @@ const queryClient = new QueryClient({
   },
 })
 
-// Create localStorage persister
-const persister = createAsyncStoragePersister({
-  storage: window.localStorage,
-  key: 'ces-query-cache',
-})
-
-// Enable persistence
-persistQueryClient({
-  queryClient,
-  persister,
-  maxAge: 1000 * 60 * 60 * 24,
-  dehydrateOptions: {
-    shouldDehydrateQuery: (query) => {
-      if (query.state.status === 'error') {
-        return false
-      }
-      return true
-    },
-  },
-})
+// Persistence disabled to ensure fresh data on each page visit
+// If you want to re-enable persistence, uncomment the imports above and this block:
+// const persister = createAsyncStoragePersister({
+//   storage: window.localStorage,
+//   key: 'ces-query-cache',
+// })
+// persistQueryClient({
+//   queryClient,
+//   persister,
+//   maxAge: 1000 * 60 * 5, // Reduced from 24 hours to 5 minutes
+//   dehydrateOptions: {
+//     shouldDehydrateQuery: (query) => {
+//       if (query.state.status === 'error') {
+//         return false
+//       }
+//       return true
+//     },
+//   },
+// })
 
 // Configure Vue Query
 app.use(VueQueryPlugin, {

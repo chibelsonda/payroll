@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\PayrollStatus;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payroll extends Model
 {
@@ -27,6 +29,7 @@ class Payroll extends Model
         'gross_pay' => 'decimal:2',
         'total_deductions' => 'decimal:2',
         'net_pay' => 'decimal:2',
+        'status' => PayrollStatus::class,
     ];
 
     /**
@@ -59,5 +62,29 @@ class Payroll extends Model
     public function deductions(): HasMany
     {
         return $this->hasMany(PayrollDeduction::class);
+    }
+
+    /**
+     * Get the payslip for this payroll
+     */
+    public function payslip(): HasOne
+    {
+        return $this->hasOne(Payslip::class);
+    }
+
+    /**
+     * Get the salary payment for this payroll
+     */
+    public function salaryPayment(): HasOne
+    {
+        return $this->hasOne(SalaryPayment::class);
+    }
+
+    /**
+     * Get all loan payments for this payroll
+     */
+    public function loanPayments(): HasMany
+    {
+        return $this->hasMany(LoanPayment::class);
     }
 }

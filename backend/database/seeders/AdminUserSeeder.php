@@ -13,14 +13,18 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $admin = \App\Models\User::factory()->create([
-            'uuid' => (string) Str::uuid(),
-            'first_name' => 'Admin',
-            'last_name' => 'User',
-            'email' => 'admin@example.com',
-        ]);
+        // Create admin user without company_id (user will create/join company during onboarding)
+        $admin = \App\Models\User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'uuid' => (string) Str::uuid(),
+                'first_name' => 'Admin',
+                'last_name' => 'User',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            ]
+        );
 
-        // Assign admin role using Spatie Permission
-        $admin->assignRole('admin');
+        // Note: Roles are assigned when user creates/joins a company
+        // For seeding purposes, we don't assign roles here since user has no company_id yet
     }
 }

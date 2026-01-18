@@ -6,6 +6,9 @@ use App\Exceptions\InvalidCredentialsException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\Request;
 
 class AuthService
 {
@@ -24,22 +27,39 @@ class AuthService
      */
     public function register(array $data): array
     {
-        // Extract role before creating user (role is not stored in users table)
-        $role = $data['role'] ?? 'employee';
+        // Remove role from data (not stored in users table)
+        // Users don't get roles until they create/join a company
         unset($data['role']);
 
-        $user = $this->userService->createUser($data);
+        // Check if user already exists (e.g., from a pending invitation)
+        $existingUser = User::where('email', $data['email'])->first();
 
-        // Automatically assign Spatie role based on registration role
-        $this->assignRoleToUser($user, $role);
-
-        if ($user->isEmployee()) {
-            $this->userService->createEmployeeForUser($user, []);
-            $user->load('employee');
+        if ($existingUser) {
+            // User already exists - update their password and profile info
+            // This handles the case where a user was invited but hasn't registered yet
+            $existingUser->update([
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
+                'password' => Hash::make($data['password']),
+            ]);
+            $user = $existingUser->fresh();
+        } else {
+            // Create new user
+            $user = $this->userService->createUser($data);
         }
+
+        // Do NOT assign roles during registration - user has no company yet
+        // Roles will be assigned when user creates a company (becomes owner/admin)
+        // or when user is invited to join a company
+
+        // Do NOT create employee record during registration
+        // Employee records are created when user joins a company
 
         // Always log in the user after registration (for public self-registration)
         Auth::login($user);
+
+        // Trigger email verification notification
+        event(new Registered($user));
 
         return [
             'user' => $user,
@@ -49,11 +69,16 @@ class AuthService
     /**
      * Assign Spatie role to user based on role field
      *
+     * During registration, roles are assigned with NULL company_id since
+     * users haven't been associated with a company yet. Roles can be
+     * re-assigned to specific companies later when users join companies.
+     *
      * @param User $user The user instance
      * @param string $role The role from registration (admin, staff, employee)
+     * @param int|null $companyId Optional company ID to assign role for specific company
      * @return void
      */
-    protected function assignRoleToUser(User $user, string $role): void
+    protected function assignRoleToUser(User $user, string $role, ?int $companyId = null): void
     {
         // Map role field to Spatie roles
         $spatieRole = match ($role) {
@@ -63,7 +88,17 @@ class AuthService
             default => 'user',  // Default to 'user' role
         };
 
-        $user->assignRole($spatieRole);
+        // Set team context if company_id is provided
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+
+        try {
+            $registrar->setPermissionsTeamId($companyId);
+            $user->assignRole($spatieRole);
+        } finally {
+            // Restore previous team context
+            $registrar->setPermissionsTeamId($previousTeamId);
+        }
     }
 
     /**
@@ -98,7 +133,7 @@ class AuthService
      * @param \Illuminate\Http\Request $request The current HTTP request
      * @return void
      */
-    public function logout(\Illuminate\Http\Request $request): void
+    public function logout(Request $request): void
     {
         Auth::guard('web')->logout();
         $request->session()->invalidate();
@@ -111,15 +146,16 @@ class AuthService
      * @param \Illuminate\Http\Request $request The current HTTP request
      * @return User The authenticated user with appropriate relationships loaded
      */
-    public function getCurrentUser(\Illuminate\Http\Request $request): User
+    public function getCurrentUser(Request $request): User
     {
         /** @var User $user */
         $user = $request->user();
 
-        // Only load employee relationship if user is an employee
-        if ($user->isEmployee()) {
-            $user->load('employee');
-        }
+        // Get fresh user instance to ensure we have latest data (including newly attached companies)
+        $user = $user->fresh();
+
+        // Load employee and roles relationships
+        $user->load(['employee', 'roles']);
 
         return $user;
     }

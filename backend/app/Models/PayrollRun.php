@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\PayrollStatus;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class PayrollRun extends Model
+class PayrollRun extends CompanyScopedModel
 {
     use HasFactory, HasUuid;
 
@@ -19,12 +19,15 @@ class PayrollRun extends Model
         'period_end',
         'pay_date',
         'status',
+        'is_locked',
     ];
 
     protected $casts = [
         'period_start' => 'date',
         'period_end' => 'date',
         'pay_date' => 'date',
+        'is_locked' => 'boolean',
+        'status' => PayrollStatus::class,
     ];
 
     /**

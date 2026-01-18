@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\DeductionType;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ class PayrollDeduction extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'type' => DeductionType::class,
     ];
 
     /**

@@ -1,0 +1,13 @@
+TESTING RULES
+
+Never:
+- Delete tests
+- Rewrite test suites
+
+When test fails:
+- Fix production code
+- Or fix only the broken assertion
+
+Tests must remain:
+- Stable
+- Deterministic

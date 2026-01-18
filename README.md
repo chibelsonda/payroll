@@ -153,6 +153,34 @@ Before you begin, ensure you have the following installed:
    SESSION_LIFETIME=120
    
    SANCTUM_STATEFUL_DOMAINS=localhost:5173
+   
+   # Queue Configuration (Redis)
+   QUEUE_CONNECTION=redis
+   CACHE_STORE=redis
+   
+   # Redis Configuration
+   REDIS_HOST=127.0.0.1
+   REDIS_PASSWORD=null
+   REDIS_PORT=6379
+   REDIS_DB=0
+   REDIS_CACHE_DB=1
+   
+   # Email Configuration (Mailpit for local development)
+   # Mailpit web UI: http://localhost:8025/
+   # Mailpit SMTP: localhost:1025
+   MAIL_MAILER=smtp
+   MAIL_HOST=127.0.0.1
+   MAIL_PORT=1025
+   MAIL_USERNAME=null
+   MAIL_PASSWORD=null
+   MAIL_ENCRYPTION=null
+   MAIL_FROM_ADDRESS="noreply@yourapp.test"
+   MAIL_FROM_NAME="${APP_NAME}"
+   
+   # Invitation Email Configuration
+   INVITATION_LOGO_URL=/images/logo.png
+   INVITATION_PRIMARY_COLOR=#1976D2
+   FRONTEND_URL=http://localhost:5173
    ```
 
    **Frontend** (`.env` in `frontend/` directory):
@@ -181,6 +209,12 @@ npm run dev
 ```
 Frontend will run on `http://localhost:5173`
 
+**Queue Worker (Terminal 3):**
+```bash
+cd backend
+php artisan queue:work database --queue=emails
+```
+
 **Option 2: Run together (Backend script)**
 
 From the root directory:
@@ -189,6 +223,98 @@ cd backend
 composer run dev
 ```
 This will concurrently run the Laravel server, queue worker, logs, and Vite dev server.
+
+### Queue Worker
+
+The application uses database queues for background job processing (e.g., sending invitation emails). You need to run a queue worker:
+
+```bash
+cd backend
+php artisan queue:work database --queue=emails
+```
+
+**For Development:**
+```bash
+# Run queue worker in the background
+php artisan queue:work database --queue=emails --tries=5 --timeout=60
+```
+
+**For Production:**
+```bash
+# Use supervisor or systemd to keep the worker running
+# See Laravel documentation for production queue setup
+php artisan queue:work database --queue=emails --tries=5 --timeout=60 --sleep=3 --max-jobs=1000
+```
+
+**Note:** 
+- The application is configured to use Redis queues. Make sure Redis server is running and the PHP Redis extension is installed.
+- If Redis is not available, you can fall back to database queues by changing `QUEUE_CONNECTION=redis` to `QUEUE_CONNECTION=database` in `.env`.
+- Consider using [Laravel Horizon](https://laravel.com/docs/horizon) for a better queue management dashboard in production.
+
+### Email Testing (Mailpit)
+
+For local development, the application is configured to use [Mailpit](https://github.com/axllent/mailpit) for email testing:
+
+- **Web UI**: http://localhost:8025/
+- **SMTP Port**: 1025
+- **Configuration**: Already set in `.env` with `MAIL_HOST=127.0.0.1` and `MAIL_PORT=1025`
+
+All emails sent by the application (including invitation emails) will be captured by Mailpit and can be viewed in the web interface.
+
+### Redis Setup
+
+**Install Redis Server:**
+
+**macOS:**
+```bash
+brew install redis
+brew services start redis
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get install redis-server
+sudo systemctl start redis
+sudo systemctl enable redis
+```
+
+**Windows:**
+- Download Redis from [redis.io](https://redis.io/download) or use WSL2
+
+**Install PHP Redis Extension:**
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install php-redis
+sudo systemctl restart php8.3-fpm  # Adjust version as needed
+```
+
+**Using PECL (if apt package not available):**
+```bash
+sudo pecl install redis
+# Add 'extension=redis.so' to php.ini
+sudo systemctl restart php8.3-fpm  # Adjust version as needed
+```
+
+**Verify Redis is running:**
+```bash
+redis-cli ping
+# Should return: PONG
+```
+
+**Verify PHP Redis extension is installed:**
+```bash
+php -m | grep redis
+# Should return: redis
+```
+
+**Configuration:**
+The `.env` file is already configured for Redis:
+- `QUEUE_CONNECTION=redis`
+- `CACHE_STORE=redis`
+- `REDIS_HOST=127.0.0.1`
+- `REDIS_PORT=6379`
 
 ### Production Build
 

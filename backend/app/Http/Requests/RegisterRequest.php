@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Invitation;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RegisterRequest extends FormRequest
 {
@@ -21,12 +23,38 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
+        $email = $this->input('email');
+        
+        // Check if there's a pending invitation for this email
+        $hasPendingInvitation = $email && Invitation::where('email', $email)
+            ->where('status', 'pending')
+            ->where('expires_at', '>', now())
+            ->exists();
+
+        // If there's a pending invitation, allow registration even if email exists
+        // This handles the case where a user was invited but hasn't registered yet
+        $emailRule = $hasPendingInvitation
+            ? 'required|string|email|max:255'
+            : 'required|string|email|max:255|unique:users';
+
         return [
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => $emailRule,
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'sometimes|in:admin,staff,employee',
+            'role' => 'sometimes|in:admin,staff,employee,owner',
+        ];
+    }
+
+    /**
+     * Get custom messages for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'The email has already been taken. If you have an account, please log in instead.',
         ];
     }
 }

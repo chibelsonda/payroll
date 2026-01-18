@@ -133,7 +133,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useEmployees } from '@/composables/useEmployees'
+import { useEmployees } from '@/composables'
 
 const auth = useAuthStore()
 

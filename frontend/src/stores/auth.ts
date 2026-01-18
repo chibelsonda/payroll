@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed } from 'vue'
-import { useLogin, useRegister, useLogout, useCurrentUser } from '@/composables/useAuth'
+import { useLogin, useRegister, useLogout, useCurrentUser } from '@/composables'
 import type { LoginCredentials, RegisterData } from '@/types/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -31,12 +31,18 @@ export const useAuthStore = defineStore('auth', () => {
     await logoutMutation.mutateAsync()
   }
 
-  const fetchUser = async () => {
+  /**
+   * Fetch user from backend - single source of truth
+   * Returns true if user is authenticated, false otherwise
+   */
+  const fetchUser = async (): Promise<boolean> => {
     enable()
     try {
       await refetchUser()
+      return !!user.value
     } catch {
-      // Silently ignore 401 errors (user is not authenticated)
+      // User is not authenticated
+      return false
     }
   }
 

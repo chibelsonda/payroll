@@ -1,0 +1,18 @@
+API CONTRACT RULES:
+
+- The existing API response format is a CONTRACT.
+- It must NEVER be broken.
+
+- Always:
+  - Inspect existing endpoints before modifying or adding new ones
+  - Copy the same response shape
+
+- Never:
+  - Return raw models
+  - Return ad-hoc arrays
+  - Change key names
+  - Change nesting structure
+
+- If unsure:
+  - Search for similar endpoint
+  - Follow its response format exactly

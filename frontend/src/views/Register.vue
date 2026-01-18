@@ -107,7 +107,6 @@
                 :loading="auth.isRegisterLoading || isSubmitting"
                 :disabled="!isValid"
                 block
-                size="large"
                 class="text-uppercase font-weight-bold mb-4"
               >
                 SIGN UP
@@ -132,15 +131,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useRouter } from 'vue-router'
-import { useNotification } from '@/composables/useNotification'
-import { useZodForm } from '@/composables/useZodForm'
+import { useRouter, useRoute } from 'vue-router'
+import { useNotification } from '@/composables'
+import { useZodForm } from '@/composables'
 import { registerSchema, type RegisterFormData } from '@/validation'
+import { webAxios } from '@/lib/axios'
 
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const notification = useNotification()
 const showPassword = ref(false)
 const showPasswordConfirm = ref(false)
@@ -155,11 +156,11 @@ const {
   setServerErrors,
   clearServerErrors,
 } = useZodForm<RegisterFormData>(registerSchema, {
-  first_name: '',
-  last_name: '',
-  email: '',
-  password: '',
-  password_confirmation: '',
+  first_name: 'try',
+  last_name: 'inv',
+  email: 'tt@test.com',
+  password: 'Pass!234',
+  password_confirmation: 'Pass!234',
   role: 'employee',
 })
 
@@ -184,6 +185,14 @@ const lastName = computed({
 const email = computed({
   get: () => emailField.value.value as string,
   set: (value: string) => emailField.setValue(value),
+})
+
+// Pre-fill email from query parameter if coming from invitation
+onMounted(() => {
+  const emailFromQuery = route.query.email as string | undefined
+  if (emailFromQuery && !email.value) {
+    emailField.setValue(emailFromQuery)
+  }
 })
 
 const password = computed({
@@ -225,14 +234,32 @@ const onSubmit = handleSubmit(async (values: unknown) => {
 
   try {
     await auth.register(formData)
-    notification.showSuccess('Registration successful!')
+    notification.showSuccess('Registration successful. Please verify your email.')
 
-    // Redirect based on role
-    if (auth.isAdmin) {
-      router.push('/admin')
-    } else {
-      router.push('/employee')
+    // CRITICAL: Ensure session is properly established
+    // Fetch CSRF cookie to ensure session cookie is set
+    try {
+      await webAxios.get('/sanctum/csrf-cookie')
+      await new Promise(resolve => setTimeout(resolve, 200))
+    } catch {
+      // If CSRF cookie fetch fails, continue anyway
     }
+
+    // Try to load the session user (best effort, don't block)
+    await auth.fetchUser().catch(() => undefined)
+
+    // Check if there's a redirect query parameter (e.g., from invitation link)
+    const redirect = route.query.redirect as string | undefined
+    const token = route.query.token as string | undefined
+
+    if (redirect && token) {
+      // Redirect to the specified path with token (e.g., accept invitation)
+      await router.push(`${redirect}?token=${token}`)
+      return
+    }
+
+    // After registration, prompt user to verify email before company setup
+    await router.push('/verify-email-notice')
   } catch (error: unknown) {
     // Handle server-side validation errors
     const err = error as { response?: { data?: { errors?: Record<string, string | string[]>; message?: string } } }

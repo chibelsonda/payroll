@@ -9,5 +9,19 @@ export * from './department'
 export * from './position'
 export * from './payroll'
 
+// Payroll-related types
+export * from './salary'
+export * from './deduction'
+export * from './tax'
+export * from './contribution'
+export * from './attendance'
+export * from './leave'
+export * from './loan'
+export * from './payslip'
+export * from './salary'
+export * from './contribution'
+export * from './salaryPayment'
+export * from './invitation'
+
 // Utility types
 export * from './pagination'

@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'active.company' => \App\Http\Middleware\SetActiveCompany::class,
+            'ensure.user.has.company' => \App\Http\Middleware\EnsureUserHasCompany::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -49,7 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
-            if ($request->is('api/*')) {
+            if ($request->is('api/*') || $request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed.',
