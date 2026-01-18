@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PayrollStatus;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +27,7 @@ class PayrollRun extends CompanyScopedModel
         'period_end' => 'date',
         'pay_date' => 'date',
         'is_locked' => 'boolean',
+        'status' => PayrollStatus::class,
     ];
 
     /**

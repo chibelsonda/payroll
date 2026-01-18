@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AttendanceStatus;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -34,6 +35,7 @@ class Attendance extends Model
         'needs_review' => 'boolean',
         'is_auto_corrected' => 'boolean',
         'is_locked' => 'boolean',
+        'status' => AttendanceStatus::class,
     ];
 
     /**

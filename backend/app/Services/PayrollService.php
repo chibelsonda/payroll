@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\AttendanceStatus;
+use App\Enums\DeductionType;
+use App\Enums\EarningType;
+use App\Enums\EmployeeStatus;
+use App\Enums\PayrollStatus;
 use App\Models\Attendance;
 use App\Models\AttendanceSettings;
 use App\Models\Company;
@@ -31,7 +36,8 @@ class PayrollService
      */
     public function getAllPayrollRuns()
     {
-        return PayrollRun::with('company')->orderBy('created_at', 'desc')->paginate(config('application.pagination.per_page'));
+        return PayrollRun::with('company')->orderBy('created_at', 'desc')
+            ->paginate(config('application.pagination.per_page'));
     }
 
     /**
@@ -56,7 +62,7 @@ class PayrollService
         // UUID to ID conversion is already handled in StorePayrollRunRequest
         // The validated data already contains company_id
         // Always set status to 'draft' for new payroll runs
-        $data['status'] = 'draft';
+        $data['status'] = PayrollStatus::DRAFT;
         return PayrollRun::create($data);
     }
 
@@ -102,7 +108,7 @@ class PayrollService
             throw new \Exception('Payroll run not found');
         }
 
-        if ($payrollRun->status !== 'draft') {
+        if ($payrollRun->status !== PayrollStatus::DRAFT) {
             throw new \Exception('Payroll run is not in draft status');
         }
 
@@ -113,7 +119,7 @@ class PayrollService
         return DB::transaction(function () use ($payrollRun) {
             // Get all active employees for the company
             $employees = Employee::where('company_id', $payrollRun->company_id)
-                ->where('status', 'active')
+                ->where('status', EmployeeStatus::ACTIVE)
                 ->with(['user', 'employeeAllowances', 'employeeDeductions.deduction'])
                 ->get();
 
@@ -187,7 +193,7 @@ class PayrollService
             }
 
             // Update payroll run status to processed
-            $payrollRun->update(['status' => 'processed']);
+            $payrollRun->update(['status' => PayrollStatus::PROCESSED]);
 
             return $generatedPayrolls;
         });
@@ -247,7 +253,7 @@ class PayrollService
         // Get attendance records for the payroll period
         $attendances = Attendance::where('employee_id', $employee->id)
             ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('status', '!=', 'absent') // Exclude absent days
+            ->where('status', '!=', AttendanceStatus::ABSENT) // Exclude absent days
             ->get();
 
         // Calculate total hours worked from attendance records
@@ -353,7 +359,7 @@ class PayrollService
         foreach ($allowances as $allowance) {
             PayrollEarning::create([
                 'payroll_id' => $payroll->id,
-                'type' => 'allowance',
+                'type' => EarningType::ALLOWANCE,
                 'description' => $allowance->description ?? ucfirst($allowance->type) . ' Allowance',
                 'amount' => $allowance->amount,
             ]);
@@ -392,7 +398,7 @@ class PayrollService
         if ($contributions['sss']['employee'] > 0) {
             PayrollDeduction::create([
                 'payroll_id' => $payroll->id,
-                'type' => 'sss',
+                'type' => DeductionType::SSS,
                 'description' => 'SSS Contribution',
                 'amount' => $contributions['sss']['employee'],
             ]);
@@ -402,7 +408,7 @@ class PayrollService
         if ($contributions['philhealth']['employee'] > 0) {
             PayrollDeduction::create([
                 'payroll_id' => $payroll->id,
-                'type' => 'philhealth',
+                'type' => DeductionType::PHILHEALTH,
                 'description' => 'PhilHealth Contribution',
                 'amount' => $contributions['philhealth']['employee'],
             ]);
@@ -412,7 +418,7 @@ class PayrollService
         if ($contributions['pagibig']['employee'] > 0) {
             PayrollDeduction::create([
                 'payroll_id' => $payroll->id,
-                'type' => 'pagibig',
+                'type' => DeductionType::PAGIBIG,
                 'description' => 'Pag-IBIG Contribution',
                 'amount' => $contributions['pagibig']['employee'],
             ]);
@@ -423,7 +429,7 @@ class PayrollService
         if ($taxAmount > 0) {
             PayrollDeduction::create([
                 'payroll_id' => $payroll->id,
-                'type' => 'tax',
+                'type' => DeductionType::TAX,
                 'description' => 'Withholding Tax',
                 'amount' => $taxAmount,
             ]);
@@ -464,13 +470,13 @@ class PayrollService
             throw new \Exception('Payroll run not found');
         }
 
-        if ($payrollRun->status !== 'processed') {
+        if ($payrollRun->status !== PayrollStatus::PROCESSED) {
             throw new \Exception('Payroll run must be processed before finalization');
         }
 
         // Lock the payroll run and mark as paid
         $payrollRun->update([
-            'status' => 'paid',
+            'status' => PayrollStatus::PAID,
             'is_locked' => true,
         ]);
 
